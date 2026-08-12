@@ -1,0 +1,358 @@
+---
+title: Branches & Customers
+description: Look up and save customers via Kayko EBM, plus push branch users and insurance to RRA.
+icon: building
+---
+
+
+## Select customer (Kayko EBM)
+
+`POST /customers/select`
+
+<ParamField body="tin" type="string" required>Your 9-digit TIN</ParamField>
+<ParamField body="branch_id" type="string" required>2-character branch ID</ParamField>
+<ParamField body="customer_tin" type="string" required>Customer TIN to look up</ParamField>
+<ParamField body="ebm_url" type="string" required>Business VSDC base URL from Enable EBM</ParamField>
+
+| Request field | VSDC field |
+|---------------|------------|
+| `tin` | `tin` |
+| `branch_id` | `bhfId` |
+| `customer_tin` | `custmTin` |
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/customers/select" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -d '{
+    "tin": "100027060",
+    "branch_id": "00",
+    "customer_tin": "100004527",
+    "ebm_url": "http://localhost:8080/rra/ACME01/"
+  }'
+```
+
+```javascript JavaScript
+const data = await fetch(`${BASE_URL}/customers/select`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+  },
+  body: JSON.stringify({
+    tin: '100027060',
+    branch_id: '00',
+    customer_tin: '100004527',
+    ebm_url: process.env.EBM_URL,
+  }),
+}).then((r) => r.json());
+```
+
+```json Payload
+{
+  "tin": "100027060",
+  "branch_id": "00",
+  "customer_tin": "100004527",
+  "ebm_url": "http://localhost:8080/rra/ACME01/"
+}
+```
+
+</CodeGroup>
+
+---
+
+## Create branch customer (Kayko EBM)
+
+`POST /customers/create`
+
+<ParamField body="tin" type="string" required>Your TIN</ParamField>
+<ParamField body="branch_id" type="string" required>Branch ID</ParamField>
+<ParamField body="customer_number" type="string" required>Internal customer number (max 9)</ParamField>
+<ParamField body="customer_tin" type="string" required>Customer TIN</ParamField>
+<ParamField body="customer_name" type="string" required>Customer name (max 60)</ParamField>
+<ParamField body="address" type="string">Address</ParamField>
+<ParamField body="telephone_number" type="string">Phone</ParamField>
+<ParamField body="email" type="string">Email</ParamField>
+<ParamField body="fax_number" type="string">Fax</ParamField>
+<ParamField body="use_yn" type="string" required>`Y` or `N`</ParamField>
+<ParamField body="remark" type="string">Notes</ParamField>
+<ParamField body="registrar_name" type="string" required>Registrant name</ParamField>
+<ParamField body="registrar_id" type="string" required>Registrant ID</ParamField>
+<ParamField body="modifier_name" type="string" required>Modifier name</ParamField>
+<ParamField body="modifier_id" type="string" required>Modifier ID</ParamField>
+<ParamField body="ebm_url" type="string" required>Business VSDC base URL</ParamField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/customers/create" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -d '{
+    "tin": "100027060",
+    "branch_id": "00",
+    "customer_number": "C001",
+    "customer_tin": "100004527",
+    "customer_name": "RULIBA CLAYS LTD",
+    "use_yn": "Y",
+    "registrar_name": "Kayko",
+    "registrar_id": "1",
+    "modifier_name": "Kayko",
+    "modifier_id": "1",
+    "ebm_url": "http://localhost:8080/rra/ACME01/"
+  }'
+```
+
+```javascript JavaScript
+await fetch(`${BASE_URL}/customers/create`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+  },
+  body: JSON.stringify({
+    tin: '100027060',
+    branch_id: '00',
+    customer_number: 'C001',
+    customer_tin: '100004527',
+    customer_name: 'RULIBA CLAYS LTD',
+    use_yn: 'Y',
+    registrar_name: 'Kayko',
+    registrar_id: '1',
+    modifier_name: 'Kayko',
+    modifier_id: '1',
+    ebm_url: process.env.EBM_URL,
+  }),
+});
+```
+
+```json Payload
+{
+  "tin": "100027060",
+  "branch_id": "00",
+  "customer_number": "C001",
+  "customer_tin": "100004527",
+  "customer_name": "RULIBA CLAYS LTD",
+  "use_yn": "Y",
+  "registrar_name": "Kayko",
+  "registrar_id": "1",
+  "modifier_name": "Kayko",
+  "modifier_id": "1",
+  "ebm_url": "http://localhost:8080/rra/ACME01/"
+}
+```
+
+</CodeGroup>
+
+---
+
+## Save branch customer
+
+`POST /branches/saveBrancheCustomers`
+
+<ParamField body="tin" type="string" required>TIN</ParamField>
+<ParamField body="bhfId" type="string" required>Branch ID</ParamField>
+<ParamField body="custNo" type="string" required>Your internal customer number</ParamField>
+<ParamField body="custTin" type="string" required>Customer TIN</ParamField>
+<ParamField body="custNm" type="string" required>Customer name</ParamField>
+<ParamField body="adrs" type="string">Address</ParamField>
+<ParamField body="telNo" type="string">Phone number</ParamField>
+<ParamField body="email" type="string">Email</ParamField>
+<ParamField body="useYn" type="string" required>`"Y"` or `"N"`</ParamField>
+<ParamField body="regrId" type="string" required>Registrant ID</ParamField>
+<ParamField body="regrNm" type="string" required>Registrant name</ParamField>
+<ParamField body="modrId" type="string" required>Modifier ID</ParamField>
+<ParamField body="modrNm" type="string" required>Modifier name</ParamField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/branches/saveBrancheCustomers" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tin": "999958074",
+    "bhfId": "00",
+    "custNo": "999991113",
+    "custTin": "118620650",
+    "custNm": "Kayko Group Ltd",
+    "useYn": "Y",
+    "regrNm": "Admin", "regrId": "Admin",
+    "modrNm": "Admin", "modrId": "Admin"
+  }'
+```
+
+```javascript JavaScript
+await vsdcPost('/branches/saveBrancheCustomers', {
+  tin: '999958074', bhfId: '00',
+  custNo: '999991113', custTin: '118620650', custNm: 'Kayko Group Ltd',
+  useYn: 'Y',
+  regrNm: 'Admin', regrId: 'Admin',
+  modrNm: 'Admin', modrId: 'Admin',
+});
+```
+
+```php PHP
+<?php
+vsdcPost('/branches/saveBrancheCustomers', [
+    'tin' => '999958074', 'bhfId' => '00',
+    'custNo' => '999991113', 'custTin' => '118620650',
+    'custNm' => 'Kayko Group Ltd', 'useYn' => 'Y',
+    'regrNm' => 'Admin', 'regrId' => 'Admin',
+    'modrNm' => 'Admin', 'modrId' => 'Admin',
+]);
+```
+
+```json Payload
+{
+  "tin": "999958074",
+  "bhfId": "00",
+  "custNo": "999991113",
+  "custTin": "118620650",
+  "custNm": "Kayko Group Ltd",
+  "adrs": null,
+  "telNo": null,
+  "email": null,
+  "faxNo": null,
+  "useYn": "Y",
+  "remark": null,
+  "regrNm": "Admin",
+  "regrId": "Admin",
+  "modrNm": "Admin",
+  "modrId": "Admin"
+}
+```
+
+</CodeGroup>
+
+---
+
+## Save branch user
+
+`POST /branches/saveBrancheUsers`
+
+<ParamField body="userId" type="string" required>User login ID</ParamField>
+<ParamField body="userNm" type="string" required>User display name</ParamField>
+<ParamField body="pwd" type="string" required>Password</ParamField>
+<ParamField body="authCd" type="string">Authority/role code</ParamField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/branches/saveBrancheUsers" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tin": "999958074", "bhfId": "00",
+    "userId": "userId3", "userNm": "User Name3", "pwd": "12341234",
+    "useYn": "Y",
+    "regrNm": "Admin", "regrId": "123",
+    "modrNm": "Admin", "modrId": "123"
+  }'
+```
+
+```javascript JavaScript
+await vsdcPost('/branches/saveBrancheUsers', {
+  tin: '999958074', bhfId: '00',
+  userId: 'userId3', userNm: 'User Name3', pwd: '12341234',
+  useYn: 'Y',
+  regrNm: 'Admin', regrId: '123',
+  modrNm: 'Admin', modrId: '123',
+});
+```
+
+```php PHP
+<?php
+vsdcPost('/branches/saveBrancheUsers', [
+    'tin' => '999958074', 'bhfId' => '00',
+    'userId' => 'userId3', 'userNm' => 'User Name3', 'pwd' => '12341234',
+    'useYn' => 'Y',
+    'regrNm' => 'Admin', 'regrId' => '123',
+    'modrNm' => 'Admin', 'modrId' => '123',
+]);
+```
+
+```json Payload
+{
+  "tin": "999958074",
+  "bhfId": "00",
+  "userId": "userId3",
+  "userNm": "User Name3",
+  "pwd": "12341234",
+  "adrs": null,
+  "modrId": "123",
+  "modrNm": "Modr Name",
+  "regrId": "123",
+  "regrNm": "Regr Name",
+  "cntc": null,
+  "authCd": null,
+  "remark": null,
+  "useYn": "Y"
+}
+```
+
+</CodeGroup>
+
+---
+
+## Save branch insurance
+
+Pharmacy-only. Register insurance providers used by the branch.
+
+`POST /branches/saveBrancheInsurances`
+
+<ParamField body="isrccCd" type="string" required>Insurance company code</ParamField>
+<ParamField body="isrccNm" type="string" required>Insurance company name</ParamField>
+<ParamField body="isrcRt" type="number" required>Premium rate (e.g. `20` for 20%)</ParamField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/branches/saveBrancheInsurances" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tin": "999958074", "bhfId": "00",
+    "isrccCd": "ISRCC01", "isrccNm": "RSSB Insurance", "isrcRt": 20,
+    "useYn": "Y",
+    "regrNm": "Admin", "regrId": "123",
+    "modrNm": "Admin", "modrId": "123"
+  }'
+```
+
+```javascript JavaScript
+await vsdcPost('/branches/saveBrancheInsurances', {
+  tin: '999958074', bhfId: '00',
+  isrccCd: 'ISRCC01', isrccNm: 'RSSB Insurance', isrcRt: 20,
+  useYn: 'Y',
+  regrNm: 'Admin', regrId: '123',
+  modrNm: 'Admin', modrId: '123',
+});
+```
+
+```php PHP
+<?php
+vsdcPost('/branches/saveBrancheInsurances', [
+    'tin' => '999958074', 'bhfId' => '00',
+    'isrccCd' => 'ISRCC01', 'isrccNm' => 'RSSB Insurance', 'isrcRt' => 20,
+    'useYn' => 'Y',
+    'regrNm' => 'Admin', 'regrId' => '123',
+    'modrNm' => 'Admin', 'modrId' => '123',
+]);
+```
+
+```json Payload
+{
+  "tin": "999958074",
+  "bhfId": "00",
+  "isrccCd": "ISRCC01",
+  "isrccNm": "ISRCC NAME",
+  "modrId": "123",
+  "modrNm": "Modr Name",
+  "regrId": "123",
+  "regrNm": "Regr Name",
+  "isrcRt": 20,
+  "useYn": "Y"
+}
+```
+
+</CodeGroup>

@@ -1,0 +1,230 @@
+---
+title: Stock
+description: Record stock movements and update inventory master.
+icon: boxes-stacked
+---
+
+<Note>
+  For the full inventory workflow, see [Stock Management Workflow](/workflows/stock-management).
+</Note>
+
+---
+
+## Save stock in/out
+
+Record an inventory movement (sale deduction, purchase addition, adjustment, etc.).
+
+`POST /stock/saveStockItems`
+
+<ParamField body="sarNo" type="string" required>Stock and release document number</ParamField>
+<ParamField body="orgSarNo" type="string" required>Original SAR number</ParamField>
+<ParamField body="regTyCd" type="string" required>`"A"` Automatic or `"M"` Manual</ParamField>
+<ParamField body="sarTyCd" type="string" required>Movement type- see [Stock In/Out Types](/reference/enumerations#stock-inout-type)</ParamField>
+<ParamField body="ocrnDt" type="string" required>Occurrence date (`yyyyMMdd`)</ParamField>
+<ParamField body="totItemCnt" type="number" required>Number of line items</ParamField>
+<ParamField body="itemList" type="array" required>Stock movement line items</ParamField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/stock/saveStockItems" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tin": "999958074",
+    "bhfId": "00",
+    "sarNo": "106",
+    "orgSarNo": "00",
+    "regTyCd": "M",
+    "sarTyCd": "11",
+    "ocrnDt": "20240520",
+    "totItemCnt": 1,
+    "totTaxblAmt": 1000,
+    "totTaxAmt": 152.54,
+    "totAmt": 1000,
+    "itemList": [{
+      "itemSeq": 1,
+      "itemCd": "RW3NTXNOX0000006",
+      "itemClsCd": "5012161100",
+      "itemNm": "Inyange Water",
+      "qty": 50,
+      "prc": 10000,
+      "splyAmt": 1000,
+      "taxTyCd": "B",
+      "taxblAmt": 1000,
+      "taxAmt": 152.54,
+      "totAmt": 1000,
+      "pkg": 1,
+      "pkgUnitCd": "NT",
+      "qtyUnitCd": "U"
+    }],
+    "regrId": "1", "regrNm": "Kayko",
+    "modrId": "1", "modrNm": "Kayko"
+  }'
+```
+
+```javascript JavaScript
+await vsdcPost('/stock/saveStockItems', {
+  tin: '999958074', bhfId: '00',
+  sarNo: '106', orgSarNo: '00',
+  regTyCd: 'M', sarTyCd: '11',
+  ocrnDt: '20240520',
+  totItemCnt: 1,
+  totTaxblAmt: 1000, totTaxAmt: 152.54, totAmt: 1000,
+  itemList: [{ /* items */ }],
+  regrId: '1', regrNm: 'Kayko',
+  modrId: '1', modrNm: 'Kayko',
+});
+```
+
+```php PHP
+<?php
+vsdcPost('/stock/saveStockItems', $stockPayload);
+```
+
+```json Payload
+{
+  "tin": "999958074",
+  "regTyCd": "M",
+  "useYn": "Y",
+  "bhfId": "00",
+  "remark": null,
+  "modrId": "1",
+  "modrNm": "Kayko",
+  "regrId": "1",
+  "regrNm": "Kayko",
+  "sarTyCd": "11",
+  "sarNo": "106",
+  "orgSarNo": "00",
+  "custTin": null,
+  "custNm": null,
+  "custBhfId": null,
+  "ocrnDt": "20240520",
+  "totItemCnt": 1,
+  "totTaxblAmt": 1000,
+  "totTaxAmt": 1000,
+  "totAmt": 1000,
+  "itemList": [
+    {
+      "itemSeq": 1,
+      "itemCd": "RW3NTXNOX0000006",
+      "itemClsCd": "5012161100",
+      "itemNm": "Inyange Water",
+      "qtyUnitCd": "U",
+      "pkgUnitCd": "NT",
+      "bcd": null,
+      "qty": 50,
+      "prc": 10000,
+      "splyAmt": 1000,
+      "totDcAmt": 9000,
+      "taxTyCd": "B",
+      "taxblAmt": 1000,
+      "taxAmt": 152.54,
+      "totAmt": 1000,
+      "pkg": 1,
+      "itemExprDt": "20250101"
+    }
+  ]
+}
+```
+
+</CodeGroup>
+
+---
+
+## Get stock movements
+
+Pull stock movement history (sync endpoint).
+
+`POST /stock/selectStockItems`
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/stock/selectStockItems" \
+  -H "Content-Type: application/json" \
+  -d '{"tin":"999958074","bhfId":"00","lastReqDt":"20210520000000"}'
+```
+
+```javascript JavaScript
+const { data } = await vsdcPost('/stock/selectStockItems', {
+  tin: '999958074', bhfId: '00', lastReqDt: '20210520000000',
+});
+// data.stockList → movement history
+```
+
+```php PHP
+<?php
+$result = vsdcPost('/stock/selectStockItems', [
+    'tin' => '999958074', 'bhfId' => '00', 'lastReqDt' => '20210520000000',
+]);
+```
+
+```json Payload
+{
+  "tin": "999958074",
+  "bhfId": "00",
+  "lastReqDt": "20210520000000"
+}
+```
+
+</CodeGroup>
+
+---
+
+## Save stock master
+
+Update the current remaining quantity for an item. Must be called **after** the related stock in/out.
+
+`POST /stockMaster/saveStockMaster`
+
+<ParamField body="itemCd" type="string" required>Item code</ParamField>
+<ParamField body="rsdQty" type="number" required>Remaining quantity on hand</ParamField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/stockMaster/saveStockMaster" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tin": "999958074",
+    "bhfId": "00",
+    "itemCd": "RW1NTXU0000006",
+    "rsdQty": 150,
+    "regrId": "123", "regrNm": "Kayko",
+    "modrId": "123", "modrNm": "Kayko"
+  }'
+```
+
+```javascript JavaScript
+await vsdcPost('/stockMaster/saveStockMaster', {
+  tin: '999958074', bhfId: '00',
+  itemCd: 'RW1NTXU0000006', rsdQty: 150,
+  regrId: '123', regrNm: 'Kayko',
+  modrId: '123', modrNm: 'Kayko',
+});
+```
+
+```php PHP
+<?php
+vsdcPost('/stockMaster/saveStockMaster', [
+    'tin' => '999958074', 'bhfId' => '00',
+    'itemCd' => 'RW1NTXU0000006', 'rsdQty' => 150,
+    'regrId' => '123', 'regrNm' => 'Kayko',
+    'modrId' => '123', 'modrNm' => 'Kayko',
+]);
+```
+
+```json Payload
+{
+  "tin": "999958074",
+  "bhfId": "00",
+  "itemCd": "RW1NTXU0000006",
+  "rsdQty": 1,
+  "modrId": "123",
+  "modrNm": "Modr Name",
+  "regrId": "123",
+  "regrNm": "Regr Name"
+}
+```
+
+</CodeGroup>

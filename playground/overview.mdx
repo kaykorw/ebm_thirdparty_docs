@@ -1,0 +1,142 @@
+---
+title: API Playground
+description: Interactive testing for Kayko EBM and VSDC endpoints- auth, environments, and every domain group.
+icon: play
+---
+
+Use the playground pages in the sidebar to send live requests. Each operation is its own page with pre-filled bodies, auth, and response examples.
+
+## Before you start
+
+<Steps>
+  <Step title="Pick an environment">
+    Use the **environment dropdown** on any playground page:
+
+    | Environment | Use for |
+    |-------------|---------|
+    | **Local EBM** | Kayko EBM gateway (preferred for live EBM routes) |
+    | **Production VSDC** | Direct hosted VSDC |
+    | **Local VSDC** | Self-hosted WAR |
+
+    Code samples use `{{baseUrl}}` and update when you switch environments.
+  </Step>
+  <Step title="Authenticate">
+    | Routes | Header |
+    |--------|--------|
+    | Customers, Reference Data (`/constants/*`) | `Authorization: Bearer sk_…` or `x-api-key: sk_…` |
+    | Initialization (`/initialize/*`) | `X-API-Token: <EBM_INTERNAL_API_TOKEN>` |
+
+    Generate business keys in the dashboard: **Settings → Enable EBM → Generate API key**. See [API Keys](/concepts/api-keys).
+  </Step>
+  <Step title="Set ebm_url on Kayko EBM POSTs">
+    Device init and customer routes need `ebm_url` in the JSON body (from Enable EBM), for example:
+
+    ```
+    http://localhost:8080/rra/{business_code}/
+    ```
+  </Step>
+  <Step title="Send">
+    Edit the pre-filled body, then click **Send**. Inspect status, headers, and response body in the panel.
+  </Step>
+</Steps>
+
+## Endpoint groups
+
+Each group lists individual playground pages (same pattern as **Select Countries** under Reference Data):
+
+### Initialization
+
+| Playground page | Path | Auth |
+|-----------------|------|------|
+| Enable EBM | `POST /initialize/enable` | Internal token |
+| Get Deployment Status | `GET /initialize/status/{deploymentId}` | Internal token |
+| Initialize Device | `POST /initialize/init` | Internal token |
+
+Docs: [Initialization](/api/initialization)
+
+### Reference Data
+
+Each constant is a full playground page with schema, examples, and code samples:
+
+| Playground page | Path |
+|-----------------|------|
+| Select Countries | `GET /constants/countries` |
+| Select Currencies | `GET /constants/currencies` |
+| Select Packaging | `GET /constants/packaging` |
+| Select Quantity | `GET /constants/quantity` |
+| Select Taxes | `GET /constants/taxes` |
+| Select Products | `GET /constants/products` |
+| Select Transactions | `GET /constants/transactions` |
+| Select Sales Receipt Types | `GET /constants/sales-receipt-types` |
+| Select Purchase Receipt Types | `GET /constants/purchase-receipt-types` |
+| Select Payment Modes | `GET /constants/payment-modes` |
+| Select Transaction Progress | `GET /constants/transaction-progress` |
+| Select Registrations | `GET /constants/registrations` |
+| Select Stock Types | `GET /constants/stock-types` |
+| Select Refund Reasons | `GET /constants/refund-reasons` |
+| Select Import Item Statuses | `GET /constants/import-item-statuses` |
+| Select Taxpayer Statuses | `GET /constants/taxpayer-statuses` |
+
+Docs: [Reference Data](/api/reference-data)
+
+### Branches & Customers
+
+| Playground page | Path | Auth |
+|-----------------|------|------|
+| Select Customer | `POST /customers/select` | API key + `customers` |
+| Create Branch Customer | `POST /customers/create` | API key + `customers` |
+| Save Branch User | `POST /branches/saveBrancheUsers` |- |
+| Save Branch Insurance | `POST /branches/saveBrancheInsurances` |- |
+| Save Branch Customer | `POST /branches/saveBrancheCustomers` |- |
+
+Docs: [Branches & Customers](/api/branches-customers)
+
+### Items · Imports · Sales · Purchases · Stock
+
+Full VSDC domain pages remain in the playground for the complete API surface:
+
+- **Items**- `saveItems`, `selectItems`, `saveItemComposition`
+- **Imports**- `selectImportItems`, `updateImportItems`
+- **Sales**- `saveSales`, `resendSales`
+- **Purchases**- `selectTrnsPurchaseSales`, `savePurchases`
+- **Stock**- `saveStockItems`, `selectStockItems`, `saveStockMaster`
+
+## What responses look like
+
+| Kind | Shape |
+|------|-------|
+| `/initialize/init` | Full VSDC envelope `{ resultCd, resultMsg, resultDt, data }` |
+| `/customers/*` | Unwrapped VSDC `data` |
+| `/constants/*` | JSON array of `{ code, sort, name, … }` |
+| Auth failures | Kayko EBM `{ statusCode, message, errorCode }` |
+
+### Common VSDC codes
+
+| `resultCd` | Meaning |
+|------------|---------|
+| `000` | Success |
+| `001` | No new data (sync-style pulls) |
+| `910` | Parameter / totals validation error |
+| `999` | Unknown error |
+
+Full list: [Response Codes](/reference/response-codes).
+
+### Common auth errors
+
+| `errorCode` | Meaning |
+|-------------|---------|
+| `API_KEY_REQUIRED` | Missing business key |
+| `API_KEY_INVALID` / `INACTIVE` / `EXPIRED` | Bad or unusable key |
+| `API_KEY_SCOPE_DENIED` | Missing required scope (e.g. `customers`) |
+| `API_KEY_IP_DENIED` | Caller IP not allowlisted |
+| `INTERNAL_TOKEN_REQUIRED` | Missing/wrong `X-API-Token` on `/initialize/*` |
+
+## Local connectivity
+
+The Mintlify docs proxy may not reach `localhost`. If playground calls to Local EBM/VSDC fail from the cloud preview, call the same URL from your machine (cURL, Postman, or your app) using the samples on each page.
+
+## Related
+
+- [Quickstart](/quickstart)
+- [API Keys](/concepts/api-keys)
+- [API Overview](/api/overview)

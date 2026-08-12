@@ -1,0 +1,4268 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Kayko VSDC API",
+    "description": "Kayko VSDC / EBM API. Prefer Kayko EBM gateway routes under /ebm for initialize, customers, and constants. Full VSDC domain paths remain documented.",
+    "version": "1.0.5"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/ebm",
+      "description": "Local EBM"
+    },
+    {
+      "url": "https://vsdc.kayko.rw/rra-2.1.2.3.8",
+      "description": "Production VSDC"
+    },
+    {
+      "url": "http://localhost:8080",
+      "description": "Local VSDC"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyBearer": []
+    },
+    {
+      "ApiKeyHeader": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "API Key",
+        "description": "Kayko business API key from Settings → Enable EBM → Generate API key. Example: Bearer sk_live_…"
+      },
+      "ApiKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "Alternative to Authorization Bearer. Pass the raw sk_live_… / sk_test_… secret."
+      },
+      "InternalToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Token",
+        "description": "Internal EBM_INTERNAL_API_TOKEN for /initialize/* (not a business sk_ key)."
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Initialization",
+      "description": "Enable EBM, check deployment status, and initialize the device via Kayko EBM."
+    },
+    {
+      "name": "Reference Data",
+      "description": "Kayko EBM GET /constants/* tables- Select Countries, Taxes, Packaging, and more."
+    },
+    {
+      "name": "Branches & Customers",
+      "description": "Select and create customers via Kayko EBM, plus branch users and insurance."
+    },
+    {
+      "name": "Items",
+      "description": "Product registration and catalog sync"
+    },
+    {
+      "name": "Imports",
+      "description": "Customs import declarations"
+    },
+    {
+      "name": "Sales",
+      "description": "Invoice submission and receipt signatures"
+    },
+    {
+      "name": "Purchases",
+      "description": "Supplier invoice confirmation"
+    },
+    {
+      "name": "Stock",
+      "description": "Inventory movements and stock master"
+    }
+  ],
+  "paths": {
+    "/initialize/enable": {
+      "post": {
+        "tags": [
+          "Initialization"
+        ],
+        "operationId": "enable_ebm",
+        "summary": "Enable EBM",
+        "description": "Provision a VSDC instance for a business and return `ebm_url`. Called when the dashboard enables EBM. Requires `X-API-Token` (internal), not a business API key.",
+        "security": [
+          {
+            "InternalToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "business_code"
+                ],
+                "properties": {
+                  "business_code": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^[A-Za-z0-9_-]+$",
+                    "example": "ACME01"
+                  },
+                  "redeploy": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                }
+              },
+              "example": {
+                "business_code": "ACME01",
+                "redeploy": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "EBM enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ebm_url": {
+                      "type": "string"
+                    },
+                    "business_code": {
+                      "type": "string"
+                    },
+                    "deployment_id": {
+                      "type": "string"
+                    },
+                    "status_url": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "ebm_url": "http://localhost:8080/rra/ACME01/",
+                  "business_code": "ACME01",
+                  "deployment_id": "42",
+                  "status_url": "http://127.0.0.1:8000/api/deployments/42/"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid internal token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "Internal API token is required",
+                  "errorCode": "INTERNAL_TOKEN_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/initialize/enable\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"X-API-Token: $EBM_INTERNAL_API_TOKEN\" \\\n  -d '{\n  \"business_code\": \"ACME01\",\n  \"redeploy\": false\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const res = await fetch(`${BASE_URL}/initialize/enable`, {\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json',\n    'X-API-Token': process.env.EBM_INTERNAL_API_TOKEN,\n  },\n  body: JSON.stringify({ business_code: 'ACME01', redeploy: false }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"business_code\": \"ACME01\",\n  \"redeploy\": false\n}"
+          }
+        ]
+      }
+    },
+    "/initialize/status/{deploymentId}": {
+      "get": {
+        "tags": [
+          "Initialization"
+        ],
+        "operationId": "get_deployment_status",
+        "summary": "Get Deployment Status",
+        "description": "Poll deployer status for an Enable EBM job. Requires `X-API-Token`. Path parameter must be numeric.",
+        "security": [
+          {
+            "InternalToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "deploymentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "example": "42",
+            "description": "Deployment id returned from Enable EBM"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deployer status JSON",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": 42,
+                  "status": "succeeded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid internal token"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/initialize/status/42\" \\\n  -H \"X-API-Token: $EBM_INTERNAL_API_TOKEN\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const status = await fetch(`${BASE_URL}/initialize/status/42`, {\n  headers: { 'X-API-Token': process.env.EBM_INTERNAL_API_TOKEN },\n}).then(r => r.json());"
+          }
+        ]
+      }
+    },
+    "/initialize/init": {
+      "post": {
+        "tags": [
+          "Initialization"
+        ],
+        "operationId": "initialize_device",
+        "summary": "Initialize Device",
+        "description": "Initialize a device using TIN, branch ID, and device serial number. Returns device info and cryptographic keys (intrlKey, signKey, cmcKey). Call once before other EBM operations. Requires X-API-Token.",
+        "security": [
+          {
+            "InternalToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "tin",
+                  "branch_id",
+                  "device_serial_number",
+                  "ebm_url"
+                ],
+                "properties": {
+                  "tin": {
+                    "type": "string",
+                    "minLength": 9,
+                    "maxLength": 9
+                  },
+                  "branch_id": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 2
+                  },
+                  "device_serial_number": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "ebm_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Business VSDC base URL from Enable EBM"
+                  }
+                }
+              },
+              "example": {
+                "tin": "122548433",
+                "branch_id": "03",
+                "device_serial_number": "QUA-77379",
+                "ebm_url": "http://localhost:8080/rra/ACME01/"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Full VSDC envelope",
+            "content": {
+              "application/json": {
+                "example": {
+                  "resultCd": "000",
+                  "resultMsg": "It is succeeded",
+                  "resultDt": "20220130101912",
+                  "data": {
+                    "info": {
+                      "tin": "999000099",
+                      "taxprNm": "TEST VSDC",
+                      "bhfId": "00",
+                      "bhfNm": "Headquarter",
+                      "dvcId": "9990000997006310",
+                      "intrlKey": "...",
+                      "signKey": "...",
+                      "cmcKey": "...",
+                      "lastSaleInvcNo": 0,
+                      "lastSaleRcptNo": 0
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/initialize/init\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"X-API-Token: $EBM_INTERNAL_API_TOKEN\" \\\n  -d '{\n  \"tin\": \"122548433\",\n  \"branch_id\": \"03\",\n  \"device_serial_number\": \"QUA-77379\",\n  \"ebm_url\": \"http://localhost:8080/rra/ACME01/\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const result = await fetch(`${BASE_URL}/initialize/init`, {\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json',\n    'X-API-Token': process.env.EBM_INTERNAL_API_TOKEN,\n  },\n  body: JSON.stringify({\n    tin: '122548433',\n    branch_id: '03',\n    device_serial_number: 'QUA-77379',\n    ebm_url: process.env.EBM_URL,\n  }),\n}).then(r => r.json());\nconst { intrlKey, signKey, cmcKey } = result.data.info;"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$payload = json_encode([\n    'tin' => '122548433',\n    'branch_id' => '03',\n    'device_serial_number' => 'QUA-77379',\n    'ebm_url' => getenv('EBM_URL'),\n]);\n$ch = curl_init($baseUrl . '/initialize/init');\ncurl_setopt_array($ch, [\n    CURLOPT_POST => true,\n    CURLOPT_HTTPHEADER => [\n        'Content-Type: application/json',\n        'X-API-Token: ' . getenv('EBM_INTERNAL_API_TOKEN'),\n    ],\n    CURLOPT_POSTFIELDS => $payload,\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$result = json_decode(curl_exec($ch), true);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"122548433\",\n  \"branch_id\": \"03\",\n  \"device_serial_number\": \"QUA-77379\",\n  \"ebm_url\": \"http://localhost:8080/rra/ACME01/\"\n}"
+          }
+        ]
+      }
+    },
+    "/customers/select": {
+      "post": {
+        "tags": [
+          "Branches & Customers"
+        ],
+        "operationId": "select_customer",
+        "summary": "Select Customer",
+        "description": "Look up a customer by TIN. Returns customer name, status, and address details. Requires a business API key with scope `customers`.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "tin",
+                  "branch_id",
+                  "customer_tin",
+                  "ebm_url"
+                ],
+                "properties": {
+                  "tin": {
+                    "type": "string",
+                    "minLength": 9,
+                    "maxLength": 9
+                  },
+                  "branch_id": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 2
+                  },
+                  "customer_tin": {
+                    "type": "string",
+                    "minLength": 9,
+                    "maxLength": 9
+                  },
+                  "ebm_url": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              },
+              "example": {
+                "tin": "100027060",
+                "branch_id": "00",
+                "customer_tin": "100004527",
+                "ebm_url": "http://localhost:8080/rra/ACME01/"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Unwrapped VSDC customer data (or empty)"
+          },
+          "401": {
+            "description": "Missing/invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing customers scope or IP denied"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/customers/select\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\" \\\n  -d '{\n  \"tin\": \"100027060\",\n  \"branch_id\": \"00\",\n  \"customer_tin\": \"100004527\",\n  \"ebm_url\": \"http://localhost:8080/rra/ACME01/\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/customers/select`, {\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json',\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n  body: JSON.stringify({\n    tin: '100027060',\n    branch_id: '00',\n    customer_tin: '100004527',\n    ebm_url: process.env.EBM_URL,\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$payload = json_encode([\n    'tin' => '100027060',\n    'branch_id' => '00',\n    'customer_tin' => '100004527',\n    'ebm_url' => getenv('EBM_URL'),\n]);\n$ch = curl_init($baseUrl . '/customers/select');\ncurl_setopt_array($ch, [\n    CURLOPT_POST => true,\n    CURLOPT_HTTPHEADER => [\n        'Content-Type: application/json',\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_POSTFIELDS => $payload,\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"100027060\",\n  \"branch_id\": \"00\",\n  \"customer_tin\": \"100004527\",\n  \"ebm_url\": \"http://localhost:8080/rra/ACME01/\"\n}"
+          }
+        ]
+      }
+    },
+    "/customers/create": {
+      "post": {
+        "tags": [
+          "Branches & Customers"
+        ],
+        "operationId": "create_branch_customer",
+        "summary": "Create Branch Customer",
+        "description": "Create or update a branch customer through Kayko EBM (`/customers/create`). Stores customer TIN, name, and contact details linked to your branch. Requires a business API key with scope `customers`.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "tin",
+                  "branch_id",
+                  "customer_number",
+                  "customer_tin",
+                  "customer_name",
+                  "use_yn",
+                  "registrar_name",
+                  "registrar_id",
+                  "modifier_name",
+                  "modifier_id",
+                  "ebm_url"
+                ],
+                "properties": {
+                  "tin": {
+                    "type": "string",
+                    "minLength": 9,
+                    "maxLength": 9
+                  },
+                  "branch_id": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 2
+                  },
+                  "customer_number": {
+                    "type": "string",
+                    "maxLength": 9
+                  },
+                  "customer_tin": {
+                    "type": "string",
+                    "minLength": 9,
+                    "maxLength": 9
+                  },
+                  "customer_name": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "address": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "nullable": true
+                  },
+                  "telephone_number": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "nullable": true
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 50,
+                    "nullable": true
+                  },
+                  "fax_number": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "nullable": true
+                  },
+                  "use_yn": {
+                    "type": "string",
+                    "enum": [
+                      "Y",
+                      "N"
+                    ]
+                  },
+                  "remark": {
+                    "type": "string",
+                    "maxLength": 400,
+                    "nullable": true
+                  },
+                  "registrar_name": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "registrar_id": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "modifier_name": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "modifier_id": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "ebm_url": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              },
+              "example": {
+                "tin": "100027060",
+                "branch_id": "00",
+                "customer_number": "C001",
+                "customer_tin": "100004527",
+                "customer_name": "RULIBA CLAYS LTD",
+                "address": "Kigali",
+                "telephone_number": "0780000000",
+                "email": "ops@example.com",
+                "use_yn": "Y",
+                "registrar_name": "Kayko",
+                "registrar_id": "1",
+                "modifier_name": "Kayko",
+                "modifier_id": "1",
+                "ebm_url": "http://localhost:8080/rra/ACME01/"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Unwrapped VSDC data"
+          },
+          "401": {
+            "description": "Missing/invalid API key"
+          },
+          "403": {
+            "description": "Missing customers scope or IP denied"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/customers/create\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\" \\\n  -d '{\n  \"tin\": \"100027060\",\n  \"branch_id\": \"00\",\n  \"customer_number\": \"C001\",\n  \"customer_tin\": \"100004527\",\n  \"customer_name\": \"RULIBA CLAYS LTD\",\n  \"use_yn\": \"Y\",\n  \"registrar_name\": \"Kayko\",\n  \"registrar_id\": \"1\",\n  \"modifier_name\": \"Kayko\",\n  \"modifier_id\": \"1\",\n  \"ebm_url\": \"http://localhost:8080/rra/ACME01/\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/customers/create`, {\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json',\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n  body: JSON.stringify({\n    tin: '100027060',\n    branch_id: '00',\n    customer_number: 'C001',\n    customer_tin: '100004527',\n    customer_name: 'RULIBA CLAYS LTD',\n    use_yn: 'Y',\n    registrar_name: 'Kayko',\n    registrar_id: '1',\n    modifier_name: 'Kayko',\n    modifier_id: '1',\n    ebm_url: process.env.EBM_URL,\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"100027060\",\n  \"branch_id\": \"00\",\n  \"customer_number\": \"C001\",\n  \"customer_tin\": \"100004527\",\n  \"customer_name\": \"RULIBA CLAYS LTD\",\n  \"use_yn\": \"Y\",\n  \"registrar_name\": \"Kayko\",\n  \"registrar_id\": \"1\",\n  \"modifier_name\": \"Kayko\",\n  \"modifier_id\": \"1\",\n  \"ebm_url\": \"http://localhost:8080/rra/ACME01/\"\n}"
+          }
+        ]
+      }
+    },
+    "/constants/countries": {
+      "get": {
+        "tags": [
+          "Reference Data"
+        ],
+        "operationId": "select_countries",
+        "summary": "Select Countries",
+        "description": "Return the list of country codes used for fields such as `orgnNatCd`. Requires a business API key.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reference codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "sort",
+                      "name"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "example": "RW"
+                      },
+                      "sort": {
+                        "type": "integer",
+                        "example": 193
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "RWANDA"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "code": "RW",
+                    "sort": 193,
+                    "name": "RWANDA"
+                  },
+                  {
+                    "code": "KE",
+                    "sort": 115,
+                    "name": "KENYA"
+                  },
+                  {
+                    "code": "US",
+                    "sort": 233,
+                    "name": "UNITED STATES"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/constants/countries\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/constants/countries`, {\n  headers: {\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n}).then((r) => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$ch = curl_init($baseUrl . '/constants/countries');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
+          }
+        ]
+      }
+    },
+    "/constants/currencies": {
+      "get": {
+        "tags": [
+          "Reference Data"
+        ],
+        "operationId": "select_currencies",
+        "summary": "Select Currencies",
+        "description": "Return currency codes used for invoice foreign-currency fields such as `invcFcurCd`. Requires a business API key.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reference codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "sort",
+                      "name"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "example": "RWF"
+                      },
+                      "sort": {
+                        "type": "integer",
+                        "example": 1
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "RWANDAN FRANC"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "code": "RWF",
+                    "sort": 1,
+                    "name": "RWANDAN FRANC"
+                  },
+                  {
+                    "code": "USD",
+                    "sort": 2,
+                    "name": "US DOLLAR"
+                  },
+                  {
+                    "code": "EUR",
+                    "sort": 3,
+                    "name": "EURO"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/constants/currencies\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/constants/currencies`, {\n  headers: {\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n}).then((r) => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$ch = curl_init($baseUrl . '/constants/currencies');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
+          }
+        ]
+      }
+    },
+    "/constants/packaging": {
+      "get": {
+        "tags": [
+          "Reference Data"
+        ],
+        "operationId": "select_packaging",
+        "summary": "Select Packaging",
+        "description": "Return packaging unit codes (`pkgUnitCd`) such as NT, BX, CT. Requires a business API key.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reference codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "sort",
+                      "name"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "example": "NT"
+                      },
+                      "sort": {
+                        "type": "integer",
+                        "example": 1
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "Net"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "code": "NT",
+                    "sort": 1,
+                    "name": "Net"
+                  },
+                  {
+                    "code": "BX",
+                    "sort": 2,
+                    "name": "Box"
+                  },
+                  {
+                    "code": "CT",
+                    "sort": 3,
+                    "name": "Carton"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/constants/packaging\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/constants/packaging`, {\n  headers: {\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n}).then((r) => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$ch = curl_init($baseUrl . '/constants/packaging');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
+          }
+        ]
+      }
+    },
+    "/constants/quantity": {
+      "get": {
+        "tags": [
+          "Reference Data"
+        ],
+        "operationId": "select_quantity",
+        "summary": "Select Quantity",
+        "description": "Return quantity unit codes (`qtyUnitCd`) such as U, KG, L. Requires a business API key.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reference codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "sort",
+                      "name"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "example": "U"
+                      },
+                      "sort": {
+                        "type": "integer",
+                        "example": 1
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "Pieces/unit"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "code": "U",
+                    "sort": 1,
+                    "name": "Pieces/unit"
+                  },
+                  {
+                    "code": "KG",
+                    "sort": 2,
+                    "name": "Kilogram"
+                  },
+                  {
+                    "code": "L",
+                    "sort": 3,
+                    "name": "Litre"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/constants/quantity\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/constants/quantity`, {\n  headers: {\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n}).then((r) => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$ch = curl_init($baseUrl . '/constants/quantity');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
+          }
+        ]
+      }
+    },
+    "/constants/taxes": {
+      "get": {
+        "tags": [
+          "Reference Data"
+        ],
+        "operationId": "select_taxes",
+        "summary": "Select Taxes",
+        "description": "Return tax type codes (`taxTyCd`) with rates. Category B is standard 18% VAT. Requires a business API key.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reference codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "sort",
+                      "name",
+                      "rate"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "example": "B"
+                      },
+                      "sort": {
+                        "type": "integer",
+                        "example": 2
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "B-18.00%"
+                      },
+                      "rate": {
+                        "type": "number",
+                        "example": 18
+                      },
+                      "userDfnCd1": {
+                        "type": "number",
+                        "example": 18
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "code": "A",
+                    "sort": 1,
+                    "name": "A-EX (Exempt)",
+                    "rate": 0,
+                    "userDfnCd1": 0
+                  },
+                  {
+                    "code": "B",
+                    "sort": 2,
+                    "name": "B-18.00%",
+                    "rate": 18,
+                    "userDfnCd1": 18
+                  },
+                  {
+                    "code": "C",
+                    "sort": 3,
+                    "name": "C",
+                    "rate": 0,
+                    "userDfnCd1": 0
+                  },
+                  {
+                    "code": "D",
+                    "sort": 4,
+                    "name": "D",
+                    "rate": 0,
+                    "userDfnCd1": 0
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/constants/taxes\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/constants/taxes`, {\n  headers: {\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n}).then((r) => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$ch = curl_init($baseUrl . '/constants/taxes');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
+          }
+        ]
+      }
+    },
+    "/constants/products": {
+      "get": {
+        "tags": [
+          "Reference Data"
+        ],
+        "operationId": "select_products",
+        "summary": "Select Products",
+        "description": "Return product / item type codes (itemTyCd) such as raw material, finished product, and service. Requires a business API key.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reference codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "sort",
+                      "name"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "example": "2"
+                      },
+                      "sort": {
+                        "type": "integer",
+                        "example": 2
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "Finished Product"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "code": "1",
+                    "sort": 1,
+                    "name": "Raw Material"
+                  },
+                  {
+                    "code": "2",
+                    "sort": 2,
+                    "name": "Finished Product"
+                  },
+                  {
+                    "code": "3",
+                    "sort": 3,
+                    "name": "Service"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/constants/products\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/constants/products`, {\n  headers: {\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n}).then((r) => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$ch = curl_init($baseUrl . '/constants/products');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
+          }
+        ]
+      }
+    },
+    "/constants/transactions": {
+      "get": {
+        "tags": [
+          "Reference Data"
+        ],
+        "operationId": "select_transactions",
+        "summary": "Select Transactions",
+        "description": "Return sales transaction type codes (`salesTyCd`). Requires a business API key.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reference codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "sort",
+                      "name"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "example": "N"
+                      },
+                      "sort": {
+                        "type": "integer",
+                        "example": 1
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "Normal"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "code": "N",
+                    "sort": 1,
+                    "name": "Normal"
+                  },
+                  {
+                    "code": "C",
+                    "sort": 2,
+                    "name": "Copy"
+                  },
+                  {
+                    "code": "T",
+                    "sort": 3,
+                    "name": "Training"
+                  },
+                  {
+                    "code": "P",
+                    "sort": 4,
+                    "name": "Proforma"
+                  },
+                  {
+                    "code": "R",
+                    "sort": 5,
+                    "name": "Refund"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/constants/transactions\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/constants/transactions`, {\n  headers: {\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n}).then((r) => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$ch = curl_init($baseUrl . '/constants/transactions');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
+          }
+        ]
+      }
+    },
+    "/constants/sales-receipt-types": {
+      "get": {
+        "tags": [
+          "Reference Data"
+        ],
+        "operationId": "select_sales_receipt_types",
+        "summary": "Select Sales Receipt Types",
+        "description": "Return sales receipt type codes (`rcptTyCd`). Requires a business API key.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reference codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "sort",
+                      "name"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "example": "S"
+                      },
+                      "sort": {
+                        "type": "integer",
+                        "example": 1
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "Sale"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "code": "S",
+                    "sort": 1,
+                    "name": "Sale"
+                  },
+                  {
+                    "code": "R",
+                    "sort": 2,
+                    "name": "Refund"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/constants/sales-receipt-types\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/constants/sales-receipt-types`, {\n  headers: {\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n}).then((r) => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$ch = curl_init($baseUrl . '/constants/sales-receipt-types');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
+          }
+        ]
+      }
+    },
+    "/constants/purchase-receipt-types": {
+      "get": {
+        "tags": [
+          "Reference Data"
+        ],
+        "operationId": "select_purchase_receipt_types",
+        "summary": "Select Purchase Receipt Types",
+        "description": "Return purchase receipt type codes. Requires a business API key.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reference codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "sort",
+                      "name"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "example": "P"
+                      },
+                      "sort": {
+                        "type": "integer",
+                        "example": 1
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "Purchase"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "code": "P",
+                    "sort": 1,
+                    "name": "Purchase"
+                  },
+                  {
+                    "code": "R",
+                    "sort": 2,
+                    "name": "Refund"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/constants/purchase-receipt-types\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/constants/purchase-receipt-types`, {\n  headers: {\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n}).then((r) => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$ch = curl_init($baseUrl . '/constants/purchase-receipt-types');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
+          }
+        ]
+      }
+    },
+    "/constants/payment-modes": {
+      "get": {
+        "tags": [
+          "Reference Data"
+        ],
+        "operationId": "select_payment_modes",
+        "summary": "Select Payment Modes",
+        "description": "Return payment method codes (`pmtTyCd`). Requires a business API key.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reference codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "sort",
+                      "name"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "example": "01"
+                      },
+                      "sort": {
+                        "type": "integer",
+                        "example": 1
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "CASH"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "code": "01",
+                    "sort": 1,
+                    "name": "CASH"
+                  },
+                  {
+                    "code": "02",
+                    "sort": 2,
+                    "name": "CREDIT"
+                  },
+                  {
+                    "code": "03",
+                    "sort": 3,
+                    "name": "CASH/CREDIT"
+                  },
+                  {
+                    "code": "04",
+                    "sort": 4,
+                    "name": "BANK CHECK"
+                  },
+                  {
+                    "code": "05",
+                    "sort": 5,
+                    "name": "DEBIT&CREDIT CARD"
+                  },
+                  {
+                    "code": "06",
+                    "sort": 6,
+                    "name": "MOBILE MONEY"
+                  },
+                  {
+                    "code": "07",
+                    "sort": 7,
+                    "name": "OTHER"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/constants/payment-modes\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/constants/payment-modes`, {\n  headers: {\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n}).then((r) => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$ch = curl_init($baseUrl . '/constants/payment-modes');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
+          }
+        ]
+      }
+    },
+    "/constants/transaction-progress": {
+      "get": {
+        "tags": [
+          "Reference Data"
+        ],
+        "operationId": "select_transaction_progress",
+        "summary": "Select Transaction Progress",
+        "description": "Return transaction progress / sales status codes (`salesSttsCd`). Requires a business API key.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reference codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "sort",
+                      "name"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "example": "02"
+                      },
+                      "sort": {
+                        "type": "integer",
+                        "example": 2
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "Approved"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "code": "01",
+                    "sort": 1,
+                    "name": "Wait for Approval"
+                  },
+                  {
+                    "code": "02",
+                    "sort": 2,
+                    "name": "Approved"
+                  },
+                  {
+                    "code": "03",
+                    "sort": 3,
+                    "name": "Cancel Requested"
+                  },
+                  {
+                    "code": "04",
+                    "sort": 4,
+                    "name": "Canceled"
+                  },
+                  {
+                    "code": "05",
+                    "sort": 5,
+                    "name": "Refunded"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/constants/transaction-progress\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/constants/transaction-progress`, {\n  headers: {\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n}).then((r) => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$ch = curl_init($baseUrl . '/constants/transaction-progress');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
+          }
+        ]
+      }
+    },
+    "/constants/registrations": {
+      "get": {
+        "tags": [
+          "Reference Data"
+        ],
+        "operationId": "select_registrations",
+        "summary": "Select Registrations",
+        "description": "Return registration type codes. Requires a business API key.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reference codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "sort",
+                      "name"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "example": "M"
+                      },
+                      "sort": {
+                        "type": "integer",
+                        "example": 1
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "Manual"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "code": "M",
+                    "sort": 1,
+                    "name": "Manual"
+                  },
+                  {
+                    "code": "A",
+                    "sort": 2,
+                    "name": "Auto"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/constants/registrations\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/constants/registrations`, {\n  headers: {\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n}).then((r) => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$ch = curl_init($baseUrl . '/constants/registrations');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
+          }
+        ]
+      }
+    },
+    "/constants/stock-types": {
+      "get": {
+        "tags": [
+          "Reference Data"
+        ],
+        "operationId": "select_stock_types",
+        "summary": "Select Stock Types",
+        "description": "Return stock in/out type codes with direction (`in` / `out`). Requires a business API key.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reference codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "sort",
+                      "name",
+                      "direction"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "example": "01"
+                      },
+                      "sort": {
+                        "type": "integer",
+                        "example": 1
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "Import"
+                      },
+                      "direction": {
+                        "type": "string",
+                        "enum": [
+                          "in",
+                          "out"
+                        ],
+                        "example": "in"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "code": "01",
+                    "sort": 1,
+                    "name": "Import",
+                    "direction": "in"
+                  },
+                  {
+                    "code": "02",
+                    "sort": 2,
+                    "name": "Purchase",
+                    "direction": "in"
+                  },
+                  {
+                    "code": "11",
+                    "sort": 7,
+                    "name": "Sale",
+                    "direction": "out"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/constants/stock-types\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/constants/stock-types`, {\n  headers: {\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n}).then((r) => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$ch = curl_init($baseUrl . '/constants/stock-types');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
+          }
+        ]
+      }
+    },
+    "/constants/refund-reasons": {
+      "get": {
+        "tags": [
+          "Reference Data"
+        ],
+        "operationId": "select_refund_reasons",
+        "summary": "Select Refund Reasons",
+        "description": "Return refund reason codes used on credit notes / refunds. Requires a business API key.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reference codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "sort",
+                      "name"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "example": "06"
+                      },
+                      "sort": {
+                        "type": "integer",
+                        "example": 6
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "Refund"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "code": "01",
+                    "sort": 1,
+                    "name": "Missing Quantity"
+                  },
+                  {
+                    "code": "02",
+                    "sort": 2,
+                    "name": "Missing Item"
+                  },
+                  {
+                    "code": "03",
+                    "sort": 3,
+                    "name": "Damaged"
+                  },
+                  {
+                    "code": "04",
+                    "sort": 4,
+                    "name": "Wasted"
+                  },
+                  {
+                    "code": "05",
+                    "sort": 5,
+                    "name": "Raw Material Shortage"
+                  },
+                  {
+                    "code": "06",
+                    "sort": 6,
+                    "name": "Refund"
+                  },
+                  {
+                    "code": "07",
+                    "sort": 7,
+                    "name": "Wrong Customer TIN"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/constants/refund-reasons\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/constants/refund-reasons`, {\n  headers: {\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n}).then((r) => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$ch = curl_init($baseUrl . '/constants/refund-reasons');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
+          }
+        ]
+      }
+    },
+    "/constants/import-item-statuses": {
+      "get": {
+        "tags": [
+          "Reference Data"
+        ],
+        "operationId": "select_import_item_statuses",
+        "summary": "Select Import Item Statuses",
+        "description": "Return customs import item status codes (`imptItemSttsCd`). Requires a business API key.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reference codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "sort",
+                      "name"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "example": "3"
+                      },
+                      "sort": {
+                        "type": "integer",
+                        "example": 3
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "Approved"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "code": "1",
+                    "sort": 1,
+                    "name": "Unsent"
+                  },
+                  {
+                    "code": "2",
+                    "sort": 2,
+                    "name": "Waiting"
+                  },
+                  {
+                    "code": "3",
+                    "sort": 3,
+                    "name": "Approved"
+                  },
+                  {
+                    "code": "4",
+                    "sort": 4,
+                    "name": "Cancelled"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/constants/import-item-statuses\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/constants/import-item-statuses`, {\n  headers: {\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n}).then((r) => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$ch = curl_init($baseUrl . '/constants/import-item-statuses');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
+          }
+        ]
+      }
+    },
+    "/constants/taxpayer-statuses": {
+      "get": {
+        "tags": [
+          "Reference Data"
+        ],
+        "operationId": "select_taxpayer_statuses",
+        "summary": "Select Taxpayer Statuses",
+        "description": "Return taxpayer status codes (`taxprSttsCd`). Requires a business API key.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reference codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "sort",
+                      "name"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "example": "A"
+                      },
+                      "sort": {
+                        "type": "integer",
+                        "example": 1
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "Active"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "code": "A",
+                    "sort": 1,
+                    "name": "Active"
+                  },
+                  {
+                    "code": "D",
+                    "sort": 2,
+                    "name": "Discarded"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "API key is required",
+                  "errorCode": "API_KEY_REQUIRED"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X GET \"{{baseUrl}}/constants/taxpayer-statuses\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\""
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const data = await fetch(`${BASE_URL}/constants/taxpayer-statuses`, {\n  headers: {\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n}).then((r) => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$ch = curl_init($baseUrl . '/constants/taxpayer-statuses');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
+          }
+        ]
+      }
+    },
+    "/branches/saveBrancheCustomers": {
+      "post": {
+        "tags": [
+          "Branches & Customers"
+        ],
+        "summary": "Save Branch Customer",
+        "operationId": "save_branch_customer",
+        "description": "Push a customer record to RRA for backup and sync. Stores customer TIN, name, and contact details linked to your branch.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "999958074",
+                "bhfId": "00",
+                "custNo": "999991113",
+                "custTin": "118620650",
+                "custNm": "Kayko Group Ltd",
+                "adrs": null,
+                "telNo": null,
+                "email": null,
+                "faxNo": null,
+                "useYn": "Y",
+                "remark": null,
+                "regrNm": "Admin",
+                "regrId": "Admin",
+                "modrNm": "Admin",
+                "modrId": "Admin"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Push a customer record to RRA for backup and sync. Stores customer TIN, name, and contact details linked to your branch."
+          },
+          "content": "Register frequent buyers so their details are available across branches and for B2B invoicing."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/branches/saveBrancheCustomers\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"custNo\": \"999991113\",\n  \"custTin\": \"118620650\",\n  \"custNm\": \"Kayko Group Ltd\",\n  \"adrs\": null,\n  \"telNo\": null,\n  \"email\": null,\n  \"faxNo\": null,\n  \"useYn\": \"Y\",\n  \"remark\": null,\n  \"regrNm\": \"Admin\",\n  \"regrId\": \"Admin\",\n  \"modrNm\": \"Admin\",\n  \"modrId\": \"Admin\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/branches/saveBrancheCustomers', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999958074\",\n    \"bhfId\": \"00\",\n    \"custNo\": \"999991113\",\n    \"custTin\": \"118620650\",\n    \"custNm\": \"Kayko Group Ltd\",\n    \"adrs\": null,\n    \"telNo\": null,\n    \"email\": null,\n    \"faxNo\": null,\n    \"useYn\": \"Y\",\n    \"remark\": null,\n    \"regrNm\": \"Admin\",\n    \"regrId\": \"Admin\",\n    \"modrNm\": \"Admin\",\n    \"modrId\": \"Admin\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/branches/saveBrancheCustomers', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'custNo' => '999991113',\n    'custTin' => '118620650',\n    'custNm' => 'Kayko Group Ltd',\n    'adrs' => null,\n    'telNo' => null,\n    'email' => null,\n    'faxNo' => null,\n    'useYn' => 'Y',\n    'remark' => null,\n    'regrNm' => 'Admin',\n    'regrId' => 'Admin',\n    'modrNm' => 'Admin',\n    'modrId' => 'Admin'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"custNo\": \"999991113\",\n  \"custTin\": \"118620650\",\n  \"custNm\": \"Kayko Group Ltd\",\n  \"adrs\": null,\n  \"telNo\": null,\n  \"email\": null,\n  \"faxNo\": null,\n  \"useYn\": \"Y\",\n  \"remark\": null,\n  \"regrNm\": \"Admin\",\n  \"regrId\": \"Admin\",\n  \"modrNm\": \"Admin\",\n  \"modrId\": \"Admin\"\n}"
+          }
+        ]
+      }
+    },
+    "/branches/saveBrancheInsurances": {
+      "post": {
+        "tags": [
+          "Branches & Customers"
+        ],
+        "summary": "Save Branch Insurance",
+        "operationId": "save_branch_insurances",
+        "description": "Register an insurance provider for pharmacy integrations. Required when selling items with insurance coverage (`isrcAplcbYn` set to `\"Y\"`).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "999958074",
+                "bhfId": "00",
+                "isrccCd": "ISRCC01",
+                "isrccNm": "ISRCC NAME",
+                "modrId": "123",
+                "modrNm": "Modr Name",
+                "regrId": "123",
+                "regrNm": "Regr Name",
+                "isrcRt": 20,
+                "useYn": "Y"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Register an insurance provider for pharmacy integrations. Required when selling items with insurance coverage (`isrcAplcbYn` set to `\"Y\"`)."
+          },
+          "content": "Pharmacy-only endpoint. Set `isrcRt` (coverage rate %) and link via `isrccCd` on sale line items."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/branches/saveBrancheInsurances\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"isrccCd\": \"ISRCC01\",\n  \"isrccNm\": \"ISRCC NAME\",\n  \"modrId\": \"123\",\n  \"modrNm\": \"Modr Name\",\n  \"regrId\": \"123\",\n  \"regrNm\": \"Regr Name\",\n  \"isrcRt\": 20,\n  \"useYn\": \"Y\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/branches/saveBrancheInsurances', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999958074\",\n    \"bhfId\": \"00\",\n    \"isrccCd\": \"ISRCC01\",\n    \"isrccNm\": \"ISRCC NAME\",\n    \"modrId\": \"123\",\n    \"modrNm\": \"Modr Name\",\n    \"regrId\": \"123\",\n    \"regrNm\": \"Regr Name\",\n    \"isrcRt\": 20,\n    \"useYn\": \"Y\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/branches/saveBrancheInsurances', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'isrccCd' => 'ISRCC01',\n    'isrccNm' => 'ISRCC NAME',\n    'modrId' => '123',\n    'modrNm' => 'Modr Name',\n    'regrId' => '123',\n    'regrNm' => 'Regr Name',\n    'isrcRt' => 20,\n    'useYn' => 'Y'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"isrccCd\": \"ISRCC01\",\n  \"isrccNm\": \"ISRCC NAME\",\n  \"modrId\": \"123\",\n  \"modrNm\": \"Modr Name\",\n  \"regrId\": \"123\",\n  \"regrNm\": \"Regr Name\",\n  \"isrcRt\": 20,\n  \"useYn\": \"Y\"\n}"
+          }
+        ]
+      }
+    },
+    "/branches/saveBrancheUsers": {
+      "post": {
+        "tags": [
+          "Branches & Customers"
+        ],
+        "summary": "Save Branch User",
+        "operationId": "save_branch_user",
+        "description": "Register or update a branch user account on RRA. Pushes user credentials and profile data for backup and synchronization.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "999958074",
+                "bhfId": "00",
+                "userId": "userId3",
+                "userNm": "User Name3",
+                "pwd": "12341234",
+                "adrs": null,
+                "modrId": "123",
+                "modrNm": "Modr Name",
+                "regrId": "123",
+                "regrNm": "Regr Name",
+                "cntc": null,
+                "authCd": null,
+                "remark": null,
+                "useYn": "Y"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Register or update a branch user account on RRA. Pushes user credentials and profile data for backup and synchronization."
+          },
+          "content": "Used to sync POS operator accounts with RRA's records."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/branches/saveBrancheUsers\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"userId\": \"userId3\",\n  \"userNm\": \"User Name3\",\n  \"pwd\": \"12341234\",\n  \"adrs\": null,\n  \"modrId\": \"123\",\n  \"modrNm\": \"Modr Name\",\n  \"regrId\": \"123\",\n  \"regrNm\": \"Regr Name\",\n  \"cntc\": null,\n  \"authCd\": null,\n  \"remark\": null,\n  \"useYn\": \"Y\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/branches/saveBrancheUsers', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999958074\",\n    \"bhfId\": \"00\",\n    \"userId\": \"userId3\",\n    \"userNm\": \"User Name3\",\n    \"pwd\": \"12341234\",\n    \"adrs\": null,\n    \"modrId\": \"123\",\n    \"modrNm\": \"Modr Name\",\n    \"regrId\": \"123\",\n    \"regrNm\": \"Regr Name\",\n    \"cntc\": null,\n    \"authCd\": null,\n    \"remark\": null,\n    \"useYn\": \"Y\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/branches/saveBrancheUsers', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'userId' => 'userId3',\n    'userNm' => 'User Name3',\n    'pwd' => '12341234',\n    'adrs' => null,\n    'modrId' => '123',\n    'modrNm' => 'Modr Name',\n    'regrId' => '123',\n    'regrNm' => 'Regr Name',\n    'cntc' => null,\n    'authCd' => null,\n    'remark' => null,\n    'useYn' => 'Y'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"userId\": \"userId3\",\n  \"userNm\": \"User Name3\",\n  \"pwd\": \"12341234\",\n  \"adrs\": null,\n  \"modrId\": \"123\",\n  \"modrNm\": \"Modr Name\",\n  \"regrId\": \"123\",\n  \"regrNm\": \"Regr Name\",\n  \"cntc\": null,\n  \"authCd\": null,\n  \"remark\": null,\n  \"useYn\": \"Y\"\n}"
+          }
+        ]
+      }
+    },
+    "/branches/selectBranches": {
+      "post": {
+        "tags": [
+          "Reference Data"
+        ],
+        "summary": "Select Branches",
+        "operationId": "get_branches",
+        "description": "Pull the list of branch offices registered under your TIN. Supports pagination via `startPageIndex` and `endPageIndex`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "145515745",
+                "bhfId": "01",
+                "lastReqDt": "20210101010000",
+                "startPageIndex": "1",
+                "endPageIndex": "10"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Pull the list of branch offices registered under your TIN. Supports pagination via `startPageIndex` and `endPageIndex`."
+          },
+          "content": "Use `\"00\"` as `bhfId` for head office. Other branches use `\"01\"`–`\"99\"`."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/branches/selectBranches\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"145515745\",\n  \"bhfId\": \"01\",\n  \"lastReqDt\": \"20210101010000\",\n  \"startPageIndex\": \"1\",\n  \"endPageIndex\": \"10\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/branches/selectBranches', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"145515745\",\n    \"bhfId\": \"01\",\n    \"lastReqDt\": \"20210101010000\",\n    \"startPageIndex\": \"1\",\n    \"endPageIndex\": \"10\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/branches/selectBranches', [\n    'tin' => '145515745',\n    'bhfId' => '01',\n    'lastReqDt' => '20210101010000',\n    'startPageIndex' => '1',\n    'endPageIndex' => '10'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"145515745\",\n  \"bhfId\": \"01\",\n  \"lastReqDt\": \"20210101010000\",\n  \"startPageIndex\": \"1\",\n  \"endPageIndex\": \"10\"\n}"
+          }
+        ]
+      }
+    },
+    "/code/selectCodes": {
+      "post": {
+        "tags": [
+          "Reference Data"
+        ],
+        "summary": "Select Codes",
+        "operationId": "get_codes",
+        "description": "Pull reference code tables from RRA- tax types, payment methods, packaging units, quantity units, currencies, and more. Uses incremental sync- only returns codes changed after `lastReqDt`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "103093362",
+                "bhfId": "01",
+                "lastReqDt": "20250101010000"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Pull reference code tables from RRA- tax types, payment methods, packaging units, quantity units, currencies, and more. Uses incremental sync- only returns codes changed after `lastReqDt`."
+          },
+          "content": "On first sync, set `lastReqDt` to `\"20000101000000\"` to fetch everything. Save `resultDt` after each call and use it as the next `lastReqDt`."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/code/selectCodes\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"103093362\",\n  \"bhfId\": \"01\",\n  \"lastReqDt\": \"20250101010000\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/code/selectCodes', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"103093362\",\n    \"bhfId\": \"01\",\n    \"lastReqDt\": \"20250101010000\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/code/selectCodes', [\n    'tin' => '103093362',\n    'bhfId' => '01',\n    'lastReqDt' => '20250101010000'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"103093362\",\n  \"bhfId\": \"01\",\n  \"lastReqDt\": \"20250101010000\"\n}"
+          }
+        ]
+      }
+    },
+    "/customers/selectCustomer": {
+      "post": {
+        "tags": [
+          "Reference Data"
+        ],
+        "summary": "Select Customer",
+        "operationId": "get_customers",
+        "description": "Look up a customer or supplier by TIN in the RRA taxpayer registry. Returns name, status, and address details.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "121066044",
+                "bhfId": "02",
+                "custmTin": "148175665"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Look up a customer or supplier by TIN in the RRA taxpayer registry. Returns name, status, and address details."
+          },
+          "content": "Use before a B2B sale to validate the buyer's TIN and auto-fill `custNm` on the invoice."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/customers/selectCustomer\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"121066044\",\n  \"bhfId\": \"02\",\n  \"custmTin\": \"148175665\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/customers/selectCustomer', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"121066044\",\n    \"bhfId\": \"02\",\n    \"custmTin\": \"148175665\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/customers/selectCustomer', [\n    'tin' => '121066044',\n    'bhfId' => '02',\n    'custmTin' => '148175665'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"121066044\",\n  \"bhfId\": \"02\",\n  \"custmTin\": \"148175665\"\n}"
+          }
+        ]
+      }
+    },
+    "/imports/selectImportItems": {
+      "post": {
+        "tags": [
+          "Imports"
+        ],
+        "summary": "Select Import Items",
+        "operationId": "get_imported_items",
+        "description": "Pull customs import declarations from RRA that are available for conversion to registered products. Returns declarations changed since `lastReqDt`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "999958074",
+                "bhfId": "00",
+                "lastReqDt": "20240706192223"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Pull customs import declarations from RRA that are available for conversion to registered products. Returns declarations changed since `lastReqDt`."
+          },
+          "content": "Use when importing goods through customs- each declaration includes HS code, declared value, and origin country."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/imports/selectImportItems\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"lastReqDt\": \"20240706192223\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/imports/selectImportItems', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999958074\",\n    \"bhfId\": \"00\",\n    \"lastReqDt\": \"20240706192223\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/imports/selectImportItems', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'lastReqDt' => '20240706192223'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"lastReqDt\": \"20240706192223\"\n}"
+          }
+        ]
+      }
+    },
+    "/imports/updateImportItems": {
+      "post": {
+        "tags": [
+          "Imports"
+        ],
+        "summary": "Update Import Item",
+        "operationId": "save_imported_items",
+        "description": "Confirm and convert a customs import declaration into a registered VSDC product. Assigns an `itemCd` and classification to the imported goods.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "999958074",
+                "bhfId": "00",
+                "taskCd": "2287735",
+                "dclDe": "20200220",
+                "itemSeq": 1,
+                "hsCd": "25201000000",
+                "itemClsCd": "4229311900",
+                "itemCd": "AD2AMU0000024",
+                "imptItemSttsCd": "4",
+                "modrId": "1",
+                "modrNm": "Kayko",
+                "regrId": "1",
+                "regrNm": "Kayko",
+                "remark": "remark"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Confirm and convert a customs import declaration into a registered VSDC product. Assigns an `itemCd` and classification to the imported goods."
+          },
+          "content": "Call after `selectImportItems`. Set `imptItemSttsCd` to confirm the conversion status."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/imports/updateImportItems\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"taskCd\": \"2287735\",\n  \"dclDe\": \"20200220\",\n  \"itemSeq\": 1,\n  \"hsCd\": \"25201000000\",\n  \"itemClsCd\": \"4229311900\",\n  \"itemCd\": \"AD2AMU0000024\",\n  \"imptItemSttsCd\": \"4\",\n  \"modrId\": \"1\",\n  \"modrNm\": \"Kayko\",\n  \"regrId\": \"1\",\n  \"regrNm\": \"Kayko\",\n  \"remark\": \"remark\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/imports/updateImportItems', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999958074\",\n    \"bhfId\": \"00\",\n    \"taskCd\": \"2287735\",\n    \"dclDe\": \"20200220\",\n    \"itemSeq\": 1,\n    \"hsCd\": \"25201000000\",\n    \"itemClsCd\": \"4229311900\",\n    \"itemCd\": \"AD2AMU0000024\",\n    \"imptItemSttsCd\": \"4\",\n    \"modrId\": \"1\",\n    \"modrNm\": \"Kayko\",\n    \"regrId\": \"1\",\n    \"regrNm\": \"Kayko\",\n    \"remark\": \"remark\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/imports/updateImportItems', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'taskCd' => '2287735',\n    'dclDe' => '20200220',\n    'itemSeq' => 1,\n    'hsCd' => '25201000000',\n    'itemClsCd' => '4229311900',\n    'itemCd' => 'AD2AMU0000024',\n    'imptItemSttsCd' => '4',\n    'modrId' => '1',\n    'modrNm' => 'Kayko',\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'remark' => 'remark'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"taskCd\": \"2287735\",\n  \"dclDe\": \"20200220\",\n  \"itemSeq\": 1,\n  \"hsCd\": \"25201000000\",\n  \"itemClsCd\": \"4229311900\",\n  \"itemCd\": \"AD2AMU0000024\",\n  \"imptItemSttsCd\": \"4\",\n  \"modrId\": \"1\",\n  \"modrNm\": \"Kayko\",\n  \"regrId\": \"1\",\n  \"regrNm\": \"Kayko\",\n  \"remark\": \"remark\"\n}"
+          }
+        ]
+      }
+    },
+    "/itemClass/selectItemsClass": {
+      "post": {
+        "tags": [
+          "Reference Data"
+        ],
+        "summary": "Select Item Classification",
+        "operationId": "get_item_classification",
+        "description": "Pull the RRA item classification code tree. Each code maps to a product category and default tax type- required when registering items via `saveItems`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "147069592",
+                "bhfId": "00",
+                "lastReqDt": "20210101000000"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Pull the RRA item classification code tree. Each code maps to a product category and default tax type- required when registering items via `saveItems`."
+          },
+          "content": "Use `itemClsCd` from this list when calling `POST /items/saveItems`."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/itemClass/selectItemsClass\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"147069592\",\n  \"bhfId\": \"00\",\n  \"lastReqDt\": \"20210101000000\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/itemClass/selectItemsClass', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"147069592\",\n    \"bhfId\": \"00\",\n    \"lastReqDt\": \"20210101000000\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/itemClass/selectItemsClass', [\n    'tin' => '147069592',\n    'bhfId' => '00',\n    'lastReqDt' => '20210101000000'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"147069592\",\n  \"bhfId\": \"00\",\n  \"lastReqDt\": \"20210101000000\"\n}"
+          }
+        ]
+      }
+    },
+    "/items/saveItemComposition": {
+      "post": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Save Item Composition",
+        "operationId": "save_item_composition",
+        "description": "Save a bill-of-materials (BOM) linking a parent item to component items and quantities. Stored for backup only- cannot be queried back from RRA.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "999958074",
+                "bhfId": "00",
+                "itemCd": "1",
+                "cpstItemCd": "1",
+                "cpstQty": 1,
+                "regrId": "123",
+                "regrNm": "Testing Name"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Save a bill-of-materials (BOM) linking a parent item to component items and quantities. Stored for backup only- cannot be queried back from RRA."
+          },
+          "content": "For composite products (e.g. a meal kit made from multiple ingredients)."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/items/saveItemComposition\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"itemCd\": \"1\",\n  \"cpstItemCd\": \"1\",\n  \"cpstQty\": 1,\n  \"regrId\": \"123\",\n  \"regrNm\": \"Testing Name\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/items/saveItemComposition', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999958074\",\n    \"bhfId\": \"00\",\n    \"itemCd\": \"1\",\n    \"cpstItemCd\": \"1\",\n    \"cpstQty\": 1,\n    \"regrId\": \"123\",\n    \"regrNm\": \"Testing Name\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/items/saveItemComposition', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'itemCd' => '1',\n    'cpstItemCd' => '1',\n    'cpstQty' => 1,\n    'regrId' => '123',\n    'regrNm' => 'Testing Name'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"itemCd\": \"1\",\n  \"cpstItemCd\": \"1\",\n  \"cpstQty\": 1,\n  \"regrId\": \"123\",\n  \"regrNm\": \"Testing Name\"\n}"
+          }
+        ]
+      }
+    },
+    "/items/saveItems": {
+      "post": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Save Item",
+        "operationId": "save_items",
+        "description": "Register a new product or update an existing one in the VSDC catalog. Every sale line must reference a registered `itemCd`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "999202800",
+                "bhfId": "00",
+                "itemCd": "RW2NTU0000001",
+                "itemClsCd": "8014160101",
+                "itemTyCd": "2",
+                "itemNm": "Coca Cola",
+                "itemStdNm": null,
+                "orgnNatCd": "RW",
+                "pkgUnitCd": "NT",
+                "qtyUnitCd": "U",
+                "taxTyCd": "B",
+                "btchNo": null,
+                "bcd": null,
+                "dftPrc": 118,
+                "grpPrcL1": null,
+                "grpPrcL2": null,
+                "grpPrcL3": null,
+                "grpPrcL4": null,
+                "grpPrcL5": null,
+                "addInfo": null,
+                "sftyQty": null,
+                "isrcAplcbYn": "N",
+                "modrId": "1",
+                "modrNm": "Kayko",
+                "regrId": "1",
+                "regrNm": "Kayko",
+                "useYn": "Y"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Register a new product or update an existing one in the VSDC catalog. Every sale line must reference a registered `itemCd`."
+          },
+          "content": "Generate `itemCd` using the format `{orgnNatCd}{itemTyCd}{pkgUnitCd}{qtyUnitCd}{sequence}`. See [Items API reference](/api/items#item-code-format)."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/items/saveItems\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999202800\",\n  \"bhfId\": \"00\",\n  \"itemCd\": \"RW2NTU0000001\",\n  \"itemClsCd\": \"8014160101\",\n  \"itemTyCd\": \"2\",\n  \"itemNm\": \"Coca Cola\",\n  \"itemStdNm\": null,\n  \"orgnNatCd\": \"RW\",\n  \"pkgUnitCd\": \"NT\",\n  \"qtyUnitCd\": \"U\",\n  \"taxTyCd\": \"B\",\n  \"btchNo\": null,\n  \"bcd\": null,\n  \"dftPrc\": 118,\n  \"grpPrcL1\": null,\n  \"grpPrcL2\": null,\n  \"grpPrcL3\": null,\n  \"grpPrcL4\": null,\n  \"grpPrcL5\": null,\n  \"addInfo\": null,\n  \"sftyQty\": null,\n  \"isrcAplcbYn\": \"N\",\n  \"modrId\": \"1\",\n  \"modrNm\": \"Kayko\",\n  \"regrId\": \"1\",\n  \"regrNm\": \"Kayko\",\n  \"useYn\": \"Y\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/items/saveItems', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999202800\",\n    \"bhfId\": \"00\",\n    \"itemCd\": \"RW2NTU0000001\",\n    \"itemClsCd\": \"8014160101\",\n    \"itemTyCd\": \"2\",\n    \"itemNm\": \"Coca Cola\",\n    \"itemStdNm\": null,\n    \"orgnNatCd\": \"RW\",\n    \"pkgUnitCd\": \"NT\",\n    \"qtyUnitCd\": \"U\",\n    \"taxTyCd\": \"B\",\n    \"btchNo\": null,\n    \"bcd\": null,\n    \"dftPrc\": 118,\n    \"grpPrcL1\": null,\n    \"grpPrcL2\": null,\n    \"grpPrcL3\": null,\n    \"grpPrcL4\": null,\n    \"grpPrcL5\": null,\n    \"addInfo\": null,\n    \"sftyQty\": null,\n    \"isrcAplcbYn\": \"N\",\n    \"modrId\": \"1\",\n    \"modrNm\": \"Kayko\",\n    \"regrId\": \"1\",\n    \"regrNm\": \"Kayko\",\n    \"useYn\": \"Y\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/items/saveItems', [\n    'tin' => '999202800',\n    'bhfId' => '00',\n    'itemCd' => 'RW2NTU0000001',\n    'itemClsCd' => '8014160101',\n    'itemTyCd' => '2',\n    'itemNm' => 'Coca Cola',\n    'itemStdNm' => null,\n    'orgnNatCd' => 'RW',\n    'pkgUnitCd' => 'NT',\n    'qtyUnitCd' => 'U',\n    'taxTyCd' => 'B',\n    'btchNo' => null,\n    'bcd' => null,\n    'dftPrc' => 118,\n    'grpPrcL1' => null,\n    'grpPrcL2' => null,\n    'grpPrcL3' => null,\n    'grpPrcL4' => null,\n    'grpPrcL5' => null,\n    'addInfo' => null,\n    'sftyQty' => null,\n    'isrcAplcbYn' => 'N',\n    'modrId' => '1',\n    'modrNm' => 'Kayko',\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'useYn' => 'Y'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"999202800\",\n  \"bhfId\": \"00\",\n  \"itemCd\": \"RW2NTU0000001\",\n  \"itemClsCd\": \"8014160101\",\n  \"itemTyCd\": \"2\",\n  \"itemNm\": \"Coca Cola\",\n  \"itemStdNm\": null,\n  \"orgnNatCd\": \"RW\",\n  \"pkgUnitCd\": \"NT\",\n  \"qtyUnitCd\": \"U\",\n  \"taxTyCd\": \"B\",\n  \"btchNo\": null,\n  \"bcd\": null,\n  \"dftPrc\": 118,\n  \"grpPrcL1\": null,\n  \"grpPrcL2\": null,\n  \"grpPrcL3\": null,\n  \"grpPrcL4\": null,\n  \"grpPrcL5\": null,\n  \"addInfo\": null,\n  \"sftyQty\": null,\n  \"isrcAplcbYn\": \"N\",\n  \"modrId\": \"1\",\n  \"modrNm\": \"Kayko\",\n  \"regrId\": \"1\",\n  \"regrNm\": \"Kayko\",\n  \"useYn\": \"Y\"\n}"
+          }
+        ]
+      }
+    },
+    "/items/selectItems": {
+      "post": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Select Items",
+        "operationId": "get_items",
+        "description": "Pull registered products that changed since `lastReqDt`. Returns the full item catalog for your branch.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "123038911",
+                "bhfId": "00",
+                "lastReqDt": "20000101000000"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Pull registered products that changed since `lastReqDt`. Returns the full item catalog for your branch."
+          },
+          "content": "Use after `saveItems` to verify registration, or on startup to sync your local product database."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/items/selectItems\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"123038911\",\n  \"bhfId\": \"00\",\n  \"lastReqDt\": \"20000101000000\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/items/selectItems', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"123038911\",\n    \"bhfId\": \"00\",\n    \"lastReqDt\": \"20000101000000\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/items/selectItems', [\n    'tin' => '123038911',\n    'bhfId' => '00',\n    'lastReqDt' => '20000101000000'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"123038911\",\n  \"bhfId\": \"00\",\n  \"lastReqDt\": \"20000101000000\"\n}"
+          }
+        ]
+      }
+    },
+    "/notices/selectNotices": {
+      "post": {
+        "tags": [
+          "Reference Data"
+        ],
+        "summary": "Select Notices",
+        "operationId": "get_notices",
+        "description": "Pull RRA announcements and regulatory notices. Returns only notices published after `lastReqDt`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "123038911",
+                "bhfId": "00",
+                "lastReqDt": "20210101010000"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Pull RRA announcements and regulatory notices. Returns only notices published after `lastReqDt`."
+          },
+          "content": "Display notices in your POS or ERP so cashiers see the latest RRA communications."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/notices/selectNotices\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"123038911\",\n  \"bhfId\": \"00\",\n  \"lastReqDt\": \"20210101010000\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/notices/selectNotices', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"123038911\",\n    \"bhfId\": \"00\",\n    \"lastReqDt\": \"20210101010000\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/notices/selectNotices', [\n    'tin' => '123038911',\n    'bhfId' => '00',\n    'lastReqDt' => '20210101010000'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"123038911\",\n  \"bhfId\": \"00\",\n  \"lastReqDt\": \"20210101010000\"\n}"
+          }
+        ]
+      }
+    },
+    "/stock/saveStockItems": {
+      "post": {
+        "tags": [
+          "Stock"
+        ],
+        "summary": "Save Stock Movement",
+        "operationId": "save_stock",
+        "description": "Record a stock in or stock out movement after a sale or purchase. Tracks quantity changes per item with tax amounts.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "999958074",
+                "regTyCd": "M",
+                "useYn": "Y",
+                "bhfId": "00",
+                "remark": null,
+                "modrId": "1",
+                "modrNm": "Kayko",
+                "regrId": "1",
+                "regrNm": "Kayko",
+                "sarTyCd": "11",
+                "sarNo": "106",
+                "orgSarNo": "00",
+                "custTin": null,
+                "custNm": null,
+                "custBhfId": null,
+                "ocrnDt": "20240520",
+                "totItemCnt": 1,
+                "totTaxblAmt": 1000,
+                "totTaxAmt": 1000,
+                "totAmt": 1000,
+                "itemList": [
+                  {
+                    "itemSeq": 1,
+                    "itemCd": "RW3NTXNOX0000006",
+                    "itemClsCd": "5012161100",
+                    "itemNm": "Inyange Water",
+                    "qtyUnitCd": "U",
+                    "pkgUnitCd": "NT",
+                    "bcd": null,
+                    "qty": 50,
+                    "prc": 10000,
+                    "splyAmt": 1000,
+                    "totDcAmt": 9000,
+                    "taxTyCd": "B",
+                    "taxblAmt": 1000,
+                    "taxAmt": 152.54,
+                    "totAmt": 1000,
+                    "pkg": 1,
+                    "itemExprDt": "20250101"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Record a stock in or stock out movement after a sale or purchase. Tracks quantity changes per item with tax amounts."
+          },
+          "content": "Use `sarTyCd` set to `\"11\"` for stock out (after sales) and `\"02\"` for stock in (after purchases). See [Stock Workflow](/workflows/stock-management)."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/stock/saveStockItems\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999958074\",\n  \"regTyCd\": \"M\",\n  \"useYn\": \"Y\",\n  \"bhfId\": \"00\",\n  \"remark\": null,\n  \"modrId\": \"1\",\n  \"modrNm\": \"Kayko\",\n  \"regrId\": \"1\",\n  \"regrNm\": \"Kayko\",\n  \"sarTyCd\": \"11\",\n  \"sarNo\": \"106\",\n  \"orgSarNo\": \"00\",\n  \"custTin\": null,\n  \"custNm\": null,\n  \"custBhfId\": null,\n  \"ocrnDt\": \"20240520\",\n  \"totItemCnt\": 1,\n  \"totTaxblAmt\": 1000,\n  \"totTaxAmt\": 1000,\n  \"totAmt\": 1000,\n  \"itemList\": [\n    {\n      \"itemSeq\": 1,\n      \"itemCd\": \"RW3NTXNOX0000006\",\n      \"itemClsCd\": \"5012161100\",\n      \"itemNm\": \"Inyange Water\",\n      \"qtyUnitCd\": \"U\",\n      \"pkgUnitCd\": \"NT\",\n      \"bcd\": null,\n      \"qty\": 50,\n      \"prc\": 10000,\n      \"splyAmt\": 1000,\n      \"totDcAmt\": 9000,\n      \"taxTyCd\": \"B\",\n      \"taxblAmt\": 1000,\n      \"taxAmt\": 152.54,\n      \"totAmt\": 1000,\n      \"pkg\": 1,\n      \"itemExprDt\": \"20250101\"\n    }\n  ]\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/stock/saveStockItems', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999958074\",\n    \"regTyCd\": \"M\",\n    \"useYn\": \"Y\",\n    \"bhfId\": \"00\",\n    \"remark\": null,\n    \"modrId\": \"1\",\n    \"modrNm\": \"Kayko\",\n    \"regrId\": \"1\",\n    \"regrNm\": \"Kayko\",\n    \"sarTyCd\": \"11\",\n    \"sarNo\": \"106\",\n    \"orgSarNo\": \"00\",\n    \"custTin\": null,\n    \"custNm\": null,\n    \"custBhfId\": null,\n    \"ocrnDt\": \"20240520\",\n    \"totItemCnt\": 1,\n    \"totTaxblAmt\": 1000,\n    \"totTaxAmt\": 1000,\n    \"totAmt\": 1000,\n    \"itemList\": [\n      {\n        \"itemSeq\": 1,\n        \"itemCd\": \"RW3NTXNOX0000006\",\n        \"itemClsCd\": \"5012161100\",\n        \"itemNm\": \"Inyange Water\",\n        \"qtyUnitCd\": \"U\",\n        \"pkgUnitCd\": \"NT\",\n        \"bcd\": null,\n        \"qty\": 50,\n        \"prc\": 10000,\n        \"splyAmt\": 1000,\n        \"totDcAmt\": 9000,\n        \"taxTyCd\": \"B\",\n        \"taxblAmt\": 1000,\n        \"taxAmt\": 152.54,\n        \"totAmt\": 1000,\n        \"pkg\": 1,\n        \"itemExprDt\": \"20250101\"\n      }\n    ]\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/stock/saveStockItems', [\n    'tin' => '999958074',\n    'regTyCd' => 'M',\n    'useYn' => 'Y',\n    'bhfId' => '00',\n    'remark' => null,\n    'modrId' => '1',\n    'modrNm' => 'Kayko',\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'sarTyCd' => '11',\n    'sarNo' => '106',\n    'orgSarNo' => '00',\n    'custTin' => null,\n    'custNm' => null,\n    'custBhfId' => null,\n    'ocrnDt' => '20240520',\n    'totItemCnt' => 1,\n    'totTaxblAmt' => 1000,\n    'totTaxAmt' => 1000,\n    'totAmt' => 1000,\n    'itemList' => [\n        [\n            'itemSeq' => 1,\n            'itemCd' => 'RW3NTXNOX0000006',\n            'itemClsCd' => '5012161100',\n            'itemNm' => 'Inyange Water',\n            'qtyUnitCd' => 'U',\n            'pkgUnitCd' => 'NT',\n            'bcd' => null,\n            'qty' => 50,\n            'prc' => 10000,\n            'splyAmt' => 1000,\n            'totDcAmt' => 9000,\n            'taxTyCd' => 'B',\n            'taxblAmt' => 1000,\n            'taxAmt' => 152.54,\n            'totAmt' => 1000,\n            'pkg' => 1,\n            'itemExprDt' => '20250101'\n        ]\n    ]\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"999958074\",\n  \"regTyCd\": \"M\",\n  \"useYn\": \"Y\",\n  \"bhfId\": \"00\",\n  \"remark\": null,\n  \"modrId\": \"1\",\n  \"modrNm\": \"Kayko\",\n  \"regrId\": \"1\",\n  \"regrNm\": \"Kayko\",\n  \"sarTyCd\": \"11\",\n  \"sarNo\": \"106\",\n  \"orgSarNo\": \"00\",\n  \"custTin\": null,\n  \"custNm\": null,\n  \"custBhfId\": null,\n  \"ocrnDt\": \"20240520\",\n  \"totItemCnt\": 1,\n  \"totTaxblAmt\": 1000,\n  \"totTaxAmt\": 1000,\n  \"totAmt\": 1000,\n  \"itemList\": [\n    {\n      \"itemSeq\": 1,\n      \"itemCd\": \"RW3NTXNOX0000006\",\n      \"itemClsCd\": \"5012161100\",\n      \"itemNm\": \"Inyange Water\",\n      \"qtyUnitCd\": \"U\",\n      \"pkgUnitCd\": \"NT\",\n      \"bcd\": null,\n      \"qty\": 50,\n      \"prc\": 10000,\n      \"splyAmt\": 1000,\n      \"totDcAmt\": 9000,\n      \"taxTyCd\": \"B\",\n      \"taxblAmt\": 1000,\n      \"taxAmt\": 152.54,\n      \"totAmt\": 1000,\n      \"pkg\": 1,\n      \"itemExprDt\": \"20250101\"\n    }\n  ]\n}"
+          }
+        ]
+      }
+    },
+    "/stock/selectStockItems": {
+      "post": {
+        "tags": [
+          "Stock"
+        ],
+        "summary": "Select Stock Movements",
+        "operationId": "get_stock",
+        "description": "Pull stock movement history changed since `lastReqDt`. Returns all stock in/out records for your branch.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "999958074",
+                "bhfId": "00",
+                "lastReqDt": "20210520000000"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Pull stock movement history changed since `lastReqDt`. Returns all stock in/out records for your branch."
+          },
+          "content": "Use to audit inventory changes and reconcile with your ERP stock ledger."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/stock/selectStockItems\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"lastReqDt\": \"20210520000000\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/stock/selectStockItems', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999958074\",\n    \"bhfId\": \"00\",\n    \"lastReqDt\": \"20210520000000\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/stock/selectStockItems', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'lastReqDt' => '20210520000000'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"lastReqDt\": \"20210520000000\"\n}"
+          }
+        ]
+      }
+    },
+    "/stockMaster/saveStockMaster": {
+      "post": {
+        "tags": [
+          "Stock"
+        ],
+        "summary": "Save Stock Master",
+        "operationId": "save_stock_master",
+        "description": "Update the current remaining quantity (`rsdQty`) for a registered item. Keeps VSDC inventory in sync with your physical stock count.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "999958074",
+                "bhfId": "00",
+                "itemCd": "RW1NTXU0000006",
+                "rsdQty": 1,
+                "modrId": "123",
+                "modrNm": "Modr Name",
+                "regrId": "123",
+                "regrNm": "Regr Name"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Update the current remaining quantity (`rsdQty`) for a registered item. Keeps VSDC inventory in sync with your physical stock count."
+          },
+          "content": "Call after `saveStockItems` to reflect the new balance. `rsdQty` is the authoritative on-hand quantity in VSDC."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/stockMaster/saveStockMaster\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"itemCd\": \"RW1NTXU0000006\",\n  \"rsdQty\": 1,\n  \"modrId\": \"123\",\n  \"modrNm\": \"Modr Name\",\n  \"regrId\": \"123\",\n  \"regrNm\": \"Regr Name\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/stockMaster/saveStockMaster', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999958074\",\n    \"bhfId\": \"00\",\n    \"itemCd\": \"RW1NTXU0000006\",\n    \"rsdQty\": 1,\n    \"modrId\": \"123\",\n    \"modrNm\": \"Modr Name\",\n    \"regrId\": \"123\",\n    \"regrNm\": \"Regr Name\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/stockMaster/saveStockMaster', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'itemCd' => 'RW1NTXU0000006',\n    'rsdQty' => 1,\n    'modrId' => '123',\n    'modrNm' => 'Modr Name',\n    'regrId' => '123',\n    'regrNm' => 'Regr Name'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"itemCd\": \"RW1NTXU0000006\",\n  \"rsdQty\": 1,\n  \"modrId\": \"123\",\n  \"modrNm\": \"Modr Name\",\n  \"regrId\": \"123\",\n  \"regrNm\": \"Regr Name\"\n}"
+          }
+        ]
+      }
+    },
+    "/trnsPurchase/savePurchases": {
+      "post": {
+        "tags": [
+          "Purchases"
+        ],
+        "summary": "Save Purchase",
+        "operationId": "save_purchases",
+        "description": "Confirm a supplier invoice as received. Maps supplier items to your `itemCd` and records the purchase in RRA's system.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "999958074",
+                "bhfId": "00",
+                "invcNo": 18,
+                "orgInvcNo": 18,
+                "spplrTin": "105418285",
+                "spplrNm": "SUNDOWNER Ltd",
+                "spplrInvcNo": "17",
+                "regTyCd": "A",
+                "pchsTyCd": "N",
+                "rcptTyCd": "N",
+                "pmtTyCd": "01",
+                "pchsSttsCd": "02",
+                "cfmDt": "20240706165014",
+                "pchsDt": "20200303",
+                "wrhsDt": "20240706165014",
+                "cnclReqDt": null,
+                "cnclDt": null,
+                "rfdDt": null,
+                "totItemCnt": 2,
+                "taxblAmtA": 0,
+                "taxblAmtB": 8000,
+                "taxblAmtC": 0,
+                "taxblAmtD": 0,
+                "taxRtA": 0,
+                "taxRtB": 18,
+                "taxRtC": 0,
+                "taxRtD": 0,
+                "taxAmtA": 0,
+                "taxAmtB": 1220.34,
+                "taxAmtC": 0,
+                "taxAmtD": 0,
+                "totTaxblAmt": 8000,
+                "totTaxAmt": 1220.34,
+                "totAmt": 8000,
+                "remark": null,
+                "modrId": "1",
+                "modrNm": "Kayko",
+                "regrId": "1",
+                "regrNm": "Kayko",
+                "itemList": [
+                  {
+                    "itemSeq": 1,
+                    "itemCd": "RW2BQL0000003",
+                    "itemClsCd": "4111363900",
+                    "itemNm": "Water Jibu 2",
+                    "bcd": null,
+                    "spplrItemClsCd": "5012161100",
+                    "spplrItemCd": "RW3NTXNOX0000006",
+                    "spplrItemNm": "Buffet",
+                    "pkgUnitCd": "BQ",
+                    "pkg": 1,
+                    "qtyUnitCd": "L",
+                    "qty": 2,
+                    "prc": 100,
+                    "splyAmt": 100,
+                    "dcRt": 0,
+                    "dcAmt": 0,
+                    "totDcAmt": 0,
+                    "taxTyCd": "B",
+                    "taxblAmt": 7000,
+                    "taxAmt": "2135.59",
+                    "totAmt": 7000,
+                    "itemExprDt": null
+                  },
+                  {
+                    "itemSeq": 2,
+                    "itemCd": "RW2BQL0000003",
+                    "itemClsCd": "4111363900",
+                    "itemNm": "Water Jibu 2",
+                    "bcd": null,
+                    "spplrItemClsCd": "5020220100",
+                    "spplrItemCd": "RW2BCXU0000001",
+                    "spplrItemNm": "Fanta 33 Cl",
+                    "pkgUnitCd": "BQ",
+                    "pkg": 1,
+                    "qtyUnitCd": "L",
+                    "qty": 2,
+                    "prc": 100,
+                    "splyAmt": 100,
+                    "dcRt": 0,
+                    "dcAmt": 0,
+                    "totDcAmt": 0,
+                    "taxTyCd": "B",
+                    "taxblAmt": 1000,
+                    "taxAmt": "305.08",
+                    "totAmt": 1000,
+                    "itemExprDt": null
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Confirm a supplier invoice as received. Maps supplier items to your `itemCd` and records the purchase in RRA's system."
+          },
+          "content": "Follow with `saveStockItems` (stock in) to update inventory. See [Purchases Workflow](/workflows/purchases)."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/trnsPurchase/savePurchases\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"invcNo\": 18,\n  \"orgInvcNo\": 18,\n  \"spplrTin\": \"105418285\",\n  \"spplrNm\": \"SUNDOWNER Ltd\",\n  \"spplrInvcNo\": \"17\",\n  \"regTyCd\": \"A\",\n  \"pchsTyCd\": \"N\",\n  \"rcptTyCd\": \"N\",\n  \"pmtTyCd\": \"01\",\n  \"pchsSttsCd\": \"02\",\n  \"cfmDt\": \"20240706165014\",\n  \"pchsDt\": \"20200303\",\n  \"wrhsDt\": \"20240706165014\",\n  \"cnclReqDt\": null,\n  \"cnclDt\": null,\n  \"rfdDt\": null,\n  \"totItemCnt\": 2,\n  \"taxblAmtA\": 0,\n  \"taxblAmtB\": 8000,\n  \"taxblAmtC\": 0,\n  \"taxblAmtD\": 0,\n  \"taxRtA\": 0,\n  \"taxRtB\": 18,\n  \"taxRtC\": 0,\n  \"taxRtD\": 0,\n  \"taxAmtA\": 0,\n  \"taxAmtB\": 1220.34,\n  \"taxAmtC\": 0,\n  \"taxAmtD\": 0,\n  \"totTaxblAmt\": 8000,\n  \"totTaxAmt\": 1220.34,\n  \"totAmt\": 8000,\n  \"remark\": null,\n  \"modrId\": \"1\",\n  \"modrNm\": \"Kayko\",\n  \"regrId\": \"1\",\n  \"regrNm\": \"Kayko\",\n  \"itemList\": [\n    {\n      \"itemSeq\": 1,\n      \"itemCd\": \"RW2BQL0000003\",\n      \"itemClsCd\": \"4111363900\",\n      \"itemNm\": \"Water Jibu 2\",\n      \"bcd\": null,\n      \"spplrItemClsCd\": \"5012161100\",\n      \"spplrItemCd\": \"RW3NTXNOX0000006\",\n      \"spplrItemNm\": \"Buffet\",\n      \"pkgUnitCd\": \"BQ\",\n      \"pkg\": 1,\n      \"qtyUnitCd\": \"L\",\n      \"qty\": 2,\n      \"prc\": 100,\n      \"splyAmt\": 100,\n      \"dcRt\": 0,\n      \"dcAmt\": 0,\n      \"totDcAmt\": 0,\n      \"taxTyCd\": \"B\",\n      \"taxblAmt\": 7000,\n      \"taxAmt\": \"2135.59\",\n      \"totAmt\": 7000,\n      \"itemExprDt\": null\n    },\n    {\n      \"itemSeq\": 2,\n      \"itemCd\": \"RW2BQL0000003\",\n      \"itemClsCd\": \"4111363900\",\n      \"itemNm\": \"Water Jibu 2\",\n      \"bcd\": null,\n      \"spplrItemClsCd\": \"5020220100\",\n      \"spplrItemCd\": \"RW2BCXU0000001\",\n      \"spplrItemNm\": \"Fanta 33 Cl\",\n      \"pkgUnitCd\": \"BQ\",\n      \"pkg\": 1,\n      \"qtyUnitCd\": \"L\",\n      \"qty\": 2,\n      \"prc\": 100,\n      \"splyAmt\": 100,\n      \"dcRt\": 0,\n      \"dcAmt\": 0,\n      \"totDcAmt\": 0,\n      \"taxTyCd\": \"B\",\n      \"taxblAmt\": 1000,\n      \"taxAmt\": \"305.08\",\n      \"totAmt\": 1000,\n      \"itemExprDt\": null\n    }\n  ]\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/trnsPurchase/savePurchases', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999958074\",\n    \"bhfId\": \"00\",\n    \"invcNo\": 18,\n    \"orgInvcNo\": 18,\n    \"spplrTin\": \"105418285\",\n    \"spplrNm\": \"SUNDOWNER Ltd\",\n    \"spplrInvcNo\": \"17\",\n    \"regTyCd\": \"A\",\n    \"pchsTyCd\": \"N\",\n    \"rcptTyCd\": \"N\",\n    \"pmtTyCd\": \"01\",\n    \"pchsSttsCd\": \"02\",\n    \"cfmDt\": \"20240706165014\",\n    \"pchsDt\": \"20200303\",\n    \"wrhsDt\": \"20240706165014\",\n    \"cnclReqDt\": null,\n    \"cnclDt\": null,\n    \"rfdDt\": null,\n    \"totItemCnt\": 2,\n    \"taxblAmtA\": 0,\n    \"taxblAmtB\": 8000,\n    \"taxblAmtC\": 0,\n    \"taxblAmtD\": 0,\n    \"taxRtA\": 0,\n    \"taxRtB\": 18,\n    \"taxRtC\": 0,\n    \"taxRtD\": 0,\n    \"taxAmtA\": 0,\n    \"taxAmtB\": 1220.34,\n    \"taxAmtC\": 0,\n    \"taxAmtD\": 0,\n    \"totTaxblAmt\": 8000,\n    \"totTaxAmt\": 1220.34,\n    \"totAmt\": 8000,\n    \"remark\": null,\n    \"modrId\": \"1\",\n    \"modrNm\": \"Kayko\",\n    \"regrId\": \"1\",\n    \"regrNm\": \"Kayko\",\n    \"itemList\": [\n      {\n        \"itemSeq\": 1,\n        \"itemCd\": \"RW2BQL0000003\",\n        \"itemClsCd\": \"4111363900\",\n        \"itemNm\": \"Water Jibu 2\",\n        \"bcd\": null,\n        \"spplrItemClsCd\": \"5012161100\",\n        \"spplrItemCd\": \"RW3NTXNOX0000006\",\n        \"spplrItemNm\": \"Buffet\",\n        \"pkgUnitCd\": \"BQ\",\n        \"pkg\": 1,\n        \"qtyUnitCd\": \"L\",\n        \"qty\": 2,\n        \"prc\": 100,\n        \"splyAmt\": 100,\n        \"dcRt\": 0,\n        \"dcAmt\": 0,\n        \"totDcAmt\": 0,\n        \"taxTyCd\": \"B\",\n        \"taxblAmt\": 7000,\n        \"taxAmt\": \"2135.59\",\n        \"totAmt\": 7000,\n        \"itemExprDt\": null\n      },\n      {\n        \"itemSeq\": 2,\n        \"itemCd\": \"RW2BQL0000003\",\n        \"itemClsCd\": \"4111363900\",\n        \"itemNm\": \"Water Jibu 2\",\n        \"bcd\": null,\n        \"spplrItemClsCd\": \"5020220100\",\n        \"spplrItemCd\": \"RW2BCXU0000001\",\n        \"spplrItemNm\": \"Fanta 33 Cl\",\n        \"pkgUnitCd\": \"BQ\",\n        \"pkg\": 1,\n        \"qtyUnitCd\": \"L\",\n        \"qty\": 2,\n        \"prc\": 100,\n        \"splyAmt\": 100,\n        \"dcRt\": 0,\n        \"dcAmt\": 0,\n        \"totDcAmt\": 0,\n        \"taxTyCd\": \"B\",\n        \"taxblAmt\": 1000,\n        \"taxAmt\": \"305.08\",\n        \"totAmt\": 1000,\n        \"itemExprDt\": null\n      }\n    ]\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/trnsPurchase/savePurchases', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'invcNo' => 18,\n    'orgInvcNo' => 18,\n    'spplrTin' => '105418285',\n    'spplrNm' => 'SUNDOWNER Ltd',\n    'spplrInvcNo' => '17',\n    'regTyCd' => 'A',\n    'pchsTyCd' => 'N',\n    'rcptTyCd' => 'N',\n    'pmtTyCd' => '01',\n    'pchsSttsCd' => '02',\n    'cfmDt' => '20240706165014',\n    'pchsDt' => '20200303',\n    'wrhsDt' => '20240706165014',\n    'cnclReqDt' => null,\n    'cnclDt' => null,\n    'rfdDt' => null,\n    'totItemCnt' => 2,\n    'taxblAmtA' => 0,\n    'taxblAmtB' => 8000,\n    'taxblAmtC' => 0,\n    'taxblAmtD' => 0,\n    'taxRtA' => 0,\n    'taxRtB' => 18,\n    'taxRtC' => 0,\n    'taxRtD' => 0,\n    'taxAmtA' => 0,\n    'taxAmtB' => 1220.34,\n    'taxAmtC' => 0,\n    'taxAmtD' => 0,\n    'totTaxblAmt' => 8000,\n    'totTaxAmt' => 1220.34,\n    'totAmt' => 8000,\n    'remark' => null,\n    'modrId' => '1',\n    'modrNm' => 'Kayko',\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'itemList' => [\n        [\n            'itemSeq' => 1,\n            'itemCd' => 'RW2BQL0000003',\n            'itemClsCd' => '4111363900',\n            'itemNm' => 'Water Jibu 2',\n            'bcd' => null,\n            'spplrItemClsCd' => '5012161100',\n            'spplrItemCd' => 'RW3NTXNOX0000006',\n            'spplrItemNm' => 'Buffet',\n            'pkgUnitCd' => 'BQ',\n            'pkg' => 1,\n            'qtyUnitCd' => 'L',\n            'qty' => 2,\n            'prc' => 100,\n            'splyAmt' => 100,\n            'dcRt' => 0,\n            'dcAmt' => 0,\n            'totDcAmt' => 0,\n            'taxTyCd' => 'B',\n            'taxblAmt' => 7000,\n            'taxAmt' => '2135.59',\n            'totAmt' => 7000,\n            'itemExprDt' => null\n        ],\n        [\n            'itemSeq' => 2,\n            'itemCd' => 'RW2BQL0000003',\n            'itemClsCd' => '4111363900',\n            'itemNm' => 'Water Jibu 2',\n            'bcd' => null,\n            'spplrItemClsCd' => '5020220100',\n            'spplrItemCd' => 'RW2BCXU0000001',\n            'spplrItemNm' => 'Fanta 33 Cl',\n            'pkgUnitCd' => 'BQ',\n            'pkg' => 1,\n            'qtyUnitCd' => 'L',\n            'qty' => 2,\n            'prc' => 100,\n            'splyAmt' => 100,\n            'dcRt' => 0,\n            'dcAmt' => 0,\n            'totDcAmt' => 0,\n            'taxTyCd' => 'B',\n            'taxblAmt' => 1000,\n            'taxAmt' => '305.08',\n            'totAmt' => 1000,\n            'itemExprDt' => null\n        ]\n    ]\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"invcNo\": 18,\n  \"orgInvcNo\": 18,\n  \"spplrTin\": \"105418285\",\n  \"spplrNm\": \"SUNDOWNER Ltd\",\n  \"spplrInvcNo\": \"17\",\n  \"regTyCd\": \"A\",\n  \"pchsTyCd\": \"N\",\n  \"rcptTyCd\": \"N\",\n  \"pmtTyCd\": \"01\",\n  \"pchsSttsCd\": \"02\",\n  \"cfmDt\": \"20240706165014\",\n  \"pchsDt\": \"20200303\",\n  \"wrhsDt\": \"20240706165014\",\n  \"cnclReqDt\": null,\n  \"cnclDt\": null,\n  \"rfdDt\": null,\n  \"totItemCnt\": 2,\n  \"taxblAmtA\": 0,\n  \"taxblAmtB\": 8000,\n  \"taxblAmtC\": 0,\n  \"taxblAmtD\": 0,\n  \"taxRtA\": 0,\n  \"taxRtB\": 18,\n  \"taxRtC\": 0,\n  \"taxRtD\": 0,\n  \"taxAmtA\": 0,\n  \"taxAmtB\": 1220.34,\n  \"taxAmtC\": 0,\n  \"taxAmtD\": 0,\n  \"totTaxblAmt\": 8000,\n  \"totTaxAmt\": 1220.34,\n  \"totAmt\": 8000,\n  \"remark\": null,\n  \"modrId\": \"1\",\n  \"modrNm\": \"Kayko\",\n  \"regrId\": \"1\",\n  \"regrNm\": \"Kayko\",\n  \"itemList\": [\n    {\n      \"itemSeq\": 1,\n      \"itemCd\": \"RW2BQL0000003\",\n      \"itemClsCd\": \"4111363900\",\n      \"itemNm\": \"Water Jibu 2\",\n      \"bcd\": null,\n      \"spplrItemClsCd\": \"5012161100\",\n      \"spplrItemCd\": \"RW3NTXNOX0000006\",\n      \"spplrItemNm\": \"Buffet\",\n      \"pkgUnitCd\": \"BQ\",\n      \"pkg\": 1,\n      \"qtyUnitCd\": \"L\",\n      \"qty\": 2,\n      \"prc\": 100,\n      \"splyAmt\": 100,\n      \"dcRt\": 0,\n      \"dcAmt\": 0,\n      \"totDcAmt\": 0,\n      \"taxTyCd\": \"B\",\n      \"taxblAmt\": 7000,\n      \"taxAmt\": \"2135.59\",\n      \"totAmt\": 7000,\n      \"itemExprDt\": null\n    },\n    {\n      \"itemSeq\": 2,\n      \"itemCd\": \"RW2BQL0000003\",\n      \"itemClsCd\": \"4111363900\",\n      \"itemNm\": \"Water Jibu 2\",\n      \"bcd\": null,\n      \"spplrItemClsCd\": \"5020220100\",\n      \"spplrItemCd\": \"RW2BCXU0000001\",\n      \"spplrItemNm\": \"Fanta 33 Cl\",\n      \"pkgUnitCd\": \"BQ\",\n      \"pkg\": 1,\n      \"qtyUnitCd\": \"L\",\n      \"qty\": 2,\n      \"prc\": 100,\n      \"splyAmt\": 100,\n      \"dcRt\": 0,\n      \"dcAmt\": 0,\n      \"totDcAmt\": 0,\n      \"taxTyCd\": \"B\",\n      \"taxblAmt\": 1000,\n      \"taxAmt\": \"305.08\",\n      \"totAmt\": 1000,\n      \"itemExprDt\": null\n    }\n  ]\n}"
+          }
+        ]
+      }
+    },
+    "/trnsPurchase/selectTrnsPurchaseSales": {
+      "post": {
+        "tags": [
+          "Purchases"
+        ],
+        "summary": "Select Purchases",
+        "operationId": "get_purchases",
+        "description": "Pull supplier invoices awaiting your confirmation as a buyer. Returns purchases from other VSDC-registered suppliers changed since `lastReqDt`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "999958074",
+                "bhfId": "00",
+                "lastReqDt": "20240706204443"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Pull supplier invoices awaiting your confirmation as a buyer. Returns purchases from other VSDC-registered suppliers changed since `lastReqDt`."
+          },
+          "content": "When a supplier sells to you, their invoice appears here. Review and confirm via `savePurchases`."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/trnsPurchase/selectTrnsPurchaseSales\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"lastReqDt\": \"20240706204443\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/trnsPurchase/selectTrnsPurchaseSales', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999958074\",\n    \"bhfId\": \"00\",\n    \"lastReqDt\": \"20240706204443\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/trnsPurchase/selectTrnsPurchaseSales', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'lastReqDt' => '20240706204443'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"lastReqDt\": \"20240706204443\"\n}"
+          }
+        ]
+      }
+    },
+    "/trnsSales/resendSales": {
+      "post": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "Resend Sale",
+        "operationId": "resend",
+        "description": "Re-submit a sale that was signed locally but failed to reach RRA (network timeout, server error). Send the full original payload including `rcptSign` and `intrlData` from the first attempt.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "107993488",
+                "bhfId": "01",
+                "cfmDt": "20260609101449",
+                "rfdDt": null,
+                "cnclDt": null,
+                "custNm": "Customer",
+                "invcNo": "257",
+                "modrId": "1",
+                "modrNm": "Kayko",
+                "regrId": "1",
+                "regrNm": "Kayko",
+                "remark": null,
+                "taxRtA": 0,
+                "taxRtB": 18,
+                "taxRtC": 0,
+                "taxRtD": 0,
+                "totAmt": 1580000,
+                "custTin": "788312173",
+                "pmtTyCd": "06",
+                "receipt": {
+                  "adrs": null,
+                  "rptNo": "257",
+                  "btmMsg": "Kayko v.2.3.11",
+                  "topMsg": "SMATCONS Ltd\nADDRESS Remera, Gasabo, Umujyi wa Kigali, RWANDA\nPHONE +250781620053\n\nTIN 107993488\n",
+                  "trdeNm": "Customer",
+                  "custTin": null,
+                  "rcptSign": "P3SKYWLKGFJXFPXZ",
+                  "curRcptNo": 257,
+                  "custMblNo": "788312173",
+                  "intrlData": "2BGSI4XVCRPNPO32PTAZOLND5M",
+                  "totRcptNo": 257,
+                  "rcptPbctDt": "20260609101449",
+                  "prchrAcptcYn": "Y"
+                },
+                "salesDt": "20260609",
+                "taxAmtA": 0,
+                "taxAmtB": "241016.95",
+                "taxAmtC": 0,
+                "taxAmtD": 0,
+                "itemList": [
+                  {
+                    "bcd": null,
+                    "pkg": 1,
+                    "prc": "15800.00",
+                    "qty": "100.00",
+                    "dcRt": "0.00",
+                    "dcAmt": "0.00",
+                    "isrcRt": null,
+                    "itemCd": "RW2NTU0000001",
+                    "itemNm": "Cimerwa cement 32.5",
+                    "taxAmt": "241016.95",
+                    "totAmt": "1580000.00",
+                    "isrcAmt": null,
+                    "isrccCd": null,
+                    "isrccNm": null,
+                    "itemSeq": 1,
+                    "splyAmt": "1580000.00",
+                    "taxTyCd": "B",
+                    "taxblAmt": "1580000.00",
+                    "totDcAmt": "0.00",
+                    "itemClsCd": "8014160101",
+                    "pkgUnitCd": "NT",
+                    "qtyUnitCd": "U"
+                  }
+                ],
+                "prcOrdCd": null,
+                "rcptTyCd": "R",
+                "rfdRsnCd": "04",
+                "cnclReqDt": null,
+                "custPhone": "788312173",
+                "orgInvcNo": "67",
+                "salesTyCd": "N",
+                "taxblAmtA": 0,
+                "taxblAmtB": 1580000,
+                "taxblAmtC": 0,
+                "taxblAmtD": 0,
+                "totTaxAmt": "241016.95",
+                "stockRlsDt": null,
+                "totItemCnt": 1,
+                "salesSttsCd": "04",
+                "totTaxblAmt": 1580000,
+                "prchrAcptcYn": "Y"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Re-submit a sale that was signed locally but failed to reach RRA (network timeout, server error). Send the full original payload including `rcptSign` and `intrlData` from the first attempt."
+          },
+          "content": "Use when `saveSales` returned a signature but RRA did not acknowledge receipt. Do not use for new sales."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/trnsSales/resendSales\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"107993488\",\n  \"bhfId\": \"01\",\n  \"cfmDt\": \"20260609101449\",\n  \"rfdDt\": null,\n  \"cnclDt\": null,\n  \"custNm\": \"Customer\",\n  \"invcNo\": \"257\",\n  \"modrId\": \"1\",\n  \"modrNm\": \"Kayko\",\n  \"regrId\": \"1\",\n  \"regrNm\": \"Kayko\",\n  \"remark\": null,\n  \"taxRtA\": 0,\n  \"taxRtB\": 18,\n  \"taxRtC\": 0,\n  \"taxRtD\": 0,\n  \"totAmt\": 1580000,\n  \"custTin\": \"788312173\",\n  \"pmtTyCd\": \"06\",\n  \"receipt\": {\n    \"adrs\": null,\n    \"rptNo\": \"257\",\n    \"btmMsg\": \"Kayko v.2.3.11\",\n    \"topMsg\": \"SMATCONS Ltd\\nADDRESS Remera, Gasabo, Umujyi wa Kigali, RWANDA\\nPHONE +250781620053\\n\\nTIN 107993488\\n\",\n    \"trdeNm\": \"Customer\",\n    \"custTin\": null,\n    \"rcptSign\": \"P3SKYWLKGFJXFPXZ\",\n    \"curRcptNo\": 257,\n    \"custMblNo\": \"788312173\",\n    \"intrlData\": \"2BGSI4XVCRPNPO32PTAZOLND5M\",\n    \"totRcptNo\": 257,\n    \"rcptPbctDt\": \"20260609101449\",\n    \"prchrAcptcYn\": \"Y\"\n  },\n  \"salesDt\": \"20260609\",\n  \"taxAmtA\": 0,\n  \"taxAmtB\": \"241016.95\",\n  \"taxAmtC\": 0,\n  \"taxAmtD\": 0,\n  \"itemList\": [\n    {\n      \"bcd\": null,\n      \"pkg\": 1,\n      \"prc\": \"15800.00\",\n      \"qty\": \"100.00\",\n      \"dcRt\": \"0.00\",\n      \"dcAmt\": \"0.00\",\n      \"isrcRt\": null,\n      \"itemCd\": \"RW2NTU0000001\",\n      \"itemNm\": \"Cimerwa cement 32.5\",\n      \"taxAmt\": \"241016.95\",\n      \"totAmt\": \"1580000.00\",\n      \"isrcAmt\": null,\n      \"isrccCd\": null,\n      \"isrccNm\": null,\n      \"itemSeq\": 1,\n      \"splyAmt\": \"1580000.00\",\n      \"taxTyCd\": \"B\",\n      \"taxblAmt\": \"1580000.00\",\n      \"totDcAmt\": \"0.00\",\n      \"itemClsCd\": \"8014160101\",\n      \"pkgUnitCd\": \"NT\",\n      \"qtyUnitCd\": \"U\"\n    }\n  ],\n  \"prcOrdCd\": null,\n  \"rcptTyCd\": \"R\",\n  \"rfdRsnCd\": \"04\",\n  \"cnclReqDt\": null,\n  \"custPhone\": \"788312173\",\n  \"orgInvcNo\": \"67\",\n  \"salesTyCd\": \"N\",\n  \"taxblAmtA\": 0,\n  \"taxblAmtB\": 1580000,\n  \"taxblAmtC\": 0,\n  \"taxblAmtD\": 0,\n  \"totTaxAmt\": \"241016.95\",\n  \"stockRlsDt\": null,\n  \"totItemCnt\": 1,\n  \"salesSttsCd\": \"04\",\n  \"totTaxblAmt\": 1580000,\n  \"prchrAcptcYn\": \"Y\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/trnsSales/resendSales', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"107993488\",\n    \"bhfId\": \"01\",\n    \"cfmDt\": \"20260609101449\",\n    \"rfdDt\": null,\n    \"cnclDt\": null,\n    \"custNm\": \"Customer\",\n    \"invcNo\": \"257\",\n    \"modrId\": \"1\",\n    \"modrNm\": \"Kayko\",\n    \"regrId\": \"1\",\n    \"regrNm\": \"Kayko\",\n    \"remark\": null,\n    \"taxRtA\": 0,\n    \"taxRtB\": 18,\n    \"taxRtC\": 0,\n    \"taxRtD\": 0,\n    \"totAmt\": 1580000,\n    \"custTin\": \"788312173\",\n    \"pmtTyCd\": \"06\",\n    \"receipt\": {\n      \"adrs\": null,\n      \"rptNo\": \"257\",\n      \"btmMsg\": \"Kayko v.2.3.11\",\n      \"topMsg\": \"SMATCONS Ltd\\nADDRESS Remera, Gasabo, Umujyi wa Kigali, RWANDA\\nPHONE +250781620053\\n\\nTIN 107993488\\n\",\n      \"trdeNm\": \"Customer\",\n      \"custTin\": null,\n      \"rcptSign\": \"P3SKYWLKGFJXFPXZ\",\n      \"curRcptNo\": 257,\n      \"custMblNo\": \"788312173\",\n      \"intrlData\": \"2BGSI4XVCRPNPO32PTAZOLND5M\",\n      \"totRcptNo\": 257,\n      \"rcptPbctDt\": \"20260609101449\",\n      \"prchrAcptcYn\": \"Y\"\n    },\n    \"salesDt\": \"20260609\",\n    \"taxAmtA\": 0,\n    \"taxAmtB\": \"241016.95\",\n    \"taxAmtC\": 0,\n    \"taxAmtD\": 0,\n    \"itemList\": [\n      {\n        \"bcd\": null,\n        \"pkg\": 1,\n        \"prc\": \"15800.00\",\n        \"qty\": \"100.00\",\n        \"dcRt\": \"0.00\",\n        \"dcAmt\": \"0.00\",\n        \"isrcRt\": null,\n        \"itemCd\": \"RW2NTU0000001\",\n        \"itemNm\": \"Cimerwa cement 32.5\",\n        \"taxAmt\": \"241016.95\",\n        \"totAmt\": \"1580000.00\",\n        \"isrcAmt\": null,\n        \"isrccCd\": null,\n        \"isrccNm\": null,\n        \"itemSeq\": 1,\n        \"splyAmt\": \"1580000.00\",\n        \"taxTyCd\": \"B\",\n        \"taxblAmt\": \"1580000.00\",\n        \"totDcAmt\": \"0.00\",\n        \"itemClsCd\": \"8014160101\",\n        \"pkgUnitCd\": \"NT\",\n        \"qtyUnitCd\": \"U\"\n      }\n    ],\n    \"prcOrdCd\": null,\n    \"rcptTyCd\": \"R\",\n    \"rfdRsnCd\": \"04\",\n    \"cnclReqDt\": null,\n    \"custPhone\": \"788312173\",\n    \"orgInvcNo\": \"67\",\n    \"salesTyCd\": \"N\",\n    \"taxblAmtA\": 0,\n    \"taxblAmtB\": 1580000,\n    \"taxblAmtC\": 0,\n    \"taxblAmtD\": 0,\n    \"totTaxAmt\": \"241016.95\",\n    \"stockRlsDt\": null,\n    \"totItemCnt\": 1,\n    \"salesSttsCd\": \"04\",\n    \"totTaxblAmt\": 1580000,\n    \"prchrAcptcYn\": \"Y\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/trnsSales/resendSales', [\n    'tin' => '107993488',\n    'bhfId' => '01',\n    'cfmDt' => '20260609101449',\n    'rfdDt' => null,\n    'cnclDt' => null,\n    'custNm' => 'Customer',\n    'invcNo' => '257',\n    'modrId' => '1',\n    'modrNm' => 'Kayko',\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'remark' => null,\n    'taxRtA' => 0,\n    'taxRtB' => 18,\n    'taxRtC' => 0,\n    'taxRtD' => 0,\n    'totAmt' => 1580000,\n    'custTin' => '788312173',\n    'pmtTyCd' => '06',\n    'receipt' => [\n        'adrs' => null,\n        'rptNo' => '257',\n        'btmMsg' => 'Kayko v.2.3.11',\n        'topMsg' => 'SMATCONS Ltd\nADDRESS Remera, Gasabo, Umujyi wa Kigali, RWANDA\nPHONE +250781620053\n\nTIN 107993488\n',\n        'trdeNm' => 'Customer',\n        'custTin' => null,\n        'rcptSign' => 'P3SKYWLKGFJXFPXZ',\n        'curRcptNo' => 257,\n        'custMblNo' => '788312173',\n        'intrlData' => '2BGSI4XVCRPNPO32PTAZOLND5M',\n        'totRcptNo' => 257,\n        'rcptPbctDt' => '20260609101449',\n        'prchrAcptcYn' => 'Y'\n    ],\n    'salesDt' => '20260609',\n    'taxAmtA' => 0,\n    'taxAmtB' => '241016.95',\n    'taxAmtC' => 0,\n    'taxAmtD' => 0,\n    'itemList' => [\n        [\n            'bcd' => null,\n            'pkg' => 1,\n            'prc' => '15800.00',\n            'qty' => '100.00',\n            'dcRt' => '0.00',\n            'dcAmt' => '0.00',\n            'isrcRt' => null,\n            'itemCd' => 'RW2NTU0000001',\n            'itemNm' => 'Cimerwa cement 32.5',\n            'taxAmt' => '241016.95',\n            'totAmt' => '1580000.00',\n            'isrcAmt' => null,\n            'isrccCd' => null,\n            'isrccNm' => null,\n            'itemSeq' => 1,\n            'splyAmt' => '1580000.00',\n            'taxTyCd' => 'B',\n            'taxblAmt' => '1580000.00',\n            'totDcAmt' => '0.00',\n            'itemClsCd' => '8014160101',\n            'pkgUnitCd' => 'NT',\n            'qtyUnitCd' => 'U'\n        ]\n    ],\n    'prcOrdCd' => null,\n    'rcptTyCd' => 'R',\n    'rfdRsnCd' => '04',\n    'cnclReqDt' => null,\n    'custPhone' => '788312173',\n    'orgInvcNo' => '67',\n    'salesTyCd' => 'N',\n    'taxblAmtA' => 0,\n    'taxblAmtB' => 1580000,\n    'taxblAmtC' => 0,\n    'taxblAmtD' => 0,\n    'totTaxAmt' => '241016.95',\n    'stockRlsDt' => null,\n    'totItemCnt' => 1,\n    'salesSttsCd' => '04',\n    'totTaxblAmt' => 1580000,\n    'prchrAcptcYn' => 'Y'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"107993488\",\n  \"bhfId\": \"01\",\n  \"cfmDt\": \"20260609101449\",\n  \"rfdDt\": null,\n  \"cnclDt\": null,\n  \"custNm\": \"Customer\",\n  \"invcNo\": \"257\",\n  \"modrId\": \"1\",\n  \"modrNm\": \"Kayko\",\n  \"regrId\": \"1\",\n  \"regrNm\": \"Kayko\",\n  \"remark\": null,\n  \"taxRtA\": 0,\n  \"taxRtB\": 18,\n  \"taxRtC\": 0,\n  \"taxRtD\": 0,\n  \"totAmt\": 1580000,\n  \"custTin\": \"788312173\",\n  \"pmtTyCd\": \"06\",\n  \"receipt\": {\n    \"adrs\": null,\n    \"rptNo\": \"257\",\n    \"btmMsg\": \"Kayko v.2.3.11\",\n    \"topMsg\": \"SMATCONS Ltd\\nADDRESS Remera, Gasabo, Umujyi wa Kigali, RWANDA\\nPHONE +250781620053\\n\\nTIN 107993488\\n\",\n    \"trdeNm\": \"Customer\",\n    \"custTin\": null,\n    \"rcptSign\": \"P3SKYWLKGFJXFPXZ\",\n    \"curRcptNo\": 257,\n    \"custMblNo\": \"788312173\",\n    \"intrlData\": \"2BGSI4XVCRPNPO32PTAZOLND5M\",\n    \"totRcptNo\": 257,\n    \"rcptPbctDt\": \"20260609101449\",\n    \"prchrAcptcYn\": \"Y\"\n  },\n  \"salesDt\": \"20260609\",\n  \"taxAmtA\": 0,\n  \"taxAmtB\": \"241016.95\",\n  \"taxAmtC\": 0,\n  \"taxAmtD\": 0,\n  \"itemList\": [\n    {\n      \"bcd\": null,\n      \"pkg\": 1,\n      \"prc\": \"15800.00\",\n      \"qty\": \"100.00\",\n      \"dcRt\": \"0.00\",\n      \"dcAmt\": \"0.00\",\n      \"isrcRt\": null,\n      \"itemCd\": \"RW2NTU0000001\",\n      \"itemNm\": \"Cimerwa cement 32.5\",\n      \"taxAmt\": \"241016.95\",\n      \"totAmt\": \"1580000.00\",\n      \"isrcAmt\": null,\n      \"isrccCd\": null,\n      \"isrccNm\": null,\n      \"itemSeq\": 1,\n      \"splyAmt\": \"1580000.00\",\n      \"taxTyCd\": \"B\",\n      \"taxblAmt\": \"1580000.00\",\n      \"totDcAmt\": \"0.00\",\n      \"itemClsCd\": \"8014160101\",\n      \"pkgUnitCd\": \"NT\",\n      \"qtyUnitCd\": \"U\"\n    }\n  ],\n  \"prcOrdCd\": null,\n  \"rcptTyCd\": \"R\",\n  \"rfdRsnCd\": \"04\",\n  \"cnclReqDt\": null,\n  \"custPhone\": \"788312173\",\n  \"orgInvcNo\": \"67\",\n  \"salesTyCd\": \"N\",\n  \"taxblAmtA\": 0,\n  \"taxblAmtB\": 1580000,\n  \"taxblAmtC\": 0,\n  \"taxblAmtD\": 0,\n  \"totTaxAmt\": \"241016.95\",\n  \"stockRlsDt\": null,\n  \"totItemCnt\": 1,\n  \"salesSttsCd\": \"04\",\n  \"totTaxblAmt\": 1580000,\n  \"prchrAcptcYn\": \"Y\"\n}"
+          }
+        ]
+      }
+    },
+    "/trnsSales/saveSales": {
+      "post": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "Save Sale",
+        "operationId": "refund",
+        "description": "Submit a sales invoice to RRA and receive the EBM receipt signature (`rcptSign`, `intrlData`) required for compliant invoice printing. Supports normal sales, refunds, copies, training, and proforma.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "tin": "100027060",
+                "bhfId": "00",
+                "invcNo": "1799",
+                "orgInvcNo": "1799",
+                "cfmDt": "20260303145619",
+                "salesDt": "20260303",
+                "salesTyCd": "N",
+                "rcptTyCd": "S",
+                "pmtTyCd": "02",
+                "salesSttsCd": "02",
+                "prchrAcptcYn": "Y",
+                "custNm": "RULIBA CLAYS LTD",
+                "custTin": "100004527",
+                "totItemCnt": 1,
+                "taxRtA": 0,
+                "taxRtB": 18,
+                "taxRtC": 0,
+                "taxRtD": 0,
+                "taxblAmtA": 0,
+                "taxblAmtB": 2000,
+                "taxblAmtC": 0,
+                "taxblAmtD": 0,
+                "taxAmtA": 0,
+                "taxAmtB": 305.08,
+                "taxAmtC": 0,
+                "taxAmtD": 0,
+                "totTaxblAmt": 2000,
+                "totTaxAmt": 305.08,
+                "totAmt": 2000,
+                "receipt": {
+                  "rptNo": "1799",
+                  "custTin": "100004527",
+                  "trdeNm": "RULIBACLAYSLTD",
+                  "topMsg": "SONATUBES Ltd\nADDRESS KIGALI\nTIN 100027060",
+                  "btmMsg": "Kayko v.2.3.11",
+                  "prchrAcptcYn": "Y"
+                },
+                "itemList": [
+                  {
+                    "itemSeq": 1,
+                    "itemCd": "RW2NTU0000642",
+                    "itemClsCd": "8014160101",
+                    "itemNm": "TOLE PL 2 44X1 22X10",
+                    "taxTyCd": "B",
+                    "qty": 2,
+                    "prc": 1000,
+                    "splyAmt": 2000,
+                    "taxblAmt": 2000,
+                    "taxAmt": 305.08,
+                    "totAmt": 2000,
+                    "pkg": 1,
+                    "pkgUnitCd": "NT",
+                    "qtyUnitCd": "U",
+                    "dcRt": 0,
+                    "dcAmt": 0,
+                    "totDcAmt": 0
+                  }
+                ],
+                "regrId": "1",
+                "regrNm": "Kayko",
+                "modrId": "1",
+                "modrNm": "Kayko"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC standard response envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resultCd": {
+                      "type": "string",
+                      "example": "000"
+                    },
+                    "resultMsg": {
+                      "type": "string",
+                      "example": "It is succeeded"
+                    },
+                    "resultDt": {
+                      "type": "string",
+                      "example": "20260303145619"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "description": "Submit a sales invoice to RRA and receive the EBM receipt signature (`rcptSign`, `intrlData`) required for compliant invoice printing. Supports normal sales, refunds, copies, training, and proforma."
+          },
+          "content": "The most critical endpoint. Returns cryptographic data that must be printed on the receipt. See [Sales Workflow](/workflows/sales-invoice) and [VAT Formulas](/calculations/vat-formulas)."
+        },
+        "x-codeSamples": [
+          {
+            "lang": "bash",
+            "label": "cURL",
+            "source": "curl -X POST \"{{baseUrl}}/trnsSales/saveSales\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"100027060\",\n  \"bhfId\": \"00\",\n  \"invcNo\": \"1799\",\n  \"orgInvcNo\": \"1799\",\n  \"cfmDt\": \"20260303145619\",\n  \"salesDt\": \"20260303\",\n  \"salesTyCd\": \"N\",\n  \"rcptTyCd\": \"S\",\n  \"pmtTyCd\": \"02\",\n  \"salesSttsCd\": \"02\",\n  \"prchrAcptcYn\": \"Y\",\n  \"custNm\": \"RULIBA CLAYS LTD\",\n  \"custTin\": \"100004527\",\n  \"totItemCnt\": 1,\n  \"taxRtA\": 0,\n  \"taxRtB\": 18,\n  \"taxRtC\": 0,\n  \"taxRtD\": 0,\n  \"taxblAmtA\": 0,\n  \"taxblAmtB\": 2000,\n  \"taxblAmtC\": 0,\n  \"taxblAmtD\": 0,\n  \"taxAmtA\": 0,\n  \"taxAmtB\": 305.08,\n  \"taxAmtC\": 0,\n  \"taxAmtD\": 0,\n  \"totTaxblAmt\": 2000,\n  \"totTaxAmt\": 305.08,\n  \"totAmt\": 2000,\n  \"receipt\": {\n    \"rptNo\": \"1799\",\n    \"custTin\": \"100004527\",\n    \"trdeNm\": \"RULIBACLAYSLTD\",\n    \"topMsg\": \"SONATUBES Ltd\\nADDRESS KIGALI\\nTIN 100027060\",\n    \"btmMsg\": \"Kayko v.2.3.11\",\n    \"prchrAcptcYn\": \"Y\"\n  },\n  \"itemList\": [\n    {\n      \"itemSeq\": 1,\n      \"itemCd\": \"RW2NTU0000642\",\n      \"itemClsCd\": \"8014160101\",\n      \"itemNm\": \"TOLE PL 2 44X1 22X10\",\n      \"taxTyCd\": \"B\",\n      \"qty\": 2,\n      \"prc\": 1000,\n      \"splyAmt\": 2000,\n      \"taxblAmt\": 2000,\n      \"taxAmt\": 305.08,\n      \"totAmt\": 2000,\n      \"pkg\": 1,\n      \"pkgUnitCd\": \"NT\",\n      \"qtyUnitCd\": \"U\",\n      \"dcRt\": 0,\n      \"dcAmt\": 0,\n      \"totDcAmt\": 0\n    }\n  ],\n  \"regrId\": \"1\",\n  \"regrNm\": \"Kayko\",\n  \"modrId\": \"1\",\n  \"modrNm\": \"Kayko\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const response = await fetch('{{baseUrl}}/trnsSales/saveSales', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"100027060\",\n    \"bhfId\": \"00\",\n    \"invcNo\": \"1799\",\n    \"orgInvcNo\": \"1799\",\n    \"cfmDt\": \"20260303145619\",\n    \"salesDt\": \"20260303\",\n    \"salesTyCd\": \"N\",\n    \"rcptTyCd\": \"S\",\n    \"pmtTyCd\": \"02\",\n    \"salesSttsCd\": \"02\",\n    \"prchrAcptcYn\": \"Y\",\n    \"custNm\": \"RULIBA CLAYS LTD\",\n    \"custTin\": \"100004527\",\n    \"totItemCnt\": 1,\n    \"taxRtA\": 0,\n    \"taxRtB\": 18,\n    \"taxRtC\": 0,\n    \"taxRtD\": 0,\n    \"taxblAmtA\": 0,\n    \"taxblAmtB\": 2000,\n    \"taxblAmtC\": 0,\n    \"taxblAmtD\": 0,\n    \"taxAmtA\": 0,\n    \"taxAmtB\": 305.08,\n    \"taxAmtC\": 0,\n    \"taxAmtD\": 0,\n    \"totTaxblAmt\": 2000,\n    \"totTaxAmt\": 305.08,\n    \"totAmt\": 2000,\n    \"receipt\": {\n      \"rptNo\": \"1799\",\n      \"custTin\": \"100004527\",\n      \"trdeNm\": \"RULIBACLAYSLTD\",\n      \"topMsg\": \"SONATUBES Ltd\\nADDRESS KIGALI\\nTIN 100027060\",\n      \"btmMsg\": \"Kayko v.2.3.11\",\n      \"prchrAcptcYn\": \"Y\"\n    },\n    \"itemList\": [\n      {\n        \"itemSeq\": 1,\n        \"itemCd\": \"RW2NTU0000642\",\n        \"itemClsCd\": \"8014160101\",\n        \"itemNm\": \"TOLE PL 2 44X1 22X10\",\n        \"taxTyCd\": \"B\",\n        \"qty\": 2,\n        \"prc\": 1000,\n        \"splyAmt\": 2000,\n        \"taxblAmt\": 2000,\n        \"taxAmt\": 305.08,\n        \"totAmt\": 2000,\n        \"pkg\": 1,\n        \"pkgUnitCd\": \"NT\",\n        \"qtyUnitCd\": \"U\",\n        \"dcRt\": 0,\n        \"dcAmt\": 0,\n        \"totDcAmt\": 0\n      }\n    ],\n    \"regrId\": \"1\",\n    \"regrNm\": \"Kayko\",\n    \"modrId\": \"1\",\n    \"modrNm\": \"Kayko\"\n  }),\n}).then(r => r.json());"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n$response = vsdcPost('/trnsSales/saveSales', [\n    'tin' => '100027060',\n    'bhfId' => '00',\n    'invcNo' => '1799',\n    'orgInvcNo' => '1799',\n    'cfmDt' => '20260303145619',\n    'salesDt' => '20260303',\n    'salesTyCd' => 'N',\n    'rcptTyCd' => 'S',\n    'pmtTyCd' => '02',\n    'salesSttsCd' => '02',\n    'prchrAcptcYn' => 'Y',\n    'custNm' => 'RULIBA CLAYS LTD',\n    'custTin' => '100004527',\n    'totItemCnt' => 1,\n    'taxRtA' => 0,\n    'taxRtB' => 18,\n    'taxRtC' => 0,\n    'taxRtD' => 0,\n    'taxblAmtA' => 0,\n    'taxblAmtB' => 2000,\n    'taxblAmtC' => 0,\n    'taxblAmtD' => 0,\n    'taxAmtA' => 0,\n    'taxAmtB' => 305.08,\n    'taxAmtC' => 0,\n    'taxAmtD' => 0,\n    'totTaxblAmt' => 2000,\n    'totTaxAmt' => 305.08,\n    'totAmt' => 2000,\n    'receipt' => [\n        'rptNo' => '1799',\n        'custTin' => '100004527',\n        'trdeNm' => 'RULIBACLAYSLTD',\n        'topMsg' => 'SONATUBES Ltd\nADDRESS KIGALI\nTIN 100027060',\n        'btmMsg' => 'Kayko v.2.3.11',\n        'prchrAcptcYn' => 'Y'\n    ],\n    'itemList' => [\n        [\n            'itemSeq' => 1,\n            'itemCd' => 'RW2NTU0000642',\n            'itemClsCd' => '8014160101',\n            'itemNm' => 'TOLE PL 2 44X1 22X10',\n            'taxTyCd' => 'B',\n            'qty' => 2,\n            'prc' => 1000,\n            'splyAmt' => 2000,\n            'taxblAmt' => 2000,\n            'taxAmt' => 305.08,\n            'totAmt' => 2000,\n            'pkg' => 1,\n            'pkgUnitCd' => 'NT',\n            'qtyUnitCd' => 'U',\n            'dcRt' => 0,\n            'dcAmt' => 0,\n            'totDcAmt' => 0\n        ]\n    ],\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'modrId' => '1',\n    'modrNm' => 'Kayko'\n]);"
+          },
+          {
+            "lang": "json",
+            "label": "Payload",
+            "source": "{\n  \"tin\": \"100027060\",\n  \"bhfId\": \"00\",\n  \"invcNo\": \"1799\",\n  \"orgInvcNo\": \"1799\",\n  \"cfmDt\": \"20260303145619\",\n  \"salesDt\": \"20260303\",\n  \"salesTyCd\": \"N\",\n  \"rcptTyCd\": \"S\",\n  \"pmtTyCd\": \"02\",\n  \"salesSttsCd\": \"02\",\n  \"prchrAcptcYn\": \"Y\",\n  \"custNm\": \"RULIBA CLAYS LTD\",\n  \"custTin\": \"100004527\",\n  \"totItemCnt\": 1,\n  \"taxRtA\": 0,\n  \"taxRtB\": 18,\n  \"taxRtC\": 0,\n  \"taxRtD\": 0,\n  \"taxblAmtA\": 0,\n  \"taxblAmtB\": 2000,\n  \"taxblAmtC\": 0,\n  \"taxblAmtD\": 0,\n  \"taxAmtA\": 0,\n  \"taxAmtB\": 305.08,\n  \"taxAmtC\": 0,\n  \"taxAmtD\": 0,\n  \"totTaxblAmt\": 2000,\n  \"totTaxAmt\": 305.08,\n  \"totAmt\": 2000,\n  \"receipt\": {\n    \"rptNo\": \"1799\",\n    \"custTin\": \"100004527\",\n    \"trdeNm\": \"RULIBACLAYSLTD\",\n    \"topMsg\": \"SONATUBES Ltd\\nADDRESS KIGALI\\nTIN 100027060\",\n    \"btmMsg\": \"Kayko v.2.3.11\",\n    \"prchrAcptcYn\": \"Y\"\n  },\n  \"itemList\": [\n    {\n      \"itemSeq\": 1,\n      \"itemCd\": \"RW2NTU0000642\",\n      \"itemClsCd\": \"8014160101\",\n      \"itemNm\": \"TOLE PL 2 44X1 22X10\",\n      \"taxTyCd\": \"B\",\n      \"qty\": 2,\n      \"prc\": 1000,\n      \"splyAmt\": 2000,\n      \"taxblAmt\": 2000,\n      \"taxAmt\": 305.08,\n      \"totAmt\": 2000,\n      \"pkg\": 1,\n      \"pkgUnitCd\": \"NT\",\n      \"qtyUnitCd\": \"U\",\n      \"dcRt\": 0,\n      \"dcAmt\": 0,\n      \"totDcAmt\": 0\n    }\n  ],\n  \"regrId\": \"1\",\n  \"regrNm\": \"Kayko\",\n  \"modrId\": \"1\",\n  \"modrNm\": \"Kayko\"\n}"
+          }
+        ]
+      }
+    }
+  }
+}

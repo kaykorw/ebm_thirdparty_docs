@@ -1,0 +1,236 @@
+---
+title: Purchases
+description: Pull supplier invoices and confirm purchases.
+icon: cart-shopping
+---
+
+<Note>
+  For the full buyer workflow, see [Purchases Workflow](/workflows/purchases).
+</Note>
+
+---
+
+## Get purchases
+
+Pull sales transactions registered to your TIN that haven't been confirmed yet.
+
+`POST /trnsPurchase/selectTrnsPurchaseSales`
+
+<ParamField body="tin" type="string" required>Your TIN (as the buyer)</ParamField>
+<ParamField body="bhfId" type="string" required>Your branch ID</ParamField>
+<ParamField body="lastReqDt" type="string" required>Sync cursor</ParamField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/trnsPurchase/selectTrnsPurchaseSales" \
+  -H "Content-Type: application/json" \
+  -d '{"tin":"999958074","bhfId":"00","lastReqDt":"20240706204443"}'
+```
+
+```javascript JavaScript
+const { data } = await vsdcPost('/trnsPurchase/selectTrnsPurchaseSales', {
+  tin: '999958074', bhfId: '00', lastReqDt: '20240706204443',
+});
+// data.saleList → unconfirmed supplier invoices
+```
+
+```php PHP
+<?php
+$result = vsdcPost('/trnsPurchase/selectTrnsPurchaseSales', [
+    'tin' => '999958074', 'bhfId' => '00', 'lastReqDt' => '20240706204443',
+]);
+```
+
+```json Payload
+{
+  "tin": "999958074",
+  "bhfId": "00",
+  "lastReqDt": "20240706204443"
+}
+```
+
+</CodeGroup>
+
+---
+
+## Save purchase
+
+Confirm a purchase transaction.
+
+`POST /trnsPurchase/savePurchases`
+
+<ParamField body="invcNo" type="number" required>Your purchase invoice number</ParamField>
+<ParamField body="orgInvcNo" type="number" required>Original invoice number</ParamField>
+<ParamField body="spplrTin" type="string">Supplier TIN</ParamField>
+<ParamField body="spplrNm" type="string">Supplier name</ParamField>
+<ParamField body="spplrInvcNo" type="string">Supplier's invoice number</ParamField>
+<ParamField body="regTyCd" type="string" required>`"A"` Automatic or `"M"` Manual</ParamField>
+<ParamField body="pchsTyCd" type="string" required>`"N"` Normal</ParamField>
+<ParamField body="rcptTyCd" type="string" required>`"P"` Purchase or `"R"` Refund</ParamField>
+<ParamField body="pmtTyCd" type="string" required>Payment method code</ParamField>
+<ParamField body="pchsSttsCd" type="string" required>`"02"` Approved</ParamField>
+<ParamField body="pchsDt" type="string" required>Purchase date (`yyyyMMdd`)</ParamField>
+<ParamField body="itemList" type="array" required>Line items with your `itemCd` mapped</ParamField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/trnsPurchase/savePurchases" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tin": "999958074",
+    "bhfId": "00",
+    "invcNo": 18,
+    "orgInvcNo": 18,
+    "spplrTin": "105418285",
+    "spplrNm": "SUNDOWNER Ltd",
+    "spplrInvcNo": "17",
+    "regTyCd": "A",
+    "pchsTyCd": "N",
+    "rcptTyCd": "N",
+    "pmtTyCd": "01",
+    "pchsSttsCd": "02",
+    "cfmDt": "20240706165014",
+    "pchsDt": "20200303",
+    "totItemCnt": 2,
+    "taxblAmtB": 8000,
+    "taxRtB": 18,
+    "taxAmtB": 1220.34,
+    "totTaxblAmt": 8000,
+    "totTaxAmt": 1220.34,
+    "totAmt": 8000,
+    "itemList": [{
+      "itemSeq": 1,
+      "itemCd": "RW2BQL0000003",
+      "itemClsCd": "4111363900",
+      "itemNm": "Water Jibu 2",
+      "spplrItemCd": "RW3NTXNOX0000006",
+      "spplrItemNm": "Buffet",
+      "qty": 2, "prc": 100,
+      "taxTyCd": "B",
+      "taxblAmt": 7000, "taxAmt": 2135.59, "totAmt": 7000,
+      "pkg": 1, "pkgUnitCd": "BQ", "qtyUnitCd": "L"
+    }],
+    "regrId": "1", "regrNm": "Kayko",
+    "modrId": "1", "modrNm": "Kayko"
+  }'
+```
+
+```javascript JavaScript
+await vsdcPost('/trnsPurchase/savePurchases', {
+  tin: '999958074', bhfId: '00',
+  invcNo: 18, orgInvcNo: 18,
+  spplrTin: '105418285', spplrNm: 'SUNDOWNER Ltd',
+  spplrInvcNo: '17',
+  regTyCd: 'A', pchsTyCd: 'N', pchsSttsCd: '02',
+  pchsDt: '20200303',
+  totItemCnt: 2,
+  taxblAmtB: 8000, taxRtB: 18, taxAmtB: 1220.34,
+  totTaxblAmt: 8000, totTaxAmt: 1220.34, totAmt: 8000,
+  itemList: [/* mapped items */],
+  regrId: '1', regrNm: 'Kayko',
+  modrId: '1', modrNm: 'Kayko',
+});
+```
+
+```php PHP
+<?php
+vsdcPost('/trnsPurchase/savePurchases', $purchasePayload);
+```
+
+```json Payload
+{
+  "tin": "999958074",
+  "bhfId": "00",
+  "invcNo": 18,
+  "orgInvcNo": 18,
+  "spplrTin": "105418285",
+  "spplrNm": "SUNDOWNER Ltd",
+  "spplrInvcNo": "17",
+  "regTyCd": "A",
+  "pchsTyCd": "N",
+  "rcptTyCd": "N",
+  "pmtTyCd": "01",
+  "pchsSttsCd": "02",
+  "cfmDt": "20240706165014",
+  "pchsDt": "20200303",
+  "wrhsDt": "20240706165014",
+  "cnclReqDt": null,
+  "cnclDt": null,
+  "rfdDt": null,
+  "totItemCnt": 2,
+  "taxblAmtA": 0,
+  "taxblAmtB": 8000,
+  "taxblAmtC": 0,
+  "taxblAmtD": 0,
+  "taxRtA": 0,
+  "taxRtB": 18,
+  "taxRtC": 0,
+  "taxRtD": 0,
+  "taxAmtA": 0,
+  "taxAmtB": 1220.34,
+  "taxAmtC": 0,
+  "taxAmtD": 0,
+  "totTaxblAmt": 8000,
+  "totTaxAmt": 1220.34,
+  "totAmt": 8000,
+  "remark": null,
+  "modrId": "1",
+  "modrNm": "Kayko",
+  "regrId": "1",
+  "regrNm": "Kayko",
+  "itemList": [
+    {
+      "itemSeq": 1,
+      "itemCd": "RW2BQL0000003",
+      "itemClsCd": "4111363900",
+      "itemNm": "Water Jibu 2",
+      "bcd": null,
+      "spplrItemClsCd": "5012161100",
+      "spplrItemCd": "RW3NTXNOX0000006",
+      "spplrItemNm": "Buffet",
+      "pkgUnitCd": "BQ",
+      "pkg": 1,
+      "qtyUnitCd": "L",
+      "qty": 2,
+      "prc": 100,
+      "splyAmt": 100,
+      "dcRt": 0,
+      "dcAmt": 0,
+      "totDcAmt": 0,
+      "taxTyCd": "B",
+      "taxblAmt": 7000,
+      "taxAmt": "2135.59",
+      "totAmt": 7000,
+      "itemExprDt": null
+    },
+    {
+      "itemSeq": 2,
+      "itemCd": "RW2BQL0000003",
+      "itemClsCd": "4111363900",
+      "itemNm": "Water Jibu 2",
+      "bcd": null,
+      "spplrItemClsCd": "5020220100",
+      "spplrItemCd": "RW2BCXU0000001",
+      "spplrItemNm": "Fanta 33 Cl",
+      "pkgUnitCd": "BQ",
+      "pkg": 1,
+      "qtyUnitCd": "L",
+      "qty": 2,
+      "prc": 100,
+      "splyAmt": 100,
+      "dcRt": 0,
+      "dcAmt": 0,
+      "totDcAmt": 0,
+      "taxTyCd": "B",
+      "taxblAmt": 1000,
+      "taxAmt": "305.08",
+      "totAmt": 1000,
+      "itemExprDt": null
+    }
+  ]
+}
+```
+
+</CodeGroup>

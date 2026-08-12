@@ -1,0 +1,119 @@
+---
+title: Invoice Total Aggregation
+description: How header-level taxblAmt, taxAmt, and totAmt fields are summed from line items.
+icon: file-invoice
+---
+
+VSDC requires **duplicate accounting**- every amount appears at the line level in `itemList[]` and again at the header level. Header values must be the **exact sum** of their line counterparts.
+
+## Header tax fields
+
+Sales (`saveSales`), purchases (`savePurchases`), and stock (`saveStockItems`) all use the same tax aggregation pattern:
+
+| Header field | Meaning |
+|--------------|---------|
+| `taxblAmtA` | Sum of `taxblAmt` for lines with `taxTyCd = "A"` |
+| `taxblAmtB` | Sum of `taxblAmt` for lines with `taxTyCd = "B"` |
+| `taxblAmtC` | Sum of `taxblAmt` for lines with `taxTyCd = "C"` |
+| `taxblAmtD` | Sum of `taxblAmt` for lines with `taxTyCd = "D"` |
+| `taxRtA`–`D` | Tax rate per category (0, 18, 0, 0 typically) |
+| `taxAmtA`–`D` | Sum of `taxAmt` for lines in each category |
+| `totTaxblAmt` | Sum of all `taxblAmt*` fields |
+| `totTaxAmt` | Sum of all `taxAmt*` fields |
+| `totAmt` | Grand total- sum of all line `totAmt` values |
+| `totItemCnt` | Number of lines in `itemList` |
+
+## Aggregation formulas
+
+```
+taxblAmtX = Σ line.taxblAmt  where line.taxTyCd = X   (X ∈ {A, B, C, D})
+taxAmtX   = Σ line.taxAmt    where line.taxTyCd = X
+
+totTaxblAmt = taxblAmtA + taxblAmtB + taxblAmtC + taxblAmtD
+totTaxAmt   = taxAmtA + taxAmtB + taxAmtC + taxAmtD
+totAmt      = Σ line.totAmt
+```
+
+<Note>
+  Round each line's `taxAmt` to 2 decimal places **before** summing into `taxAmtB`. Do not sum unrounded values and round only the header.
+</Note>
+
+## Worked example- two-line purchase
+
+From the purchase example payload:
+
+**Line 1** (`taxTyCd: "B"`):
+
+| Field | Value |
+|-------|-------|
+| `taxblAmt` | 7,000.00 |
+| `taxAmt` | 2,135.59 |
+| `totAmt` | 7,000.00 |
+
+**Line 2** (`taxTyCd: "B"`):
+
+| Field | Value |
+|-------|-------|
+| `taxblAmt` | 1,000.00 |
+| `taxAmt` | 305.08 |
+| `totAmt` | 1,000.00 |
+
+**Header (computed):**
+
+| Field | Formula | Value |
+|-------|---------|-------|
+| `taxblAmtB` | 7000 + 1000 | 8,000.00 |
+| `taxAmtB` | 2135.59 + 305.08 | 2,440.67 |
+| `totTaxblAmt` | 8000 | 8,000.00 |
+| `totTaxAmt` | 2440.67 | 2,440.67 |
+| `totAmt` | 7000 + 1000 | 8,000.00 |
+| `totItemCnt` | 2 lines | 2 |
+
+Verification of line 1 VAT: `7000 × 18/118 = 1067.80`- note that purchase lines pulled from suppliers may carry supplier-reported `taxblAmt` values that differ from `prc × qty`. Always use the **actual taxable amount** on the document.
+
+## Consistency checks
+
+Run these checks before every API call:
+
+```
+assert taxblAmtB === sum(lines.filter(l => l.taxTyCd === 'B').map(l => l.taxblAmt))
+assert taxAmtB   === sum(lines.filter(l => l.taxTyCd === 'B').map(l => l.taxAmt))
+assert totAmt    === sum(lines.map(l => l.totAmt))
+assert totTaxblAmt === taxblAmtA + taxblAmtB + taxblAmtC + taxblAmtD
+assert totTaxAmt   === taxAmtA + taxAmtB + taxAmtC + taxAmtD
+assert totItemCnt  === itemList.length
+```
+
+## JavaScript aggregation helper
+
+```javascript
+function aggregateTax(lines) {
+  const cats = ['A', 'B', 'C', 'D'];
+  const result = {};
+
+  for (const cat of cats) {
+    const catLines = lines.filter(l => l.taxTyCd === cat);
+    result[`taxblAmt${cat}`] = round2(catLines.reduce((s, l) => s + l.taxblAmt, 0));
+    result[`taxAmt${cat}`]   = round2(catLines.reduce((s, l) => s + l.taxAmt, 0));
+    result[`taxRt${cat}`]    = cat === 'B' ? 18 : 0;
+  }
+
+  result.totTaxblAmt = round2(cats.reduce((s, c) => s + result[`taxblAmt${c}`], 0));
+  result.totTaxAmt   = round2(cats.reduce((s, c) => s + result[`taxAmt${c}`], 0));
+  result.totAmt      = round2(lines.reduce((s, l) => s + l.totAmt, 0));
+  result.totItemCnt  = lines.length;
+
+  return result;
+}
+
+function round2(n) { return Math.round(n * 100) / 100; }
+```
+
+## What happens when totals mismatch
+
+| Symptom | Likely cause |
+|---------|--------------|
+| `resultCd: 910` | Header `taxAmtB` ≠ sum of line `taxAmt` |
+| `resultCd: 910` | `totAmt` ≠ sum of line `totAmt` |
+| `resultCd: 910` | `totItemCnt` ≠ `itemList.length` |
+| `resultCd: 910` | Line `taxTyCd: "B"` but amounts in wrong header category |

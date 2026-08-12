@@ -1,0 +1,54 @@
+---
+title: Specification Changelog
+description: Document revision history from the official RRA VSDC specification.
+icon: clock-rotate-left
+---
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| **1.0.1** | 01/10/2021 | RRA | Initial VSDC specification document |
+| **1.0.2** | 01/02/2022 | RRA | Minor enhancement of the document |
+| **1.0.3** | 01/03/2022 | RRA | Minor enhancement of the document |
+| **1.0.4** | 08/04/2022 | RRA | Minor enhancement of the document |
+| **1.0.5** | 16/05/2023 | RRA | See breakdown below |
+
+## Kayko documentation updates
+
+| Date | Changes |
+|------|---------|
+| 2026-08 | Documented Kayko business API keys: dashboard **Settings → Enable EBM → Generate API key**, request headers (`Authorization: Bearer` / `x-api-key`), scopes, IP allowlist, and OpenAPI security schemes. New page: [API Keys & Authentication](/concepts/api-keys). |
+
+## v1.0.5 changes (May 2023)
+
+This is the latest official revision. Three substantive changes:
+
+### 1. Sales- new `prcOrdCd` field
+
+Added to **3.3.6.1 Sales Transaction save request** (`POST /trnsSales/saveSales`):
+
+| Field | Type | Required | Length | Notes |
+|-------|------|----------|--------|-------|
+| `prcOrdCd` | CHAR | Conditional | 6 | **Mandatory for business customers** (buyers with a TIN). Optional for individual/walk-in customers. |
+
+Related new error codes: `881`, `882`, `883`, `884`.
+
+### 2. Purchases- new `prcOrdCd` field
+
+Added to **3.3.7.1 Purchase Transaction Select Request** (`POST /trnsPurchase/selectTrnsPurchaseSales`):
+
+| Field | Type | Required | Length | Notes |
+|-------|------|----------|--------|-------|
+| `prcOrdCd` | CHAR | Conditional | 6 | Returned on purchase pull when supplier provided it. Same business/individual rules apply. |
+
+### 3. New API response codes
+
+Four codes added to **Section 4.14**:
+
+| Code | System | Description |
+|------|--------|-------------|
+| `881` | Client | Purchase is mandatory |
+| `882` | Client | Purchase code is invalid |
+| `883` | Client | Purchase already used |
+| `884` | Client | Invalid customer TIN was provided |
+
+See [Response Codes](/reference/response-codes) for the complete list.

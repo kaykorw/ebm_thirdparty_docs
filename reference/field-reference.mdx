@@ -1,0 +1,542 @@
+---
+title: Complete Field Reference
+description: Exhaustive request and response field tables from the official RRA VSDC v1.0.5 specification.
+icon: table-columns
+---
+
+<Note>
+  Field names in this reference match the JSON API schema. On `saveItems`, `itemCd` is the item code (20 chars) and `itemClsCd` is the classification code (10 chars).
+</Note>
+
+---
+
+## Initialization {#initialization}
+
+### `POST /initializer/selectInitInfo`- Request (`InitInfoReq`)
+
+| Field | Type | Required | Max Len | Format / Notes |
+|-------|------|----------|---------|----------------|
+| `tin` | CHAR | Y | 9 | Taxpayer TIN |
+| `bhfId` | CHAR | Y | 2 | Branch ID (`"00"` = head office) |
+| `dvcSrlNo` | CHAR | Y | 100 | Device serial number |
+
+### Response (`InitInfoRes`)- `data.info`
+
+| Field | Type | Max Len | Description |
+|-------|------|---------|-------------|
+| `tin` | CHAR | 9 | Taxpayer TIN |
+| `taxprNm` | CHAR | 60 | Taxpayer name |
+| `bsnsActv` | CHAR | 100 | Business activity |
+| `bhfId` | CHAR | 2 | Branch office ID |
+| `bhfNm` | CHAR | 60 | Branch office name |
+| `bhfOpenDt` | CHAR | 8 | Branch creation date (`yyyyMMdd`) |
+| `prvncNm` | CHAR | 100 | Province |
+| `dstrtNm` | CHAR | 100 | District |
+| `sctrNm` | CHAR | 100 | Sector |
+| `locDesc` | CHAR | 100 | Location description |
+| `hqYn` | CHAR | 1 | Head office flag (`Y`/`N`) |
+| `mgrNm` | CHAR | 60 | Manager name |
+| `mgrTelNo` | CHAR | 20 | Manager phone |
+| `mgrEmail` | CHAR | 50 | Manager email |
+| `dvcId` | CHAR | 20 | Device ID |
+| `sdcId` | CHAR | 12 | SDC ID |
+| `mrcNo` | CHAR | 11 | MRC number |
+| `intrlKey` | CHAR | 255 | Internal signing key |
+| `signKey` | CHAR | 255 | Signature key |
+| `cmcKey` | CHAR | 255 | Communication key |
+| `lastSaleInvcNo` | NUMBER | 38 | Last sale invoice number |
+| `lastPchsInvcNo` | NUMBER | 38 | Last purchase invoice number |
+| `lastSaleRcptNo` | NUMBER | 38 | Last sale receipt number |
+| `lastInvcNo` | NUMBER | 38 | Last CIS invoice number |
+| `lastTrainInvcNo` | NUMBER | 38 | Last training invoice number |
+| `lastProfrmInvcNo` | NUMBER | 38 | Last proforma invoice number |
+| `lastCopyInvcNo` | NUMBER | 38 | Last copy invoice number |
+
+---
+
+## Reference Data {#reference-data}
+
+### `POST /code/selectCodes`- Request (`CodeReq`)
+
+| Field | Type | Required | Max Len |
+|-------|------|----------|---------|
+| `tin` | CHAR | Y | 9 |
+| `bhfId` | CHAR | Y | 2 |
+| `lastReqDt` | CHAR | Y | 14 | `yyyyMMddHHmmss` |
+
+### Response (`CodeRes`)- `data.clsList[]`
+
+| Field | Type | Max Len | Description |
+|-------|------|---------|-------------|
+| `cdCls` | CHAR | 2 | Code class ID |
+| `cdClsNm` | CHAR | 60 | Code class name |
+| `cdClsDesc` | CHAR | 500 | Code class description |
+| `userDfnNm1` | CHAR | 60 | User-defined name 1 |
+| `userDfnNm2` | CHAR | 60 | User-defined name 2 |
+| `userDfnNm3` | CHAR | 60 | User-defined name 3 |
+| `useYn` | CHAR | 1 | Active flag |
+| `dtlList[].cd` | CHAR | 5 | Code value |
+| `dtlList[].cdNm` | CHAR | 60 | Code name |
+| `dtlList[].cdDesc` | CHAR | 500 | Code description |
+| `dtlList[].srtOrd` | NUMBER | 5 | Sort order |
+| `dtlList[].userDfnCd1` | CHAR | 20 | User-defined code 1 (e.g. tax rate for tax types) |
+| `dtlList[].userDfnCd2` | CHAR | 20 | User-defined code 2 |
+| `dtlList[].userDfnCd3` | CHAR | 20 | User-defined code 3 |
+| `dtlList[].useYn` | CHAR | 1 | Active flag |
+
+### `POST /itemClass/selectItemsClass`- Response `data.itemClsList[]`
+
+| Field | Type | Max Len | Notes |
+|-------|------|---------|-------|
+| `itemClsCd` | CHAR | 10 | Classification code |
+| `itemClsNm` | CHAR | 200 | Classification name |
+| `itemClsLvl` | NUMBER |- | Hierarchy level |
+| `taxTyCd` | CHAR | 5 | Default tax type- see [Tax Type](/reference/enumerations#tax-type) |
+| `mjrTgYn` | CHAR | 1 | Major target flag |
+| `useYn` | CHAR | 1 | Active flag |
+
+### `POST /customers/selectCustomer`- Request (`CustReq`)
+
+| Field | Type | Required | Max Len |
+|-------|------|----------|---------|
+| `tin` | CHAR | Y | 9 |
+| `bhfId` | CHAR | Y | 2 |
+| `custmTin` | CHAR | Y | 9 | Customer TIN to look up |
+
+### Response `data.custList[]`
+
+| Field | Type | Max Len | Notes |
+|-------|------|---------|-------|
+| `tin` | CHAR | 9 | Customer TIN |
+| `taxprNm` | CHAR | 60 | Customer name |
+| `taxprSttsCd` | CHAR | 5 | Status- see [Taxpayer Status](/reference/enumerations#taxpayer-status) |
+| `prvncNm` | CHAR | 100 | Province |
+| `dstrtNm` | CHAR | 100 | District |
+| `sctrNm` | CHAR | 100 | Sector |
+| `locDesc` | CHAR |- | Location description |
+
+### `POST /branches/selectBranches`- Request (`BhfReq`)
+
+| Field | Type | Required | Max Len |
+|-------|------|----------|---------|
+| `tin` | CHAR | Y | 9 |
+| `bhfId` | CHAR | Y | 2 |
+| `lastReqDt` | CHAR | Y | 14 |
+| `startPageIndex` | CHAR | N |- | Pagination start |
+| `endPageIndex` | CHAR | N |- | Pagination end |
+
+### Response `data.bhfList[]`
+
+| Field | Type | Max Len |
+|-------|------|---------|
+| `tin` | CHAR | 9 |
+| `bhfId` | CHAR | 2 |
+| `bhfNm` | CHAR | 60 |
+| `bhfSttsCd` | CHAR | 5 |
+| `prvncNm` | CHAR | 100 |
+| `dstrtNm` | CHAR | 100 |
+| `sctrNm` | CHAR | 100 |
+| `locDesc` | CHAR | 100 |
+| `mgrNm` | CHAR | 60 |
+| `mgrTelNo` | CHAR | 20 |
+| `mgrEmail` | CHAR | 100 |
+| `hqYn` | CHAR | 1 |
+
+### `POST /notices/selectNotices`- Response `data.noticeList[]`
+
+| Field | Type | Max Len |
+|-------|------|---------|
+| `noticeNo` | NUMBER |- |
+| `title` | CHAR | 1000 |
+| `cont` | CHAR | 4000 |
+| `dtlUrl` | CHAR | 200 |
+| `regrNm` | CHAR | 60 |
+| `regDt` | CHAR | 14 |
+
+---
+
+## Branches {#branches}
+
+### `POST /branches/saveBrancheCustomers`- Request (`BhfCustSaveReq`)
+
+| Field | Type | Required | Max Len |
+|-------|------|----------|---------|
+| `tin` | CHAR | Y | 9 |
+| `bhfId` | CHAR | Y | 2 |
+| `custNo` | CHAR | Y | 9 |
+| `custTin` | CHAR | Y | 9 |
+| `custNm` | CHAR | Y | 60 |
+| `adrs` | CHAR | N | 300 |
+| `telNo` | CHAR | N | 20 |
+| `email` | CHAR | N | 50 |
+| `faxNo` | CHAR | N | 20 |
+| `useYn` | CHAR | Y | 1 |
+| `remark` | CHAR | N | 1000 |
+| `regrNm` | CHAR | Y | 60 |
+| `regrId` | CHAR | Y | 20 |
+| `modrNm` | CHAR | Y | 60 |
+| `modrId` | CHAR | Y | 20 |
+
+### `POST /branches/saveBrancheUsers`- Request (`BhfUserSaveReq`)
+
+| Field | Type | Required | Max Len |
+|-------|------|----------|---------|
+| `tin` | CHAR | Y | 9 |
+| `bhfId` | CHAR | Y | 2 |
+| `userId` | CHAR | Y | 20 |
+| `userNm` | CHAR | Y | 60 |
+| `pwd` | CHAR | Y | 255 |
+| `adrs` | CHAR | N | 200 |
+| `cntc` | CHAR | N | 20 |
+| `authCd` | CHAR | N | 100 |
+| `remark` | CHAR | N | 2000 |
+| `useYn` | CHAR | Y | 1 |
+| `regrNm/Id` | CHAR | Y | 60/20 |
+| `modrNm/Id` | CHAR | Y | 60/20 |
+
+### `POST /branches/saveBrancheInsurances`- Request (`BhfInsuranceSaveReq`)
+
+| Field | Type | Required | Max Len | Notes |
+|-------|------|----------|---------|-------|
+| `tin` | CHAR | Y | 9 | |
+| `bhfId` | CHAR | Y | 2 | |
+| `isrccCd` | CHAR | Y | 10 | Insurance company code |
+| `isrccNm` | CHAR | Y | 100 | Insurance company name |
+| `isrcRt` | NUMBER | Y | 3 | Premium rate % |
+| `useYn` | CHAR | Y | 1 | Pharmacy only |
+
+---
+
+## Items {#items}
+
+### `POST /items/saveItems`- Request (`ItemSaveReq`)
+
+| Field | Type | Required | Max Len | Format |
+|-------|------|----------|---------|--------|
+| `tin` | CHAR | Y | 9 | |
+| `bhfId` | CHAR | Y | 2 | |
+| `itemCd` | CHAR | Y | 20 | See [item code format](/api/items#item-code-format) |
+| `itemClsCd` | CHAR | Y | 10 | From `/itemClass/selectItemsClass` |
+| `itemTyCd` | CHAR | Y | 5 | [Product Type](/reference/enumerations#product-type) |
+| `itemNm` | CHAR | Y | 200 | |
+| `itemStdNm` | CHAR | N | 200 | Standard name |
+| `orgnNatCd` | CHAR | Y | 5 | [Country code](/reference/country-codes) |
+| `pkgUnitCd` | CHAR | Y | 5 | [Packaging unit](/reference/enumerations#packaging-unit-full-list) |
+| `qtyUnitCd` | CHAR | Y | 5 | [Quantity unit](/reference/enumerations#unit-of-quantity-full-list) |
+| `taxTyCd` | CHAR | Y | 5 | [Tax type](/reference/enumerations#tax-type) |
+| `btchNo` | CHAR | N | 10 | Batch number |
+| `bcd` | CHAR | N | 20 | Barcode |
+| `dftPrc` | NUMBER | Y | 18,2 | Default unit price |
+| `grpPrcL1`–`L5` | NUMBER | N | 18,2 | Group price levels 1–5 |
+| `addInfo` | CHAR | N | 7 | Additional info |
+| `sftyQty` | NUMBER | N | 13,2 | Safety stock quantity |
+| `isrcAplcbYn` | CHAR | Y | 1 | Insurance applicable |
+| `useYn` | CHAR | Y | 1 | |
+| `regrNm/Id` | CHAR | Y | 60/20 | |
+| `modrNm/Id` | CHAR | Y | 60/20 | |
+
+### `POST /items/selectItems`- Response `data.itemList[]`
+
+All save fields plus:
+
+| Field | Type | Max Len | Notes |
+|-------|------|---------|-------|
+| `regBhfId` | CHAR | 2 | Branch that registered the item |
+| `rraModYn` | CHAR | 1 | RRA modified classification flag |
+
+### `POST /items/saveItemComposition`- Request (`ItemCpstSaveReq`)
+
+| Field | Type | Required | Max Len |
+|-------|------|----------|---------|
+| `tin` | CHAR | Y | 9 |
+| `bhfId` | CHAR | Y | 2 |
+| `itemCd` | CHAR | Y | 20 | Parent item |
+| `cpstItemCd` | CHAR | Y | 20 | Component item |
+| `cpstQty` | NUMBER | Y |- | Component quantity |
+| `regrNm` | CHAR | Y | 60 |
+| `regrId` | CHAR | Y | 20 |
+
+<Note>
+  Item composition is stored for backup/restoration only. It cannot be queried back from the server.
+</Note>
+
+---
+
+## Imports {#imports}
+
+### `POST /imports/selectImportItems`- Response `data.itemList[]`
+
+| Field | Type | Max Len | Notes |
+|-------|------|---------|-------|
+| `taskCd` | CHAR | 50 | Customs task code |
+| `dclDe` | CHAR | 8 | Declaration date |
+| `itemSeq` | NUMBER | 10 | Item sequence |
+| `dclNo` | CHAR | 50 | Declaration number |
+| `hsCd` | CHAR | 17 | HS tariff code |
+| `itemNm` | CHAR | 500 | Declared item name |
+| `imptItemsttsCd` | CHAR | 5 | [Import status](/reference/enumerations#import-item-status) |
+| `orgnNatCd` | CHAR | 5 | Origin nation |
+| `exptNatCd` | CHAR | 5 | Export nation |
+| `pkg` | NUMBER | 13,2 | Package count |
+| `pkgUnitCd` | CHAR | 5 | Packaging unit |
+| `qty` | NUMBER | 13,2 | Quantity |
+| `qtyUnitCd` | CHAR | 5 | Quantity unit |
+| `totWt` | NUMBER | 13,2 | Gross weight |
+| `netWt` | NUMBER | 13,2 | Net weight |
+| `spplrNm` | CHAR | 500 | Supplier name |
+| `agntNm` | CHAR | 500 | Agent name |
+| `invcFcurAmt` | NUMBER | 18,2 | Foreign currency amount |
+| `invcFcurCd` | CHAR | 5 | [Currency](/reference/currency-codes) |
+| `invcFcurExcrt` | NUMBER | 18,2 | Exchange rate |
+
+### `POST /imports/updateImportItems`- Request (`ImptItemSaveReq`)
+
+| Field | Type | Required | Max Len |
+|-------|------|----------|---------|
+| `tin` | CHAR | Y | 9 |
+| `bhfId` | CHAR | Y | 2 |
+| `taskCd` | CHAR | Y | 50 |
+| `dclDe` | CHAR | Y | 8 |
+| `itemSeq` | NUMBER | Y | 10 |
+| `hsCd` | CHAR | Y | 17 |
+| `itemClsCd` | CHAR | Y | 10 |
+| `itemCd` | CHAR | Y | 20 |
+| `imptItemSttsCd` | CHAR | Y | 5 |
+| `remark` | CHAR | N | 400 |
+| `modrNm` | CHAR | Y | 60 |
+| `modrId` | CHAR | Y | 20 |
+
+---
+
+## Sales {#sales}
+
+### `POST /trnsSales/saveSales`- Request (`TrnsSalesSaveReq`)
+
+| Field | Type | Required | Max Len | Format |
+|-------|------|----------|---------|--------|
+| `tin` | CHAR | Y | 9 | |
+| `bhfId` | CHAR | Y | 2 | |
+| `invcNo` | NUMBER | Y | 38 | |
+| `orgInvcNo` | NUMBER | Y | 38 | Original invoice (for refunds) |
+| `custTin` | CHAR | N | 9 | |
+| `custNm` | CHAR | N | 60 | |
+| `custPhone` | CHAR | N | 20 | |
+| `prcOrdCd` | CHAR | Y* | 6 | *Required for business customers (v1.0.5) |
+| `salesTyCd` | CHAR | Y | 5 | Send only `"N"` for normal- [Transaction Type](/reference/enumerations#transaction-type) |
+| `rcptTyCd` | CHAR | Y | 5 | [Sales Receipt Type](/reference/enumerations#sales-receipt-type) |
+| `pmtTyCd` | CHAR | N | 5 | [Payment Method](/reference/enumerations#payment-method) |
+| `salesSttsCd` | CHAR | Y | 5 | [Transaction Progress](/reference/enumerations#transaction-progress) |
+| `cfmDt` | CHAR | Y | 14 | `yyyyMMddHHmmss` |
+| `salesDt` | CHAR | Y | 8 | `yyyyMMdd` |
+| `stockRlsDt` | CHAR | N | 14 | `yyyyMMddHHmmss` |
+| `cnclReqDt` | CHAR | N | 14 | |
+| `cnclDt` | CHAR | N | 14 | |
+| `rfdDt` | CHAR | N | 14 | |
+| `rfdRsnCd` | CHAR | N | 5 | [Refund Reason](/reference/enumerations#refund-reason-code) |
+| `totItemCnt` | NUMBER | Y | 10 | |
+| `taxblAmtA`–`D` | NUMBER | Y | 18,2 | Per tax category |
+| `taxRtA`–`D` | NUMBER | Y | 7,2 | Per tax category |
+| `taxAmtA`–`D` | NUMBER | Y | 18,2 | Per tax category |
+| `totTaxblAmt` | NUMBER | Y | 18,2 | |
+| `totTaxAmt` | NUMBER | Y | 18,2 | |
+| `totAmt` | NUMBER | Y | 18,2 | |
+| `prchrAcptcYn` | CHAR | Y | 1 | |
+| `remark` | CHAR | N | 400 | |
+| `regrNm/Id` | CHAR | Y | 60/20 | Max 8 chars for `regrNm`/`modrNm` on sales |
+| `modrNm/Id` | CHAR | Y | 60/20 | |
+
+### Receipt object (`receipt`)
+
+| Field | Type | Required | Max Len |
+|-------|------|----------|---------|
+| `rptNo` | NUMBER | Y | 38 |
+| `custTin` | CHAR | N | 9 |
+| `custMblNo` | CHAR | N | 20 |
+| `trdeNm` | CHAR | N | 20 |
+| `adrs` | CHAR | N | 200 |
+| `topMsg` | CHAR | N | 20 | Header on printed receipt |
+| `btmMsg` | CHAR | N | 20 | Footer on printed receipt |
+| `prchrAcptcYn` | CHAR | Y | 1 | |
+
+### Line items (`itemList[]`)
+
+| Field | Type | Required | Max Len |
+|-------|------|----------|---------|
+| `itemSeq` | NUMBER | Y | 3 |
+| `itemCd` | CHAR | Y | 20 |
+| `itemClsCd` | CHAR | N | 10 |
+| `itemNm` | CHAR | Y | 200 |
+| `bcd` | CHAR | N | 20 |
+| `pkgUnitCd` | CHAR | Y | 5 |
+| `pkg` | NUMBER | Y | 13,2 |
+| `qtyUnitCd` | CHAR | Y | 5 |
+| `qty` | NUMBER | Y | 13,2 |
+| `prc` | NUMBER | Y | 18,2 |
+| `splyAmt` | NUMBER | Y | 18,2 |
+| `dcRt` | NUMBER | Y | 5,2 |
+| `dcAmt` | NUMBER | Y | 18,2 |
+| `totDcAmt` | NUMBER | Y | 18,2 |
+| `isrccCd` | CHAR | N | 10 |
+| `isrccNm` | CHAR | N | 100 |
+| `isrcRt` | NUMBER | N | 3 |
+| `isrcAmt` | NUMBER | N | 18,2 |
+| `taxTyCd` | CHAR | Y | 5 |
+| `taxblAmt` | NUMBER | Y | 18,2 |
+| `taxAmt` | NUMBER | Y | 18,2 |
+| `totAmt` | NUMBER | Y | 18,2 |
+
+### Response `data`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `rcptNo` | NUMBER | Receipt number |
+| `intrlData` | CHAR | Internal receipt data- print on receipt |
+| `rcptSign` | CHAR | Receipt signature- print on receipt |
+| `totRcptNo` | NUMBER | Total receipt counter |
+| `vsdcRcptPbctDate` | CHAR | Receipt published date |
+| `sdcId` | CHAR | SDC ID |
+| `mrcNo` | CHAR | MRC number |
+
+---
+
+## Purchases {#purchases}
+
+### `POST /trnsPurchase/selectTrnsPurchaseSales`- Response `data.saleList[]`
+
+| Field | Type | Max Len | Notes |
+|-------|------|---------|-------|
+| `spplrTin` | CHAR | 9 | Supplier TIN |
+| `spplrNm` | CHAR | 60 | Supplier name |
+| `spplrBhfId` | CHAR | 2 | Supplier branch |
+| `spplrInvcNo` | NUMBER | 38 | Supplier invoice # |
+| `spplrSdcId` | CHAR | 12 | Supplier SDC ID |
+| `spplrMrcNo` | CHAR |- | Supplier MRC |
+| `prcOrdCd` | CHAR | 6 | Purchase order code (v1.0.5) |
+| `rcptTyCd` | CHAR | 5 | |
+| `pmtTyCd` | CHAR | 5 | |
+| `cfmDt` | CHAR | 19 | `YYYY-MM-DD HH24:MI:SS` in response |
+| `salesDt` | CHAR | 8 | `YYYYMMDD` |
+| `stockRlsDt` | CHAR | 19 | |
+| `totItemCnt` | NUMBER | 10 | |
+| `taxblAmtA`–`D` | NUMBER | 18,2 | |
+| `taxRtA`–`D` | NUMBER | 7,2 | |
+| `taxAmtA`–`D` | NUMBER | 18,2 | |
+| `totTaxblAmt` | NUMBER | 18,2 | |
+| `totTaxAmt` | NUMBER | 18,2 | |
+| `totAmt` | NUMBER | 18,2 | |
+| `remark` | CHAR | 400 | |
+| `itemList[]` |- |- | Same line-item fields as sales |
+
+### `POST /trnsPurchase/savePurchases`- Request (`TrnsPurchaseSaveReq`)
+
+| Field | Type | Required | Max Len |
+|-------|------|----------|---------|
+| `tin` | CHAR | Y | 9 |
+| `bhfId` | CHAR | Y | 2 |
+| `invcNo` | NUMBER | Y | 38 |
+| `orgInvcNo` | NUMBER | Y | 38 |
+| `spplrTin` | CHAR | N | 9 |
+| `spplrBhfId` | CHAR | N | 2 |
+| `spplrNm` | CHAR | N | 60 |
+| `spplrInvcNo` | NUMBER | N | 38 |
+| `spplrSdcId` | CHAR | N | 12 | For EBM 2.0 compatibility |
+| `regTyCd` | CHAR | Y | 5 | [Registration Type](/reference/enumerations#registration-type) |
+| `pchsTyCd` | CHAR | Y | 5 | [Transaction Type](/reference/enumerations#transaction-type) |
+| `rcptTyCd` | CHAR | Y | 5 | [Purchase Receipt Type](/reference/enumerations#purchase-receipt-type) |
+| `pmtTyCd` | CHAR | Y | 5 | |
+| `pchsSttsCd` | CHAR | Y | 5 | [Transaction Progress](/reference/enumerations#transaction-progress) |
+| `cfmDt` | CHAR | N | 14 | |
+| `pchsDt` | CHAR | Y | 8 | `yyyyMMdd` |
+| `wrhsDt` | CHAR | N | 14 | Warehousing date |
+| `cnclReqDt/cnclDt/rfdDt` | CHAR | N | 14 | |
+| `totItemCnt` | NUMBER | Y | 10 | |
+| Tax fields |- | Y | Same as sales |
+| `remark` | CHAR | N | 400 | |
+| `regrNm/Id, modrNm/Id` | CHAR | Y | 60/20 | |
+
+### Purchase line items (`itemList[]`)
+
+| Field | Type | Required | Max Len |
+|-------|------|----------|---------|
+| `itemSeq` | NUMBER | Y | 3 |
+| `itemCd` | CHAR | N | 20 |
+| `itemClsCd` | CHAR | Y | 10 |
+| `itemNm` | CHAR | Y | 200 |
+| `bcd` | CHAR | N | 20 |
+| `spplrItemClsCd` | CHAR | N | 10 |
+| `spplrItemCd` | CHAR | N | 20 |
+| `spplrItemNm` | CHAR | N | 200 |
+| `pkgUnitCd` | CHAR | N | 5 |
+| `pkg` | NUMBER | Y | 13,2 |
+| `qtyUnitCd` | CHAR | Y | 5 |
+| `qty` | NUMBER | Y | 13,2 |
+| `prc` | NUMBER | Y | 18,2 |
+| `splyAmt` | NUMBER | Y | 18,2 |
+| `dcRt` | NUMBER | Y | 5,2 |
+| `dcAmt` | NUMBER | Y | 18,2 |
+| `taxTyCd` | NUMBER | Y | 5 |
+| `taxblAmt` | NUMBER | Y | 18,2 |
+| `taxAmt` | NUMBER | Y | 18,2 |
+| `totAmt` | NUMBER | Y | 18,2 |
+| `itemExprDt` | CHAR | N | 8 | `yyyyMMdd` |
+
+---
+
+## Stock {#stock}
+
+### `POST /stock/saveStockItems`- Request (`StockIOSaveReq`)
+
+| Field | Type | Required | Max Len | Format |
+|-------|------|----------|---------|--------|
+| `tin` | CHAR | Y | 9 | |
+| `bhfId` | CHAR | Y | 2 | |
+| `sarNo` | NUMBER | Y | 38 | Stock and release number |
+| `orgSarNo` | NUMBER | Y | 38 | |
+| `regTyCd` | CHAR | Y | 5 | |
+| `custTin` | CHAR | N | 9 | For transfers |
+| `custNm` | CHAR | N | 100 | |
+| `custBhfId` | CHAR | N | 2 | |
+| `sarTyCd` | CHAR | Y | 5 | [Stock In/Out Type](/reference/enumerations#stock-inout-type) |
+| `ocrnDt` | CHAR | Y | 8 | `yyyyMMdd` |
+| `totItemCnt` | NUMBER | Y | 10 | |
+| `totTaxblAmt` | NUMBER | Y | 18,2 | |
+| `totTaxAmt` | NUMBER | Y | 18,2 | |
+| `totAmt` | NUMBER | Y | 18,2 | |
+| `remark` | CHAR | N | 400 | |
+| `regrNm/Id, modrNm/Id` | CHAR | Y | 60/20 | |
+
+### Stock line items (`itemList[]`)
+
+| Field | Type | Required | Max Len |
+|-------|------|----------|---------|
+| `itemSeq` | NUMBER | Y | 3 |
+| `itemCd` | CHAR | N | 20 |
+| `itemClsCd` | CHAR | Y | 10 |
+| `itemNm` | CHAR | Y | 200 |
+| `bcd` | CHAR | N | 20 |
+| `pkgUnitCd` | CHAR | Y | 5 |
+| `pkg` | NUMBER | Y | 13,2 |
+| `qtyUnitCd` | CHAR | Y | 5 |
+| `qty` | NUMBER | Y | 13,2 |
+| `itemExprDt` | CHAR | N | 8 |
+| `prc` | NUMBER | Y | 15,2 |
+| `splyAmt` | NUMBER | Y | 18,2 |
+| `totDcAmt` | NUMBER | Y | 18,2 |
+| `taxblAmt` | NUMBER | Y | 18,2 |
+| `taxTyCd` | CHAR | Y | 5 |
+| `taxAmt` | NUMBER | Y | 18,2 |
+| `totAmt` | NUMBER | Y | 18,2 |
+
+### `POST /stockMaster/saveStockMaster`- Request (`StockMstSaveReq`)
+
+| Field | Type | Required | Max Len |
+|-------|------|----------|---------|
+| `tin` | CHAR | Y | 9 |
+| `bhfId` | CHAR | Y | 2 |
+| `itemCd` | CHAR | Y | 20 |
+| `rsdQty` | NUMBER | Y | 13,2 |
+| `regrNm/Id, modrNm/Id` | CHAR | Y | 60/20 |
+
+### `POST /stock/selectStockItems`- Response `data.stockList[]`
+
+Same header fields as save (`custTin`, `custBhfId`, `sarNo`, `ocrnDt`, totals, `remark`) plus nested `itemList[]` matching stock line items above.

@@ -1,0 +1,166 @@
+---
+title: VAT Formulas
+description: Tax categories, the 18/118 extraction formula, and multi-category invoice math.
+icon: percent
+---
+
+Rwanda's EBM system uses four tax categories. In practice, **category B (18% VAT)** covers most goods and services. Amounts are **tax-inclusive**- the price the customer pays already contains VAT.
+
+## Tax categories
+
+| Code | Name | Rate (`taxRt*`) | `taxAmt` formula |
+|------|------|-----------------|------------------|
+| `A` | A-EX (Exempt) | 0% | `taxAmt = 0` |
+| `B` | B-18% (Standard VAT) | 18% | `taxAmt = taxblAmt × 18 / 118` |
+| `C` | C (Zero-rated) | 0% | `taxAmt = 0` |
+| `D` | D (Other) | 0% | `taxAmt = 0` |
+
+Sync live rates via `POST /code/selectCodes` (code class for tax types). The `userDfnCd1` field on tax type codes carries the rate percentage.
+
+## Why 18/118 and not 18%?
+
+Category B prices are **tax-inclusive**. The customer pays one total that already includes VAT. You **extract** the VAT portion rather than adding 18% on top.
+
+If the tax-inclusive amount is **T**, the VAT component **V** is:
+
+```
+V = T × (rate / (100 + rate))
+```
+
+For 18% VAT:
+
+```
+taxAmt = taxblAmt × 18 / 118
+```
+
+### Derivation
+
+Let **T** = tax-inclusive total (what `taxblAmt` stores for category B).
+
+```
+T = netPrice + VAT
+VAT = netPrice × 0.18
+T = netPrice × 1.18
+netPrice = T / 1.18 = T × 100/118
+
+VAT = T − netPrice
+    = T − (T × 100/118)
+    = T × (1 − 100/118)
+    = T × 18/118
+```
+
+<Note>
+  Do **not** calculate `taxAmt = taxblAmt × 0.18`. That treats the amount as tax-exclusive and will produce wrong values that RRA rejects.
+</Note>
+
+## Worked example- single line, category B
+
+Selling **2 units** at **1,000 RWF** each (tax-inclusive):
+
+| Step | Field | Formula | Result |
+|------|-------|---------|--------|
+| 1 | `prc` | Unit price (inclusive) | 1,000.00 |
+| 2 | `qty` | Quantity | 2 |
+| 3 | `splyAmt` | `prc × qty` | 2,000.00 |
+| 4 | `taxblAmt` | Same as `splyAmt` (no discount) | 2,000.00 |
+| 5 | `taxAmt` | `2,000 × 18 / 118` | **305.08** |
+| 6 | `totAmt` | Same as `taxblAmt` | 2,000.00 |
+
+Verification: `2,000 × 18 ÷ 118 = 305.0847…` → rounded to **305.08**.
+
+### Invoice header for this sale
+
+| Field | Value | How derived |
+|-------|-------|-------------|
+| `taxblAmtB` | 2,000.00 | Sum of B lines' `taxblAmt` |
+| `taxRtB` | 18 | Rate for category B |
+| `taxAmtB` | 305.08 | Sum of B lines' `taxAmt` |
+| `taxblAmtA/C/D` | 0 | No lines in those categories |
+| `taxAmtA/C/D` | 0 |- |
+| `totTaxblAmt` | 2,000.00 | `taxblAmtA + B + C + D` |
+| `totTaxAmt` | 305.08 | `taxAmtA + B + C + D` |
+| `totAmt` | 2,000.00 | Grand total (what customer pays) |
+
+## Categories A, C, D- zero VAT
+
+For exempt, zero-rated, or other categories:
+
+```
+taxAmt  = 0
+taxblAmt = splyAmt − totDcAmt
+totAmt  = taxblAmt
+```
+
+The line still needs `taxTyCd` set correctly (`"A"`, `"C"`, or `"D"`) and the matching header `taxRt*` set to `0`.
+
+## Multi-category invoice
+
+Selling one **exempt** item (A) for 5,000 RWF and one **VAT** item (B) for 2,000 RWF:
+
+**Line 1** (`taxTyCd: "A"`):
+
+| Field | Value |
+|-------|-------|
+| `taxblAmt` | 5,000.00 |
+| `taxAmt` | 0.00 |
+| `totAmt` | 5,000.00 |
+
+**Line 2** (`taxTyCd: "B"`):
+
+| Field | Value |
+|-------|-------|
+| `taxblAmt` | 2,000.00 |
+| `taxAmt` | 305.08 |
+| `totAmt` | 2,000.00 |
+
+**Header:**
+
+```json
+{
+  "taxblAmtA": 5000,
+  "taxblAmtB": 2000,
+  "taxblAmtC": 0,
+  "taxblAmtD": 0,
+  "taxRtA": 0,
+  "taxRtB": 18,
+  "taxRtC": 0,
+  "taxRtD": 0,
+  "taxAmtA": 0,
+  "taxAmtB": 305.08,
+  "taxAmtC": 0,
+  "taxAmtD": 0,
+  "totTaxblAmt": 7000,
+  "totTaxAmt": 305.08,
+  "totAmt": 7000
+}
+```
+
+## JavaScript helper
+
+```javascript
+function extractVat(taxInclusiveAmount, rate = 18) {
+  return Math.round(taxInclusiveAmount * rate / (100 + rate) * 100) / 100;
+}
+
+// extractVat(2000) → 305.08
+// extractVat(8000) → 1220.34
+```
+
+## PHP helper
+
+```php
+function extractVat(float $taxInclusiveAmount, float $rate = 18): float {
+    return round($taxInclusiveAmount * $rate / (100 + $rate), 2);
+}
+
+// extractVat(2000) → 305.08
+```
+
+## Common mistakes
+
+| Mistake | Wrong result | Correct approach |
+|---------|--------------|------------------|
+| `taxAmt = taxblAmt × 0.18` | 360.00 on 2,000 | Use `× 18/118` → 305.08 |
+| Rounding only at header | Header ≠ sum of lines | Round each line first, then sum |
+| `taxTyCd: "B"` but amounts in `taxblAmtA` | Validation error | B lines → `taxblAmtB` header |
+| Integer amounts (`305` not `305.08`) | Error 910 | Always 2 decimal places |

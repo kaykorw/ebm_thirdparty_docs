@@ -1,0 +1,92 @@
+---
+title: Response Codes
+description: Complete list of VSDC API result codes and how to handle them.
+icon: circle-exclamation
+---
+
+
+## Success codes
+
+| Code | Message | Action |
+|------|---------|--------|
+| `000` | It is succeeded | Proceed- operation completed successfully |
+| `001` | There is no search result | Not an error- no new data since your `lastReqDt`. Update your sync cursor and continue. |
+
+## Client errors (881–899)
+
+These indicate issues with your request data or client configuration.
+
+| Code | Description | How to fix |
+|------|-------------|------------|
+| `881` | Purchase is mandatory | Provide `prcOrdCd` for business customers |
+| `882` | Purchase code is invalid | Verify `prcOrdCd` with the supplier |
+| `883` | Purchase already used | This purchase was already confirmed- skip it |
+| `884` | Invalid customer TIN | Validate TIN via `/customers/selectCustomer` first |
+| `891` | Error creating Request URL | Check your VSDC server URL and path |
+| `892` | Error creating Request Header | Check Content-Type and headers |
+| `893` | Error creating Request Body | Validate JSON structure and required fields |
+| `894` | Server communication error | Check network connectivity to VSDC/RRA |
+| `895` | Unallowed Request Method | Use `POST` for all endpoints |
+| `896` | Request Status error | Check HTTP status and retry |
+| `899` | Client error | General client-side failure- check logs |
+
+## Server errors (900–999)
+
+These indicate issues on the VSDC or RRA server side.
+
+| Code | Description | How to fix |
+|------|-------------|------------|
+| `900` | No Header information | Ensure `Content-Type: application/json` header is set |
+| `901` | Not valid device | Re-initialize with correct `dvcSrlNo` |
+| `902` | Device already installed | Device was already initialized- skip re-init |
+| `903` | Only VSDC device can be verified | Use a registered VSDC device |
+| `910` | Request parameter error | Check required fields, data types, and totals |
+| `911` | No request full text | Request body is empty |
+| `912` | Request Method error | Use `POST` |
+| `921` | Sales data cannot be received | Invoice data conflict- check invoice numbers |
+| `922` | Invoice before sales data | Submit sales transaction before invoice |
+| `990` | Max views exceeded | Reduce pagination range |
+| `991` | Registration error | Data validation failed on create |
+| `992` | Modification error | Data validation failed on update |
+| `993` | Deletion error | Data validation failed on delete |
+| `994` | Overlapped data | Duplicate record- check unique fields |
+| `995` | No downloaded file | File not found on server |
+| `999` | Unknown error | Contact RRA administrator |
+
+## Error handling pattern
+
+```javascript
+function handleVSDCResponse(response) {
+  const { resultCd, resultMsg } = response;
+
+  if (resultCd === '000') return { success: true, data: response.data };
+  if (resultCd === '001') return { success: true, data: [], empty: true };
+
+  const retryable = ['894', '896', '999'];
+  const userFixable = ['881', '882', '884', '910', '921', '922', '994'];
+
+  return {
+    success: false,
+    code: resultCd,
+    message: resultMsg,
+    retryable: retryable.includes(resultCd),
+    userFixable: userFixable.includes(resultCd),
+  };
+}
+```
+
+```php
+<?php
+function handleVsdcResponse(array $response): array {
+    $code = $response['resultCd'] ?? '999';
+
+    if ($code === '000') return ['success' => true, 'data' => $response['data']];
+    if ($code === '001') return ['success' => true, 'data' => [], 'empty' => true];
+
+    throw new VsdcException($code, $response['resultMsg'] ?? 'Unknown error');
+}
+```
+
+## Version history
+
+Codes `881`–`884` were added in **v1.0.5** (May 2023) related to the new `prcOrdCd` (purchase order code) field.

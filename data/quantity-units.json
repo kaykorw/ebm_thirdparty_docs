@@ -1,0 +1,260 @@
+[
+  {
+    "code": "4B",
+    "sort": 1,
+    "name": "Pair",
+    "description": "Pair"
+  },
+  {
+    "code": "AV",
+    "sort": 2,
+    "name": "Cap",
+    "description": "Cap"
+  },
+  {
+    "code": "BA",
+    "sort": 3,
+    "name": "Barrel",
+    "description": "Barrel"
+  },
+  {
+    "code": "BE",
+    "sort": 4,
+    "name": "bundle",
+    "description": "bundle"
+  },
+  {
+    "code": "BG",
+    "sort": 5,
+    "name": "bag",
+    "description": "bag"
+  },
+  {
+    "code": "BL",
+    "sort": 6,
+    "name": "block",
+    "description": "block"
+  },
+  {
+    "code": "BLL",
+    "sort": 7,
+    "name": "BLL Barrel",
+    "description": "BLL Barrel (petroleum) (158,987 dm3)"
+  },
+  {
+    "code": "BX",
+    "sort": 8,
+    "name": "box",
+    "description": "box"
+  },
+  {
+    "code": "CA",
+    "sort": 9,
+    "name": "Can",
+    "description": "Can"
+  },
+  {
+    "code": "CEL",
+    "sort": 10,
+    "name": "Cell",
+    "description": "Cell"
+  },
+  {
+    "code": "CMT",
+    "sort": 11,
+    "name": "centimetre",
+    "description": "centimetre"
+  },
+  {
+    "code": "CR",
+    "sort": 12,
+    "name": "CARAT",
+    "description": "CARAT"
+  },
+  {
+    "code": "DR",
+    "sort": 13,
+    "name": "Drum",
+    "description": "Drum"
+  },
+  {
+    "code": "DZ",
+    "sort": 14,
+    "name": "Dozen",
+    "description": "Dozen"
+  },
+  {
+    "code": "GLL",
+    "sort": 15,
+    "name": "Gallon",
+    "description": "Gallon"
+  },
+  {
+    "code": "GRM",
+    "sort": 16,
+    "name": "Gram",
+    "description": "Gram"
+  },
+  {
+    "code": "GRO",
+    "sort": 17,
+    "name": "Gross",
+    "description": "Gross"
+  },
+  {
+    "code": "KG",
+    "sort": 18,
+    "name": "Kilo-Gramme",
+    "description": "Kilo-Gramme"
+  },
+  {
+    "code": "KTM",
+    "sort": 19,
+    "name": "kilometre",
+    "description": "kilometre"
+  },
+  {
+    "code": "KWT",
+    "sort": 20,
+    "name": "kilowatt",
+    "description": "kilowatt"
+  },
+  {
+    "code": "L",
+    "sort": 21,
+    "name": "Litre",
+    "description": "Litre"
+  },
+  {
+    "code": "LBR",
+    "sort": 22,
+    "name": "pound",
+    "description": "pound"
+  },
+  {
+    "code": "LK",
+    "sort": 23,
+    "name": "link",
+    "description": "link"
+  },
+  {
+    "code": "LTR",
+    "sort": 24,
+    "name": "Litre",
+    "description": "Litre"
+  },
+  {
+    "code": "M",
+    "sort": 25,
+    "name": "Metre",
+    "description": "Metre"
+  },
+  {
+    "code": "M2",
+    "sort": 26,
+    "name": "Square Metre",
+    "description": "Square Metre"
+  },
+  {
+    "code": "M3",
+    "sort": 27,
+    "name": "Cubic Metre",
+    "description": "Cubic Metre"
+  },
+  {
+    "code": "MGM",
+    "sort": 28,
+    "name": "milligram",
+    "description": "milligram"
+  },
+  {
+    "code": "MTR",
+    "sort": 29,
+    "name": "metre",
+    "description": "metre"
+  },
+  {
+    "code": "MWT",
+    "sort": 30,
+    "name": "megawatt hour (1000 kW.h)",
+    "description": "megawatt hour (1000 kW.h)"
+  },
+  {
+    "code": "NO",
+    "sort": 31,
+    "name": "Number",
+    "description": "Number"
+  },
+  {
+    "code": "NX",
+    "sort": 32,
+    "name": "part per thousand",
+    "description": "part per thousand"
+  },
+  {
+    "code": "PA",
+    "sort": 33,
+    "name": "packet",
+    "description": "packet"
+  },
+  {
+    "code": "PG",
+    "sort": 34,
+    "name": "plate",
+    "description": "plate"
+  },
+  {
+    "code": "PR",
+    "sort": 35,
+    "name": "pair",
+    "description": "pair"
+  },
+  {
+    "code": "RL",
+    "sort": 36,
+    "name": "reel",
+    "description": "reel"
+  },
+  {
+    "code": "RO",
+    "sort": 37,
+    "name": "roll",
+    "description": "roll"
+  },
+  {
+    "code": "SET",
+    "sort": 38,
+    "name": "set",
+    "description": "set"
+  },
+  {
+    "code": "ST",
+    "sort": 39,
+    "name": "sheet",
+    "description": "sheet"
+  },
+  {
+    "code": "TNE",
+    "sort": 40,
+    "name": "tonne (metric ton)",
+    "description": "tonne (metric ton)"
+  },
+  {
+    "code": "TU",
+    "sort": 41,
+    "name": "tube",
+    "description": "tube"
+  },
+  {
+    "code": "U",
+    "sort": 42,
+    "name": "Pieces/item [Number]",
+    "description": "Pieces/item [Number]"
+  },
+  {
+    "code": "YRD",
+    "sort": 43,
+    "name": "yard",
+    "description": "yard"
+  }
+]

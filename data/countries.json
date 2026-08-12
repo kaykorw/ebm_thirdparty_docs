@@ -1,0 +1,1514 @@
+[
+  {
+    "code": "AC",
+    "sort": 1,
+    "name": "ASCENSION ISLAND",
+    "description": "ASCENSION ISLAND"
+  },
+  {
+    "code": "AD",
+    "sort": 2,
+    "name": "ANDORRA",
+    "description": "ANDORRA"
+  },
+  {
+    "code": "AE",
+    "sort": 3,
+    "name": "UNITED ARAB EMIRATES",
+    "description": "UNITED ARAB EMIRATES"
+  },
+  {
+    "code": "AG",
+    "sort": 4,
+    "name": "ANTIGUA AND BARBUDA",
+    "description": "ANTIGUA AND BARBUDA"
+  },
+  {
+    "code": "AI",
+    "sort": 5,
+    "name": "ANGUILLA",
+    "description": "ANGUILLA"
+  },
+  {
+    "code": "AL",
+    "sort": 6,
+    "name": "ALBANIA",
+    "description": "ALBANIA"
+  },
+  {
+    "code": "AM",
+    "sort": 7,
+    "name": "ARMENIA",
+    "description": "ARMENIA"
+  },
+  {
+    "code": "AN",
+    "sort": 8,
+    "name": "NETHERLANDS ANTILLES",
+    "description": "NETHERLANDS ANTILLES"
+  },
+  {
+    "code": "AO",
+    "sort": 9,
+    "name": "ANGOLA",
+    "description": "ANGOLA"
+  },
+  {
+    "code": "AQ",
+    "sort": 10,
+    "name": "ANTARCTICA",
+    "description": "ANTARCTICA"
+  },
+  {
+    "code": "AR",
+    "sort": 11,
+    "name": "ARGENTINA",
+    "description": "ARGENTINA"
+  },
+  {
+    "code": "AS",
+    "sort": 12,
+    "name": "AMERICAN SAMOA",
+    "description": "AMERICAN SAMOA"
+  },
+  {
+    "code": "AT",
+    "sort": 13,
+    "name": "AUSTRIA",
+    "description": "AUSTRIA"
+  },
+  {
+    "code": "AU",
+    "sort": 14,
+    "name": "AUSTRALIA",
+    "description": "AUSTRALIA"
+  },
+  {
+    "code": "AW",
+    "sort": 15,
+    "name": "ARUBA",
+    "description": "ARUBA"
+  },
+  {
+    "code": "AX",
+    "sort": 16,
+    "name": "ALAND ISLANDS",
+    "description": "ALAND ISLANDS"
+  },
+  {
+    "code": "AZ",
+    "sort": 17,
+    "name": "AZERBAIJAN",
+    "description": "AZERBAIJAN"
+  },
+  {
+    "code": "BA",
+    "sort": 18,
+    "name": "BOSNIA AND HERZEGOVINA",
+    "description": "BOSNIA AND HERZEGOVINA"
+  },
+  {
+    "code": "BB",
+    "sort": 19,
+    "name": "BARBADOS",
+    "description": "BARBADOS"
+  },
+  {
+    "code": "BD",
+    "sort": 20,
+    "name": "BANGLADESH",
+    "description": "BANGLADESH"
+  },
+  {
+    "code": "BE",
+    "sort": 21,
+    "name": "BELGIUM",
+    "description": "BELGIUM"
+  },
+  {
+    "code": "BF",
+    "sort": 22,
+    "name": "BURKINA FASO",
+    "description": "BURKINA FASO"
+  },
+  {
+    "code": "BG",
+    "sort": 23,
+    "name": "BULGARIA",
+    "description": "BULGARIA"
+  },
+  {
+    "code": "BH",
+    "sort": 24,
+    "name": "BAHRAIN",
+    "description": "BAHRAIN"
+  },
+  {
+    "code": "BI",
+    "sort": 25,
+    "name": "BURUNDI",
+    "description": "BURUNDI"
+  },
+  {
+    "code": "BJ",
+    "sort": 26,
+    "name": "BENIN",
+    "description": "BENIN"
+  },
+  {
+    "code": "BM",
+    "sort": 27,
+    "name": "BERMUDA",
+    "description": "BERMUDA"
+  },
+  {
+    "code": "BN",
+    "sort": 28,
+    "name": "BRUNEI DARUSSALAM",
+    "description": "BRUNEI DARUSSALAM"
+  },
+  {
+    "code": "BO",
+    "sort": 29,
+    "name": "BOLIVIA",
+    "description": "BOLIVIA"
+  },
+  {
+    "code": "BR",
+    "sort": 30,
+    "name": "BRAZIL",
+    "description": "BRAZIL"
+  },
+  {
+    "code": "BS",
+    "sort": 31,
+    "name": "BAHAMAS",
+    "description": "BAHAMAS"
+  },
+  {
+    "code": "BT",
+    "sort": 32,
+    "name": "BHUTAN",
+    "description": "BHUTAN"
+  },
+  {
+    "code": "BV",
+    "sort": 33,
+    "name": "BOUVET ISLAND",
+    "description": "BOUVET ISLAND"
+  },
+  {
+    "code": "BW",
+    "sort": 34,
+    "name": "BOTSWANA",
+    "description": "BOTSWANA"
+  },
+  {
+    "code": "BY",
+    "sort": 35,
+    "name": "BELARUS",
+    "description": "BELARUS"
+  },
+  {
+    "code": "BZ",
+    "sort": 36,
+    "name": "BELIZE",
+    "description": "BELIZE"
+  },
+  {
+    "code": "CA",
+    "sort": 37,
+    "name": "CANADA",
+    "description": "CANADA"
+  },
+  {
+    "code": "CC",
+    "sort": 38,
+    "name": "COCOS (KEELING) ISLANDS",
+    "description": "COCOS (KEELING) ISLANDS"
+  },
+  {
+    "code": "CD",
+    "sort": 39,
+    "name": "CONGO, DEMOCRATIC REPUBLIC",
+    "description": "CONGO, DEMOCRATIC REPUBLIC"
+  },
+  {
+    "code": "CF",
+    "sort": 40,
+    "name": "CENTRAL AFRICAN REPUBLIC",
+    "description": "CENTRAL AFRICAN REPUBLIC"
+  },
+  {
+    "code": "CG",
+    "sort": 41,
+    "name": "CONGO",
+    "description": "CONGO"
+  },
+  {
+    "code": "CH",
+    "sort": 42,
+    "name": "SWITZERLAND",
+    "description": "SWITZERLAND"
+  },
+  {
+    "code": "CI",
+    "sort": 43,
+    "name": "COTE D'IVOIRE (IVORY COAST)",
+    "description": "COTE D'IVOIRE (IVORY COAST)"
+  },
+  {
+    "code": "CK",
+    "sort": 44,
+    "name": "COOK ISLANDS",
+    "description": "COOK ISLANDS"
+  },
+  {
+    "code": "CL",
+    "sort": 45,
+    "name": "CHILE",
+    "description": "CHILE"
+  },
+  {
+    "code": "CM",
+    "sort": 46,
+    "name": "CAMEROON",
+    "description": "CAMEROON"
+  },
+  {
+    "code": "CN",
+    "sort": 47,
+    "name": "CHINA",
+    "description": "CHINA"
+  },
+  {
+    "code": "CO",
+    "sort": 48,
+    "name": "COLOMBIA",
+    "description": "COLOMBIA"
+  },
+  {
+    "code": "CR",
+    "sort": 49,
+    "name": "COSTA RICA",
+    "description": "COSTA RICA"
+  },
+  {
+    "code": "CS",
+    "sort": 50,
+    "name": "CZECHOSLOVAKIA (FORMER)",
+    "description": "CZECHOSLOVAKIA (FORMER)"
+  },
+  {
+    "code": "CU",
+    "sort": 51,
+    "name": "CUBA",
+    "description": "CUBA"
+  },
+  {
+    "code": "CV",
+    "sort": 52,
+    "name": "CAPE VERDE",
+    "description": "CAPE VERDE"
+  },
+  {
+    "code": "CX",
+    "sort": 53,
+    "name": "CHRISTMAS ISLAND",
+    "description": "CHRISTMAS ISLAND"
+  },
+  {
+    "code": "CY",
+    "sort": 54,
+    "name": "CYPRUS",
+    "description": "CYPRUS"
+  },
+  {
+    "code": "CZ",
+    "sort": 55,
+    "name": "CZECH REPUBLIC",
+    "description": "CZECH REPUBLIC"
+  },
+  {
+    "code": "DE",
+    "sort": 56,
+    "name": "GERMANY",
+    "description": "GERMANY"
+  },
+  {
+    "code": "DJ",
+    "sort": 57,
+    "name": "DJIBOUTI",
+    "description": "DJIBOUTI"
+  },
+  {
+    "code": "DK",
+    "sort": 58,
+    "name": "DENMARK",
+    "description": "DENMARK"
+  },
+  {
+    "code": "DM",
+    "sort": 59,
+    "name": "DOMINICA",
+    "description": "DOMINICA"
+  },
+  {
+    "code": "DO",
+    "sort": 60,
+    "name": "DOMINICAN REPUBLIC",
+    "description": "DOMINICAN REPUBLIC"
+  },
+  {
+    "code": "DZ",
+    "sort": 61,
+    "name": "ALGERIA",
+    "description": "ALGERIA"
+  },
+  {
+    "code": "EC",
+    "sort": 62,
+    "name": "ECUADOR",
+    "description": "ECUADOR"
+  },
+  {
+    "code": "EE",
+    "sort": 63,
+    "name": "ESTONIA",
+    "description": "ESTONIA"
+  },
+  {
+    "code": "EG",
+    "sort": 64,
+    "name": "EGYPT",
+    "description": "EGYPT"
+  },
+  {
+    "code": "EH",
+    "sort": 65,
+    "name": "WESTERN SAHARA",
+    "description": "WESTERN SAHARA"
+  },
+  {
+    "code": "ER",
+    "sort": 66,
+    "name": "ERITREA",
+    "description": "ERITREA"
+  },
+  {
+    "code": "ES",
+    "sort": 67,
+    "name": "SPAIN",
+    "description": "SPAIN"
+  },
+  {
+    "code": "ET",
+    "sort": 68,
+    "name": "ETHIOPIA",
+    "description": "ETHIOPIA"
+  },
+  {
+    "code": "EU",
+    "sort": 69,
+    "name": "EUROPEAN UNION",
+    "description": "EUROPEAN UNION"
+  },
+  {
+    "code": "FI",
+    "sort": 70,
+    "name": "FINLAND",
+    "description": "FINLAND"
+  },
+  {
+    "code": "FJ",
+    "sort": 71,
+    "name": "FIJI",
+    "description": "FIJI"
+  },
+  {
+    "code": "FK",
+    "sort": 72,
+    "name": "FALKLAND ISLANDS (MALVINAS)",
+    "description": "FALKLAND ISLANDS (MALVINAS)"
+  },
+  {
+    "code": "FM",
+    "sort": 73,
+    "name": "MICRONESIA",
+    "description": "MICRONESIA"
+  },
+  {
+    "code": "FO",
+    "sort": 74,
+    "name": "FAROE ISLANDS",
+    "description": "FAROE ISLANDS"
+  },
+  {
+    "code": "FR",
+    "sort": 75,
+    "name": "FRANCE",
+    "description": "FRANCE"
+  },
+  {
+    "code": "FX",
+    "sort": 76,
+    "name": "FRANCE, METROPOLITAN",
+    "description": "FRANCE, METROPOLITAN"
+  },
+  {
+    "code": "GA",
+    "sort": 77,
+    "name": "GABON",
+    "description": "GABON"
+  },
+  {
+    "code": "GB",
+    "sort": 78,
+    "name": "GREAT BRITAIN (UK)",
+    "description": "GREAT BRITAIN (UK)"
+  },
+  {
+    "code": "GD",
+    "sort": 79,
+    "name": "GRENADA",
+    "description": "GRENADA"
+  },
+  {
+    "code": "GE",
+    "sort": 80,
+    "name": "GEORGIA",
+    "description": "GEORGIA"
+  },
+  {
+    "code": "GF",
+    "sort": 81,
+    "name": "FRENCH GUIANA",
+    "description": "FRENCH GUIANA"
+  },
+  {
+    "code": "GG",
+    "sort": 82,
+    "name": "GUERNSEY",
+    "description": "GUERNSEY"
+  },
+  {
+    "code": "GH",
+    "sort": 83,
+    "name": "GHANA",
+    "description": "GHANA"
+  },
+  {
+    "code": "GI",
+    "sort": 84,
+    "name": "GIBRALTAR",
+    "description": "GIBRALTAR"
+  },
+  {
+    "code": "GL",
+    "sort": 85,
+    "name": "GREENLAND",
+    "description": "GREENLAND"
+  },
+  {
+    "code": "GM",
+    "sort": 86,
+    "name": "GAMBIA",
+    "description": "GAMBIA"
+  },
+  {
+    "code": "GN",
+    "sort": 87,
+    "name": "GUINEA",
+    "description": "GUINEA"
+  },
+  {
+    "code": "GP",
+    "sort": 88,
+    "name": "GUADELOUPE",
+    "description": "GUADELOUPE"
+  },
+  {
+    "code": "GQ",
+    "sort": 89,
+    "name": "EQUATORIAL GUINEA",
+    "description": "EQUATORIAL GUINEA"
+  },
+  {
+    "code": "GR",
+    "sort": 90,
+    "name": "GREECE",
+    "description": "GREECE"
+  },
+  {
+    "code": "GS",
+    "sort": 91,
+    "name": "S. GEORGIA AND S. SANDWICH ISLS.",
+    "description": "S. GEORGIA AND S. SANDWICH ISLS."
+  },
+  {
+    "code": "GT",
+    "sort": 92,
+    "name": "GUATEMALA",
+    "description": "GUATEMALA"
+  },
+  {
+    "code": "GU",
+    "sort": 93,
+    "name": "GUAM",
+    "description": "GUAM"
+  },
+  {
+    "code": "GW",
+    "sort": 94,
+    "name": "GUINEA BISSAU",
+    "description": "GUINEA BISSAU"
+  },
+  {
+    "code": "GY",
+    "sort": 95,
+    "name": "GUYANA",
+    "description": "GUYANA"
+  },
+  {
+    "code": "HK",
+    "sort": 96,
+    "name": "HONG KONG",
+    "description": "HONG KONG"
+  },
+  {
+    "code": "HM",
+    "sort": 97,
+    "name": "HEARD AND MCDONALD ISLANDS",
+    "description": "HEARD AND MCDONALD ISLANDS"
+  },
+  {
+    "code": "HN",
+    "sort": 98,
+    "name": "HONDURAS",
+    "description": "HONDURAS"
+  },
+  {
+    "code": "HR",
+    "sort": 99,
+    "name": "CROATIA (HRVATSKA)",
+    "description": "CROATIA (HRVATSKA)"
+  },
+  {
+    "code": "HT",
+    "sort": 100,
+    "name": "HAITI",
+    "description": "HAITI"
+  },
+  {
+    "code": "HU",
+    "sort": 101,
+    "name": "HUNGARY",
+    "description": "HUNGARY"
+  },
+  {
+    "code": "ID",
+    "sort": 102,
+    "name": "INDONESIA",
+    "description": "INDONESIA"
+  },
+  {
+    "code": "IE",
+    "sort": 103,
+    "name": "IRELAND",
+    "description": "IRELAND"
+  },
+  {
+    "code": "IL",
+    "sort": 104,
+    "name": "ISRAEL",
+    "description": "ISRAEL"
+  },
+  {
+    "code": "IM",
+    "sort": 105,
+    "name": "ISLE OF MAN",
+    "description": "ISLE OF MAN"
+  },
+  {
+    "code": "IN",
+    "sort": 106,
+    "name": "INDIA",
+    "description": "INDIA"
+  },
+  {
+    "code": "IO",
+    "sort": 107,
+    "name": "BRITISH INDIAN OCEAN TERRITORY",
+    "description": "BRITISH INDIAN OCEAN TERRITORY"
+  },
+  {
+    "code": "IQ",
+    "sort": 108,
+    "name": "IRAQ",
+    "description": "IRAQ"
+  },
+  {
+    "code": "IR",
+    "sort": 109,
+    "name": "IRAN",
+    "description": "IRAN"
+  },
+  {
+    "code": "IS",
+    "sort": 110,
+    "name": "ICELAND",
+    "description": "ICELAND"
+  },
+  {
+    "code": "IT",
+    "sort": 111,
+    "name": "ITALY",
+    "description": "ITALY"
+  },
+  {
+    "code": "JE",
+    "sort": 112,
+    "name": "JERSEY",
+    "description": "JERSEY"
+  },
+  {
+    "code": "JM",
+    "sort": 113,
+    "name": "JAMAICA",
+    "description": "JAMAICA"
+  },
+  {
+    "code": "JO",
+    "sort": 114,
+    "name": "JORDAN",
+    "description": "JORDAN"
+  },
+  {
+    "code": "JP",
+    "sort": 115,
+    "name": "JAPAN",
+    "description": "JAPAN"
+  },
+  {
+    "code": "KE",
+    "sort": 116,
+    "name": "KENYA",
+    "description": "KENYA"
+  },
+  {
+    "code": "KG",
+    "sort": 117,
+    "name": "KYRGYZSTAN",
+    "description": "KYRGYZSTAN"
+  },
+  {
+    "code": "KH",
+    "sort": 118,
+    "name": "CAMBODIA",
+    "description": "CAMBODIA"
+  },
+  {
+    "code": "KI",
+    "sort": 119,
+    "name": "KIRIBATI",
+    "description": "KIRIBATI"
+  },
+  {
+    "code": "KM",
+    "sort": 120,
+    "name": "COMOROS",
+    "description": "COMOROS"
+  },
+  {
+    "code": "KN",
+    "sort": 121,
+    "name": "SAINT KITTS AND NEVIS",
+    "description": "SAINT KITTS AND NEVIS"
+  },
+  {
+    "code": "KP",
+    "sort": 122,
+    "name": "NORTH KOREA",
+    "description": "NORTH KOREA"
+  },
+  {
+    "code": "KR",
+    "sort": 123,
+    "name": "SOUTH KOREA",
+    "description": "SOUTH KOREA"
+  },
+  {
+    "code": "KW",
+    "sort": 124,
+    "name": "KUWAIT",
+    "description": "KUWAIT"
+  },
+  {
+    "code": "KY",
+    "sort": 125,
+    "name": "CAYMAN ISLANDS",
+    "description": "CAYMAN ISLANDS"
+  },
+  {
+    "code": "KZ",
+    "sort": 126,
+    "name": "KAZAKHSTAN",
+    "description": "KAZAKHSTAN"
+  },
+  {
+    "code": "LA",
+    "sort": 127,
+    "name": "LAOS",
+    "description": "LAOS"
+  },
+  {
+    "code": "LB",
+    "sort": 128,
+    "name": "LEBANON",
+    "description": "LEBANON"
+  },
+  {
+    "code": "LC",
+    "sort": 129,
+    "name": "SAINT LUCIA",
+    "description": "SAINT LUCIA"
+  },
+  {
+    "code": "LI",
+    "sort": 130,
+    "name": "LIECHTENSTEIN",
+    "description": "LIECHTENSTEIN"
+  },
+  {
+    "code": "LK",
+    "sort": 131,
+    "name": "SRI LANKA",
+    "description": "SRI LANKA"
+  },
+  {
+    "code": "LR",
+    "sort": 132,
+    "name": "LIBERIA",
+    "description": "LIBERIA"
+  },
+  {
+    "code": "LS",
+    "sort": 133,
+    "name": "LESOTHO",
+    "description": "LESOTHO"
+  },
+  {
+    "code": "LT",
+    "sort": 134,
+    "name": "LITHUANIA",
+    "description": "LITHUANIA"
+  },
+  {
+    "code": "LU",
+    "sort": 135,
+    "name": "LUXEMBOURG",
+    "description": "LUXEMBOURG"
+  },
+  {
+    "code": "LV",
+    "sort": 136,
+    "name": "LATVIA",
+    "description": "LATVIA"
+  },
+  {
+    "code": "LY",
+    "sort": 137,
+    "name": "LIBYA",
+    "description": "LIBYA"
+  },
+  {
+    "code": "MA",
+    "sort": 138,
+    "name": "MOROCCO",
+    "description": "MOROCCO"
+  },
+  {
+    "code": "MC",
+    "sort": 139,
+    "name": "MONACO",
+    "description": "MONACO"
+  },
+  {
+    "code": "MD",
+    "sort": 140,
+    "name": "MOLDOVA",
+    "description": "MOLDOVA"
+  },
+  {
+    "code": "ME",
+    "sort": 141,
+    "name": "MONTENEGRO",
+    "description": "MONTENEGRO"
+  },
+  {
+    "code": "MG",
+    "sort": 142,
+    "name": "MADAGASCAR",
+    "description": "MADAGASCAR"
+  },
+  {
+    "code": "MH",
+    "sort": 143,
+    "name": "MARSHALL ISLANDS",
+    "description": "MARSHALL ISLANDS"
+  },
+  {
+    "code": "MK",
+    "sort": 144,
+    "name": "F.Y.R.O.M. (MACEDONIA)",
+    "description": "F.Y.R.O.M. (MACEDONIA)"
+  },
+  {
+    "code": "ML",
+    "sort": 145,
+    "name": "MALI",
+    "description": "MALI"
+  },
+  {
+    "code": "MM",
+    "sort": 146,
+    "name": "MYANMAR",
+    "description": "MYANMAR"
+  },
+  {
+    "code": "MN",
+    "sort": 147,
+    "name": "MONGOLIA",
+    "description": "MONGOLIA"
+  },
+  {
+    "code": "MO",
+    "sort": 148,
+    "name": "MACAU",
+    "description": "MACAU"
+  },
+  {
+    "code": "MP",
+    "sort": 149,
+    "name": "NORTHERN MARIANA ISLANDS",
+    "description": "NORTHERN MARIANA ISLANDS"
+  },
+  {
+    "code": "MQ",
+    "sort": 150,
+    "name": "MARTINIQUE",
+    "description": "MARTINIQUE"
+  },
+  {
+    "code": "MR",
+    "sort": 151,
+    "name": "MAURITANIA",
+    "description": "MAURITANIA"
+  },
+  {
+    "code": "MS",
+    "sort": 152,
+    "name": "MONTSERRAT",
+    "description": "MONTSERRAT"
+  },
+  {
+    "code": "MT",
+    "sort": 153,
+    "name": "MALTA",
+    "description": "MALTA"
+  },
+  {
+    "code": "MU",
+    "sort": 154,
+    "name": "MAURITIUS",
+    "description": "MAURITIUS"
+  },
+  {
+    "code": "MV",
+    "sort": 155,
+    "name": "MALDIVES",
+    "description": "MALDIVES"
+  },
+  {
+    "code": "MW",
+    "sort": 156,
+    "name": "MALAWI",
+    "description": "MALAWI"
+  },
+  {
+    "code": "MX",
+    "sort": 157,
+    "name": "MEXICO",
+    "description": "MEXICO"
+  },
+  {
+    "code": "MY",
+    "sort": 158,
+    "name": "MALAYSIA",
+    "description": "MALAYSIA"
+  },
+  {
+    "code": "MZ",
+    "sort": 159,
+    "name": "MOZAMBIQUE",
+    "description": "MOZAMBIQUE"
+  },
+  {
+    "code": "NA",
+    "sort": 160,
+    "name": "NAMIBIA",
+    "description": "NAMIBIA"
+  },
+  {
+    "code": "NC",
+    "sort": 161,
+    "name": "NEW CALEDONIA",
+    "description": "NEW CALEDONIA"
+  },
+  {
+    "code": "NE",
+    "sort": 162,
+    "name": "NIGER",
+    "description": "NIGER"
+  },
+  {
+    "code": "NF",
+    "sort": 163,
+    "name": "NORFOLK ISLAND",
+    "description": "NORFOLK ISLAND"
+  },
+  {
+    "code": "NG",
+    "sort": 164,
+    "name": "NIGERIA",
+    "description": "NIGERIA"
+  },
+  {
+    "code": "NI",
+    "sort": 165,
+    "name": "NICARAGUA",
+    "description": "NICARAGUA"
+  },
+  {
+    "code": "NL",
+    "sort": 166,
+    "name": "NETHERLANDS",
+    "description": "NETHERLANDS"
+  },
+  {
+    "code": "NO",
+    "sort": 167,
+    "name": "NORWAY",
+    "description": "NORWAY"
+  },
+  {
+    "code": "NP",
+    "sort": 168,
+    "name": "NEPAL",
+    "description": "NEPAL"
+  },
+  {
+    "code": "NR",
+    "sort": 169,
+    "name": "NAURU",
+    "description": "NAURU"
+  },
+  {
+    "code": "NT",
+    "sort": 170,
+    "name": "NEUTRAL ZONE",
+    "description": "NEUTRAL ZONE"
+  },
+  {
+    "code": "NU",
+    "sort": 171,
+    "name": "NIUE",
+    "description": "NIUE"
+  },
+  {
+    "code": "NZ",
+    "sort": 172,
+    "name": "NEW ZEALAND (AOTEAROA)",
+    "description": "NEW ZEALAND (AOTEAROA)"
+  },
+  {
+    "code": "OM",
+    "sort": 173,
+    "name": "OMAN",
+    "description": "OMAN"
+  },
+  {
+    "code": "PA",
+    "sort": 174,
+    "name": "PANAMA",
+    "description": "PANAMA"
+  },
+  {
+    "code": "PE",
+    "sort": 175,
+    "name": "PERU",
+    "description": "PERU"
+  },
+  {
+    "code": "PF",
+    "sort": 176,
+    "name": "FRENCH POLYNESIA",
+    "description": "FRENCH POLYNESIA"
+  },
+  {
+    "code": "PG",
+    "sort": 177,
+    "name": "PAPUA NEW GUINEA",
+    "description": "PAPUA NEW GUINEA"
+  },
+  {
+    "code": "PH",
+    "sort": 178,
+    "name": "PHILIPPINES",
+    "description": "PHILIPPINES"
+  },
+  {
+    "code": "PK",
+    "sort": 179,
+    "name": "PAKISTAN",
+    "description": "PAKISTAN"
+  },
+  {
+    "code": "PL",
+    "sort": 180,
+    "name": "POLAND",
+    "description": "POLAND"
+  },
+  {
+    "code": "PM",
+    "sort": 181,
+    "name": "ST. PIERRE AND MIQUELON",
+    "description": "ST. PIERRE AND MIQUELON"
+  },
+  {
+    "code": "PN",
+    "sort": 182,
+    "name": "PITCAIRN",
+    "description": "PITCAIRN"
+  },
+  {
+    "code": "PR",
+    "sort": 183,
+    "name": "PUERTO RICO",
+    "description": "PUERTO RICO"
+  },
+  {
+    "code": "PS",
+    "sort": 184,
+    "name": "PALESTINIAN TERRITORY, OCCUPIED",
+    "description": "PALESTINIAN TERRITORY, OCCUPIED"
+  },
+  {
+    "code": "PT",
+    "sort": 185,
+    "name": "PORTUGAL",
+    "description": "PORTUGAL"
+  },
+  {
+    "code": "PW",
+    "sort": 186,
+    "name": "PALAU",
+    "description": "PALAU"
+  },
+  {
+    "code": "PY",
+    "sort": 187,
+    "name": "PARAGUAY",
+    "description": "PARAGUAY"
+  },
+  {
+    "code": "QA",
+    "sort": 188,
+    "name": "QATAR",
+    "description": "QATAR"
+  },
+  {
+    "code": "RE",
+    "sort": 189,
+    "name": "REUNION",
+    "description": "REUNION"
+  },
+  {
+    "code": "RO",
+    "sort": 190,
+    "name": "ROMANIA",
+    "description": "ROMANIA"
+  },
+  {
+    "code": "RS",
+    "sort": 191,
+    "name": "SERBIA",
+    "description": "SERBIA"
+  },
+  {
+    "code": "RU",
+    "sort": 192,
+    "name": "RUSSIAN FEDERATION",
+    "description": "RUSSIAN FEDERATION"
+  },
+  {
+    "code": "RW",
+    "sort": 193,
+    "name": "RWANDA",
+    "description": "RWANDA"
+  },
+  {
+    "code": "SA",
+    "sort": 194,
+    "name": "SAUDI ARABIA",
+    "description": "SAUDI ARABIA"
+  },
+  {
+    "code": "SB",
+    "sort": 195,
+    "name": "SOLOMON ISLANDS",
+    "description": "SOLOMON ISLANDS"
+  },
+  {
+    "code": "SC",
+    "sort": 196,
+    "name": "SEYCHELLES",
+    "description": "SEYCHELLES"
+  },
+  {
+    "code": "SD",
+    "sort": 197,
+    "name": "SUDAN",
+    "description": "SUDAN"
+  },
+  {
+    "code": "SE",
+    "sort": 198,
+    "name": "SWEDEN",
+    "description": "SWEDEN"
+  },
+  {
+    "code": "SG",
+    "sort": 199,
+    "name": "SINGAPORE",
+    "description": "SINGAPORE"
+  },
+  {
+    "code": "SH",
+    "sort": 200,
+    "name": "ST. HELENA",
+    "description": "ST. HELENA"
+  },
+  {
+    "code": "SI",
+    "sort": 201,
+    "name": "SLOVENIA",
+    "description": "SLOVENIA"
+  },
+  {
+    "code": "SJ",
+    "sort": 202,
+    "name": "SVALBARD & JAN MAYEN ISLANDS",
+    "description": "SVALBARD & JAN MAYEN ISLANDS"
+  },
+  {
+    "code": "SK",
+    "sort": 203,
+    "name": "SLOVAK REPUBLIC",
+    "description": "SLOVAK REPUBLIC"
+  },
+  {
+    "code": "SL",
+    "sort": 204,
+    "name": "SIERRA LEONE",
+    "description": "SIERRA LEONE"
+  },
+  {
+    "code": "SM",
+    "sort": 205,
+    "name": "SAN MARINO",
+    "description": "SAN MARINO"
+  },
+  {
+    "code": "SN",
+    "sort": 206,
+    "name": "SENEGAL",
+    "description": "SENEGAL"
+  },
+  {
+    "code": "SO",
+    "sort": 207,
+    "name": "SOMALIA",
+    "description": "SOMALIA"
+  },
+  {
+    "code": "SR",
+    "sort": 208,
+    "name": "SURINAME",
+    "description": "SURINAME"
+  },
+  {
+    "code": "ST",
+    "sort": 209,
+    "name": "SAO TOME AND PRINCIPE",
+    "description": "SAO TOME AND PRINCIPE"
+  },
+  {
+    "code": "SU",
+    "sort": 210,
+    "name": "USSR (FORMER)",
+    "description": "USSR (FORMER)"
+  },
+  {
+    "code": "SV",
+    "sort": 211,
+    "name": "EL SALVADOR",
+    "description": "EL SALVADOR"
+  },
+  {
+    "code": "SY",
+    "sort": 212,
+    "name": "SYRIA",
+    "description": "SYRIA"
+  },
+  {
+    "code": "SZ",
+    "sort": 213,
+    "name": "SWAZILAND",
+    "description": "SWAZILAND"
+  },
+  {
+    "code": "TC",
+    "sort": 214,
+    "name": "TURKS AND CAICOS ISLANDS",
+    "description": "TURKS AND CAICOS ISLANDS"
+  },
+  {
+    "code": "TD",
+    "sort": 215,
+    "name": "CHAD",
+    "description": "CHAD"
+  },
+  {
+    "code": "TF",
+    "sort": 216,
+    "name": "FRENCH SOUTHERN TERRITORIES",
+    "description": "FRENCH SOUTHERN TERRITORIES"
+  },
+  {
+    "code": "TG",
+    "sort": 217,
+    "name": "TOGO",
+    "description": "TOGO"
+  },
+  {
+    "code": "TH",
+    "sort": 218,
+    "name": "THAILAND",
+    "description": "THAILAND"
+  },
+  {
+    "code": "TJ",
+    "sort": 219,
+    "name": "TAJIKISTAN",
+    "description": "TAJIKISTAN"
+  },
+  {
+    "code": "TK",
+    "sort": 220,
+    "name": "TOKELAU",
+    "description": "TOKELAU"
+  },
+  {
+    "code": "TM",
+    "sort": 221,
+    "name": "TURKMENISTAN",
+    "description": "TURKMENISTAN"
+  },
+  {
+    "code": "TN",
+    "sort": 222,
+    "name": "TUNISIA",
+    "description": "TUNISIA"
+  },
+  {
+    "code": "TO",
+    "sort": 223,
+    "name": "TONGA",
+    "description": "TONGA"
+  },
+  {
+    "code": "TP",
+    "sort": 224,
+    "name": "EAST TIMOR",
+    "description": "EAST TIMOR"
+  },
+  {
+    "code": "TR",
+    "sort": 225,
+    "name": "TURKEY",
+    "description": "TURKEY"
+  },
+  {
+    "code": "TT",
+    "sort": 226,
+    "name": "TRINIDAD AND TOBAGO",
+    "description": "TRINIDAD AND TOBAGO"
+  },
+  {
+    "code": "TV",
+    "sort": 227,
+    "name": "TUVALU",
+    "description": "TUVALU"
+  },
+  {
+    "code": "TW",
+    "sort": 228,
+    "name": "TAIWAN",
+    "description": "TAIWAN"
+  },
+  {
+    "code": "TZ",
+    "sort": 229,
+    "name": "TANZANIA",
+    "description": "TANZANIA"
+  },
+  {
+    "code": "UA",
+    "sort": 230,
+    "name": "UKRAINE",
+    "description": "UKRAINE"
+  },
+  {
+    "code": "UG",
+    "sort": 231,
+    "name": "UGANDA",
+    "description": "UGANDA"
+  },
+  {
+    "code": "UK",
+    "sort": 232,
+    "name": "UNITED KINGDOM",
+    "description": "UNITED KINGDOM"
+  },
+  {
+    "code": "UM",
+    "sort": 233,
+    "name": "US MINOR OUTLYING ISLANDS",
+    "description": "US MINOR OUTLYING ISLANDS"
+  },
+  {
+    "code": "US",
+    "sort": 234,
+    "name": "UNITED STATES",
+    "description": "UNITED STATES"
+  },
+  {
+    "code": "UY",
+    "sort": 235,
+    "name": "URUGUAY",
+    "description": "URUGUAY"
+  },
+  {
+    "code": "UZ",
+    "sort": 236,
+    "name": "UZBEKISTAN",
+    "description": "UZBEKISTAN"
+  },
+  {
+    "code": "VA",
+    "sort": 237,
+    "name": "VATICAN CITY STATE (HOLY SEE)",
+    "description": "VATICAN CITY STATE (HOLY SEE)"
+  },
+  {
+    "code": "VC",
+    "sort": 238,
+    "name": "SAINT VINCENT & THE GRENADINES",
+    "description": "SAINT VINCENT & THE GRENADINES"
+  },
+  {
+    "code": "VE",
+    "sort": 239,
+    "name": "VENEZUELA",
+    "description": "VENEZUELA"
+  },
+  {
+    "code": "VG",
+    "sort": 240,
+    "name": "BRITISH VIRGIN ISLANDS",
+    "description": "BRITISH VIRGIN ISLANDS"
+  },
+  {
+    "code": "VI",
+    "sort": 241,
+    "name": "VIRGIN ISLANDS (U.S.)",
+    "description": "VIRGIN ISLANDS (U.S.)"
+  },
+  {
+    "code": "VN",
+    "sort": 242,
+    "name": "VIET NAM",
+    "description": "VIET NAM"
+  },
+  {
+    "code": "VU",
+    "sort": 243,
+    "name": "VANUATU",
+    "description": "VANUATU"
+  },
+  {
+    "code": "WF",
+    "sort": 244,
+    "name": "WALLIS AND FUTUNA ISLANDS",
+    "description": "WALLIS AND FUTUNA ISLANDS"
+  },
+  {
+    "code": "WS",
+    "sort": 245,
+    "name": "SAMOA",
+    "description": "SAMOA"
+  },
+  {
+    "code": "YE",
+    "sort": 246,
+    "name": "YEMEN",
+    "description": "YEMEN"
+  },
+  {
+    "code": "YT",
+    "sort": 247,
+    "name": "MAYOTTE",
+    "description": "MAYOTTE"
+  },
+  {
+    "code": "YU",
+    "sort": 248,
+    "name": "SERBIA AND MONTENEGRO (FORMER)",
+    "description": "SERBIA AND MONTENEGRO (FORMER)"
+  },
+  {
+    "code": "ZA",
+    "sort": 249,
+    "name": "SOUTH AFRICA",
+    "description": "SOUTH AFRICA"
+  },
+  {
+    "code": "ZM",
+    "sort": 250,
+    "name": "ZAMBIA",
+    "description": "ZAMBIA"
+  },
+  {
+    "code": "ZR",
+    "sort": 251,
+    "name": "(ZAIRE) SEE CD CONGO, DEMOCRATIC REPUBLIC",
+    "description": "(ZAIRE) SEE CD CONGO, DEMOCRATIC REPUBLIC"
+  },
+  {
+    "code": "ZW",
+    "sort": 252,
+    "name": "ZIMBABWE",
+    "description": "ZIMBABWE"
+  }
+]

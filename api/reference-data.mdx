@@ -1,0 +1,465 @@
+---
+title: Reference Data
+description: Kayko EBM reference tables via GET /constants/*- Select Countries, Taxes, Packaging, and more.
+icon: database
+---
+
+All reference-data endpoints are **`GET /constants/…`** on the Kayko EBM gateway. Authenticate with your business API key (any scope).
+
+```http
+Authorization: Bearer sk_live_YOUR_SECRET
+# or
+x-api-key: sk_live_YOUR_SECRET
+```
+
+Response is a JSON **array**. Most items are `{ code, sort, name }`. Taxes also include `rate` / `userDfnCd1`. Stock types include `direction` (`in` | `out`).
+
+---
+
+## Select Countries
+
+`GET /constants/countries`
+
+Country codes for fields such as `orgnNatCd`.
+
+<ResponseField name="code" type="string">ISO-style country code (e.g. `RW`)</ResponseField>
+<ResponseField name="sort" type="integer">Display sort order</ResponseField>
+<ResponseField name="name" type="string">Country name</ResponseField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/constants/countries" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET"
+```
+
+```javascript JavaScript
+const countries = await fetch(`${BASE_URL}/constants/countries`, {
+  headers: { Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}` },
+}).then((r) => r.json());
+```
+
+```php PHP
+<?php
+$ch = curl_init($baseUrl . '/constants/countries');
+curl_setopt_array($ch, [
+    CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY')],
+    CURLOPT_RETURNTRANSFER => true,
+]);
+$countries = json_decode(curl_exec($ch), true);
+```
+
+```json Response
+[
+  { "code": "RW", "sort": 193, "name": "RWANDA" },
+  { "code": "KE", "sort": 115, "name": "KENYA" }
+]
+```
+
+</CodeGroup>
+
+---
+
+## Select Currencies
+
+`GET /constants/currencies`
+
+Currency codes for fields such as `invcFcurCd`.
+
+<ResponseField name="code" type="string">Currency code (e.g. `RWF`)</ResponseField>
+<ResponseField name="sort" type="integer">Display sort order</ResponseField>
+<ResponseField name="name" type="string">Currency name</ResponseField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/constants/currencies" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET"
+```
+
+```javascript JavaScript
+const currencies = await fetch(`${BASE_URL}/constants/currencies`, {
+  headers: { Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}` },
+}).then((r) => r.json());
+```
+
+```json Response
+[
+  { "code": "RWF", "sort": 1, "name": "RWANDAN FRANC" },
+  { "code": "USD", "sort": 2, "name": "US DOLLAR" }
+]
+```
+
+</CodeGroup>
+
+---
+
+## Select Packaging
+
+`GET /constants/packaging`
+
+Packaging unit codes (`pkgUnitCd`).
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/constants/packaging" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET"
+```
+
+```javascript JavaScript
+const packaging = await fetch(`${BASE_URL}/constants/packaging`, {
+  headers: { Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}` },
+}).then((r) => r.json());
+```
+
+```json Response
+[
+  { "code": "NT", "sort": 1, "name": "Net" },
+  { "code": "BX", "sort": 2, "name": "Box" }
+]
+```
+
+</CodeGroup>
+
+---
+
+## Select Quantity
+
+`GET /constants/quantity`
+
+Quantity unit codes (`qtyUnitCd`).
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/constants/quantity" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET"
+```
+
+```javascript JavaScript
+const quantity = await fetch(`${BASE_URL}/constants/quantity`, {
+  headers: { Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}` },
+}).then((r) => r.json());
+```
+
+```json Response
+[
+  { "code": "U", "sort": 1, "name": "Pieces/unit" },
+  { "code": "KG", "sort": 2, "name": "Kilogram" }
+]
+```
+
+</CodeGroup>
+
+---
+
+## Select Taxes
+
+`GET /constants/taxes`
+
+Tax type codes (`taxTyCd`) with rates. Category **B** is standard 18% VAT.
+
+<ResponseField name="code" type="string">Tax type (`A`–`D`)</ResponseField>
+<ResponseField name="sort" type="integer">Display sort order</ResponseField>
+<ResponseField name="name" type="string">Display label</ResponseField>
+<ResponseField name="rate" type="number">Tax rate percent</ResponseField>
+<ResponseField name="userDfnCd1" type="number">User-defined rate mirror</ResponseField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/constants/taxes" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET"
+```
+
+```javascript JavaScript
+const taxes = await fetch(`${BASE_URL}/constants/taxes`, {
+  headers: { Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}` },
+}).then((r) => r.json());
+```
+
+```json Response
+[
+  { "code": "A", "sort": 1, "name": "A-EX (Exempt)", "rate": 0, "userDfnCd1": 0 },
+  { "code": "B", "sort": 2, "name": "B-18.00%", "rate": 18, "userDfnCd1": 18 }
+]
+```
+
+</CodeGroup>
+
+---
+
+## Select Products
+
+`GET /constants/products`
+
+Item type codes (`itemTyCd`).
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/constants/products" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET"
+```
+
+```json Response
+[
+  { "code": "1", "sort": 1, "name": "Raw Material" },
+  { "code": "2", "sort": 2, "name": "Finished Product" },
+  { "code": "3", "sort": 3, "name": "Service" }
+]
+```
+
+</CodeGroup>
+
+---
+
+## Select Transactions
+
+`GET /constants/transactions`
+
+Sales transaction type codes (`salesTyCd`).
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/constants/transactions" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET"
+```
+
+```json Response
+[
+  { "code": "N", "sort": 1, "name": "Normal" },
+  { "code": "R", "sort": 5, "name": "Refund" }
+]
+```
+
+</CodeGroup>
+
+---
+
+## Select Sales Receipt Types
+
+`GET /constants/sales-receipt-types`
+
+Receipt type codes (`rcptTyCd`) for sales.
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/constants/sales-receipt-types" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET"
+```
+
+```json Response
+[
+  { "code": "S", "sort": 1, "name": "Sale" },
+  { "code": "R", "sort": 2, "name": "Refund" }
+]
+```
+
+</CodeGroup>
+
+---
+
+## Select Purchase Receipt Types
+
+`GET /constants/purchase-receipt-types`
+
+Receipt type codes for purchases.
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/constants/purchase-receipt-types" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET"
+```
+
+```json Response
+[
+  { "code": "P", "sort": 1, "name": "Purchase" },
+  { "code": "R", "sort": 2, "name": "Refund" }
+]
+```
+
+</CodeGroup>
+
+---
+
+## Select Payment Modes
+
+`GET /constants/payment-modes`
+
+Payment method codes (`pmtTyCd`).
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/constants/payment-modes" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET"
+```
+
+```json Response
+[
+  { "code": "01", "sort": 1, "name": "CASH" },
+  { "code": "06", "sort": 6, "name": "MOBILE MONEY" }
+]
+```
+
+</CodeGroup>
+
+---
+
+## Select Transaction Progress
+
+`GET /constants/transaction-progress`
+
+Sales status / progress codes (`salesSttsCd`).
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/constants/transaction-progress" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET"
+```
+
+```json Response
+[
+  { "code": "01", "sort": 1, "name": "Wait for Approval" },
+  { "code": "02", "sort": 2, "name": "Approved" }
+]
+```
+
+</CodeGroup>
+
+---
+
+## Select Registrations
+
+`GET /constants/registrations`
+
+Registration type codes.
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/constants/registrations" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET"
+```
+
+```json Response
+[
+  { "code": "M", "sort": 1, "name": "Manual" },
+  { "code": "A", "sort": 2, "name": "Auto" }
+]
+```
+
+</CodeGroup>
+
+---
+
+## Select Stock Types
+
+`GET /constants/stock-types`
+
+Stock in/out type codes with `direction`.
+
+<ResponseField name="code" type="string">Stock type code</ResponseField>
+<ResponseField name="sort" type="integer">Display sort order</ResponseField>
+<ResponseField name="name" type="string">Label</ResponseField>
+<ResponseField name="direction" type="string">`in` or `out`</ResponseField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/constants/stock-types" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET"
+```
+
+```json Response
+[
+  { "code": "01", "sort": 1, "name": "Import", "direction": "in" },
+  { "code": "11", "sort": 7, "name": "Sale", "direction": "out" }
+]
+```
+
+</CodeGroup>
+
+---
+
+## Select Refund Reasons
+
+`GET /constants/refund-reasons`
+
+Refund reason codes for credit notes / refunds.
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/constants/refund-reasons" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET"
+```
+
+```json Response
+[
+  { "code": "01", "sort": 1, "name": "Missing Quantity" },
+  { "code": "06", "sort": 6, "name": "Refund" }
+]
+```
+
+</CodeGroup>
+
+---
+
+## Select Import Item Statuses
+
+`GET /constants/import-item-statuses`
+
+Customs import item status codes (`imptItemSttsCd`).
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/constants/import-item-statuses" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET"
+```
+
+```json Response
+[
+  { "code": "1", "sort": 1, "name": "Unsent" },
+  { "code": "3", "sort": 3, "name": "Approved" }
+]
+```
+
+</CodeGroup>
+
+---
+
+## Select Taxpayer Statuses
+
+`GET /constants/taxpayer-statuses`
+
+Taxpayer status codes (`taxprSttsCd`).
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/constants/taxpayer-statuses" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET"
+```
+
+```json Response
+[
+  { "code": "A", "sort": 1, "name": "Active" },
+  { "code": "D", "sort": 2, "name": "Discarded" }
+]
+```
+
+</CodeGroup>
+
+## Related
+
+- [Enumerations](/reference/enumerations)
+- [Country codes](/reference/country-codes) · [Currency codes](/reference/currency-codes)
+- Playground: open any **Select …** page under Reference Data

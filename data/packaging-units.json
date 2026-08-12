@@ -1,0 +1,314 @@
+[
+  {
+    "code": "AM",
+    "sort": 1,
+    "name": "Ampoule",
+    "description": "Ampoule"
+  },
+  {
+    "code": "BA",
+    "sort": 2,
+    "name": "Barrel",
+    "description": "Barrel"
+  },
+  {
+    "code": "BC",
+    "sort": 3,
+    "name": "Bottlecrate",
+    "description": "Bottlecrate"
+  },
+  {
+    "code": "BE",
+    "sort": 4,
+    "name": "Bundle",
+    "description": "Bundle"
+  },
+  {
+    "code": "BF",
+    "sort": 5,
+    "name": "Balloon, non-protected",
+    "description": "Balloon, non-protected"
+  },
+  {
+    "code": "BG",
+    "sort": 6,
+    "name": "Bag",
+    "description": "Bag"
+  },
+  {
+    "code": "BJ",
+    "sort": 7,
+    "name": "Bucket",
+    "description": "Bucket"
+  },
+  {
+    "code": "BK",
+    "sort": 8,
+    "name": "Basket",
+    "description": "Basket"
+  },
+  {
+    "code": "BL",
+    "sort": 9,
+    "name": "Bale",
+    "description": "Bale"
+  },
+  {
+    "code": "BQ",
+    "sort": 10,
+    "name": "Bottle, protected cylindrical",
+    "description": "Bottle, protected cylindrical"
+  },
+  {
+    "code": "BR",
+    "sort": 11,
+    "name": "Bar",
+    "description": "Bar"
+  },
+  {
+    "code": "BV",
+    "sort": 12,
+    "name": "Bottle, bulbous",
+    "description": "Bottle, bulbous"
+  },
+  {
+    "code": "BZ",
+    "sort": 13,
+    "name": "Bag",
+    "description": "Bag"
+  },
+  {
+    "code": "CA",
+    "sort": 14,
+    "name": "Can",
+    "description": "Can"
+  },
+  {
+    "code": "CH",
+    "sort": 15,
+    "name": "Chest",
+    "description": "Chest"
+  },
+  {
+    "code": "CJ",
+    "sort": 16,
+    "name": "Coffin",
+    "description": "Coffin"
+  },
+  {
+    "code": "CL",
+    "sort": 17,
+    "name": "Coil",
+    "description": "Coil"
+  },
+  {
+    "code": "CR",
+    "sort": 18,
+    "name": "Wooden Box, Wooden Case",
+    "description": "Wooden Box, Wooden Case"
+  },
+  {
+    "code": "CS",
+    "sort": 19,
+    "name": "Cassette",
+    "description": "Cassette"
+  },
+  {
+    "code": "CT",
+    "sort": 20,
+    "name": "Carton",
+    "description": "Carton"
+  },
+  {
+    "code": "CTN",
+    "sort": 21,
+    "name": "Container",
+    "description": "Container"
+  },
+  {
+    "code": "CY",
+    "sort": 22,
+    "name": "Cylinder",
+    "description": "Cylinder"
+  },
+  {
+    "code": "DR",
+    "sort": 23,
+    "name": "Drum",
+    "description": "Drum"
+  },
+  {
+    "code": "GT",
+    "sort": 24,
+    "name": "Extra Countable Item",
+    "description": "Extra Countable Item"
+  },
+  {
+    "code": "HH",
+    "sort": 25,
+    "name": "Hand Baggage",
+    "description": "Hand Baggage"
+  },
+  {
+    "code": "IZ",
+    "sort": 26,
+    "name": "Ingots",
+    "description": "Ingots"
+  },
+  {
+    "code": "JR",
+    "sort": 27,
+    "name": "Jar",
+    "description": "Jar"
+  },
+  {
+    "code": "JU",
+    "sort": 28,
+    "name": "Jug",
+    "description": "Jug"
+  },
+  {
+    "code": "JY",
+    "sort": 29,
+    "name": "Jerry CAN Cylindrical",
+    "description": "Jerry CAN Cylindrical"
+  },
+  {
+    "code": "KZ",
+    "sort": 30,
+    "name": "Canester",
+    "description": "Canester"
+  },
+  {
+    "code": "LZ",
+    "sort": 31,
+    "name": "Logs, in bundle/bunch/truss",
+    "description": "Logs, in bundle/bunch/truss"
+  },
+  {
+    "code": "NT",
+    "sort": 32,
+    "name": "Net",
+    "description": "Net"
+  },
+  {
+    "code": "OU",
+    "sort": 33,
+    "name": "Non-Exterior Packaging Unit",
+    "description": "Non-Exterior Packaging Unit"
+  },
+  {
+    "code": "PD",
+    "sort": 34,
+    "name": "Poddon",
+    "description": "Poddon"
+  },
+  {
+    "code": "PG",
+    "sort": 35,
+    "name": "Plate",
+    "description": "Plate"
+  },
+  {
+    "code": "PI",
+    "sort": 36,
+    "name": "Pipe",
+    "description": "Pipe"
+  },
+  {
+    "code": "PO",
+    "sort": 37,
+    "name": "Pilot",
+    "description": "Pilot"
+  },
+  {
+    "code": "PU",
+    "sort": 38,
+    "name": "Traypack",
+    "description": "Traypack"
+  },
+  {
+    "code": "RL",
+    "sort": 39,
+    "name": "Reel",
+    "description": "Reel"
+  },
+  {
+    "code": "RO",
+    "sort": 40,
+    "name": "Roll",
+    "description": "Roll"
+  },
+  {
+    "code": "RZ",
+    "sort": 41,
+    "name": "Rods, in bundle/bunch/truss",
+    "description": "Rods, in bundle/bunch/truss"
+  },
+  {
+    "code": "SK",
+    "sort": 42,
+    "name": "Skeletoncase",
+    "description": "Skeletoncase"
+  },
+  {
+    "code": "TY",
+    "sort": 43,
+    "name": "Tank, cylindrical",
+    "description": "Tank, cylindrical"
+  },
+  {
+    "code": "VG",
+    "sort": 44,
+    "name": "Bulk,gas(at 1031 mbar 15 oC)",
+    "description": "Bulk,gas(at 1031 mbar 15 oC)"
+  },
+  {
+    "code": "VL",
+    "sort": 45,
+    "name": "Bulk,liquid(at normal temperature/pressure)",
+    "description": "Bulk,liquid(at normal temperature/pressure)"
+  },
+  {
+    "code": "VO",
+    "sort": 46,
+    "name": "Bulk, solid, large particles(\"nodules\")",
+    "description": "Bulk, solid, large particles(\"nodules\")"
+  },
+  {
+    "code": "VQ",
+    "sort": 47,
+    "name": "Bulk, gas (liquefied at abnormal temperature/pressure)",
+    "description": "Bulk, gas (liquefied at abnormal temperature/pressure)"
+  },
+  {
+    "code": "VR",
+    "sort": 48,
+    "name": "Bulk, solid, granular particles(\"grains\")",
+    "description": "Bulk, solid, granular particles(\"grains\")"
+  },
+  {
+    "code": "VT",
+    "sort": 49,
+    "name": "Extra Bulk Item",
+    "description": "Extra Bulk Item"
+  },
+  {
+    "code": "VY",
+    "sort": 50,
+    "name": "Bulk, fine particles(\"powder\")",
+    "description": "Bulk, fine particles(\"powder\")"
+  },
+  {
+    "code": "ML",
+    "sort": 51,
+    "name": "Mills",
+    "description": "cigarette Mills"
+  },
+  {
+    "code": "TN",
+    "sort": 52,
+    "name": "TAN",
+    "description": "1TAN REFER TO 20BAGS"
+  }
+]

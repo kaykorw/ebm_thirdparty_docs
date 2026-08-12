@@ -1,0 +1,336 @@
+---
+title: Items
+description: Register, update, and retrieve products. Includes itemCd structure, generation rules, and endpoint reference.
+icon: box
+---
+
+## Item code format {#item-code-format}
+
+Every product registered via `saveItems` requires a unique `itemCd` (max 20 characters). The code embeds the product's origin, type, and units so RRA can validate consistency across sales, purchases, and stock.
+
+### Structure
+
+```
+itemCd = {orgnNatCd}{itemTyCd}{pkgUnitCd}{qtyUnitCd}{sequence}
+          └─ 2 ─┘ └──1──┘ └── 2 ──┘ └── 2 ──┘ └── 7 ──┘
+                         Total: 14 characters (standard)
+```
+
+| Segment | Length | Request field | Example | Reference |
+|---------|--------|---------------|---------|-----------|
+| Country of origin | 2 | `orgnNatCd` | `RW` | [Country codes](/reference/country-codes) |
+| Product type | 1 | `itemTyCd` | `2` | [Product type](/reference/enumerations#product-type) |
+| Packaging unit | 2 | `pkgUnitCd` | `NT` | [Packaging units](/reference/enumerations#packaging-unit-full-list) |
+| Quantity unit | 2 | `qtyUnitCd` | `U` | [Quantity units](/reference/enumerations#unit-of-quantity-full-list) |
+| Sequence | 7 | Auto-increment | `0000001` | Unique per 7-character prefix |
+
+<Note>
+  `itemCd` and `itemClsCd` are different fields. `itemClsCd` is the 10-digit RRA item classification from `/itemClass/selectItemsClass`- it describes *what* the product is. `itemCd` is *your* unique product identifier built from origin, type, and units.
+</Note>
+
+### Annotated example
+
+```
+RW2NTU0000012
+│││││└────── sequence (0000001, 0000012, …)
+││││└─────── qtyUnitCd:  U  (Pieces)
+│││└──────── pkgUnitCd:  NT (Net)
+││└───────── itemTyCd:   2  (Finished Product)
+│└────────── orgnNatCd:  RW (Rwanda)
+```
+
+Built from this `saveItems` payload:
+
+```json
+{
+  "orgnNatCd": "RW",
+  "itemTyCd": "2",
+  "pkgUnitCd": "NT",
+  "qtyUnitCd": "U",
+  "itemCd": "RW2NTU0000012"
+}
+```
+
+### Generation rules
+
+1. **Globally unique**- no two active items may share the same `itemCd`.
+2. **Prefix must match fields**- the first 7 characters must equal `orgnNatCd + itemTyCd + pkgUnitCd + qtyUnitCd` in the same request.
+3. **Sequence increments per prefix**- for prefix `RW2NTU`, use `0000001`, then `0000002`, and so on.
+4. **Never reuse**- retired or disabled items keep their codes; do not recycle sequences.
+5. **Immutable units**- changing `pkgUnitCd` or `qtyUnitCd` after registration requires a **new** `itemCd`, not an update to the existing one.
+
+### Recommended workflow
+
+<Steps>
+  <Step title="Resolve classification">
+    Call `/itemClass/selectItemsClass` and pick the correct `itemClsCd` for the product category.
+  </Step>
+  <Step title="Choose segment values">
+    Set `orgnNatCd`, `itemTyCd`, `pkgUnitCd`, and `qtyUnitCd` from the reference tables.
+  </Step>
+  <Step title="Allocate sequence">
+    Track the next sequence number for that 7-character prefix in your ERP or database.
+  </Step>
+  <Step title="Register">
+    Submit `POST /items/saveItems` with the generated `itemCd` and matching field values.
+  </Step>
+</Steps>
+
+### Code generators
+
+```javascript
+function generateItemCd(orgnNatCd, itemTyCd, pkgUnitCd, qtyUnitCd, sequence) {
+  const prefix = `${orgnNatCd}${itemTyCd}${pkgUnitCd}${qtyUnitCd}`;
+  if (prefix.length !== 7) {
+    throw new Error(`Prefix must be 7 characters, got ${prefix.length}: ${prefix}`);
+  }
+  return `${prefix}${String(sequence).padStart(7, '0')}`;
+}
+
+// generateItemCd('RW', '2', 'NT', 'U', 1)   → "RW2NTU0000001"
+// generateItemCd('RW', '2', 'NT', 'U', 42)  → "RW2NTU0000042"
+```
+
+```php
+<?php
+function generateItemCd(
+    string $orgnNatCd,
+    string $itemTyCd,
+    string $pkgUnitCd,
+    string $qtyUnitCd,
+    int $sequence
+): string {
+    $prefix = $orgnNatCd . $itemTyCd . $pkgUnitCd . $qtyUnitCd;
+    if (strlen($prefix) !== 7) {
+        throw new InvalidArgumentException("Prefix must be 7 characters, got: {$prefix}");
+    }
+    return $prefix . str_pad((string) $sequence, 7, '0', STR_PAD_LEFT);
+}
+```
+
+### Worked examples
+
+| itemCd | Product | orgnNatCd | itemTyCd | pkg / qty | Notes |
+|--------|---------|-----------|----------|-----------|-------|
+| `RW2NTU0000001` | Coca Cola | `RW` | `2` | `NT` / `U` | Standard finished product |
+| `RW2NTU0000642` | TOLE PL 2 44X1 22X10 | `RW` | `2` | `NT` / `U` | Same prefix, higher sequence |
+| `AD2AMU0000024` | Imported goods | `AD` | `2` | `AM` / `U` | Origin from [import conversion](/api/imports) |
+
+<Warning>
+  A sale, purchase, or stock line that references an `itemCd` not registered via `saveItems` will fail validation. Register all products before using them in transactions.
+</Warning>
+
+---
+
+## Save item
+
+Register a new product or update an existing one.
+
+`POST /items/saveItems`
+
+<ParamField body="itemCd" type="string" required>
+  Unique item code (14 characters standard). Must match [item code format](#item-code-format) and align with `orgnNatCd`, `itemTyCd`, `pkgUnitCd`, and `qtyUnitCd`.
+</ParamField>
+<ParamField body="itemClsCd" type="string" required>
+  Item classification code (10 digits from `/itemClass/selectItemsClass`).
+</ParamField>
+<ParamField body="itemTyCd" type="string" required>
+  Product type: `"1"` Raw Material, `"2"` Finished Product, `"3"` Service.
+</ParamField>
+<ParamField body="itemNm" type="string" required>Product name</ParamField>
+<ParamField body="orgnNatCd" type="string" required>Origin country code (e.g. `"RW"`)</ParamField>
+<ParamField body="pkgUnitCd" type="string" required>Packaging unit (e.g. `"NT"` = Net)</ParamField>
+<ParamField body="qtyUnitCd" type="string" required>Quantity unit (e.g. `"U"` = Pieces)</ParamField>
+<ParamField body="taxTyCd" type="string" required>Tax type (e.g. `"B"` = 18% VAT)</ParamField>
+<ParamField body="dftPrc" type="number" required>Default unit price</ParamField>
+<ParamField body="bcd" type="string">Barcode</ParamField>
+<ParamField body="isrcAplcbYn" type="string" required>Insurance applicable: `"Y"` / `"N"`</ParamField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/items/saveItems" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tin": "999202800",
+    "bhfId": "00",
+    "itemCd": "RW2NTU0000001",
+    "itemClsCd": "8014160101",
+    "itemTyCd": "2",
+    "itemNm": "Coca Cola",
+    "orgnNatCd": "RW",
+    "pkgUnitCd": "NT",
+    "qtyUnitCd": "U",
+    "taxTyCd": "B",
+    "dftPrc": 118,
+    "isrcAplcbYn": "N",
+    "useYn": "Y",
+    "regrId": "1", "regrNm": "Kayko",
+    "modrId": "1", "modrNm": "Kayko"
+  }'
+```
+
+```javascript JavaScript
+await vsdcPost('/items/saveItems', {
+  tin: '999202800', bhfId: '00',
+  itemCd: 'RW2NTU0000001',
+  itemClsCd: '8014160101',
+  itemTyCd: '2',
+  itemNm: 'Coca Cola',
+  orgnNatCd: 'RW',
+  pkgUnitCd: 'NT',
+  qtyUnitCd: 'U',
+  taxTyCd: 'B',
+  dftPrc: 118,
+  isrcAplcbYn: 'N',
+  useYn: 'Y',
+  regrId: '1', regrNm: 'Kayko',
+  modrId: '1', modrNm: 'Kayko',
+});
+```
+
+```php PHP
+<?php
+vsdcPost('/items/saveItems', [
+    'tin' => '999202800', 'bhfId' => '00',
+    'itemCd' => 'RW2NTU0000001',
+    'itemClsCd' => '8014160101',
+    'itemTyCd' => '2',
+    'itemNm' => 'Coca Cola',
+    'orgnNatCd' => 'RW',
+    'pkgUnitCd' => 'NT', 'qtyUnitCd' => 'U',
+    'taxTyCd' => 'B', 'dftPrc' => 118,
+    'isrcAplcbYn' => 'N', 'useYn' => 'Y',
+    'regrId' => '1', 'regrNm' => 'Kayko',
+    'modrId' => '1', 'modrNm' => 'Kayko',
+]);
+```
+
+```json Payload
+{
+  "tin": "999202800",
+  "bhfId": "00",
+  "itemCd": "RW2NTU0000001",
+  "itemClsCd": "8014160101",
+  "itemTyCd": "2",
+  "itemNm": "Coca Cola",
+  "itemStdNm": null,
+  "orgnNatCd": "RW",
+  "pkgUnitCd": "NT",
+  "qtyUnitCd": "U",
+  "taxTyCd": "B",
+  "btchNo": null,
+  "bcd": null,
+  "dftPrc": 118,
+  "grpPrcL1": null,
+  "grpPrcL2": null,
+  "grpPrcL3": null,
+  "grpPrcL4": null,
+  "grpPrcL5": null,
+  "addInfo": null,
+  "sftyQty": null,
+  "isrcAplcbYn": "N",
+  "modrId": "1",
+  "modrNm": "Kayko",
+  "regrId": "1",
+  "regrNm": "Kayko",
+  "useYn": "Y"
+}
+```
+
+</CodeGroup>
+
+---
+
+## Get items
+
+Pull registered products (sync endpoint).
+
+`POST /items/selectItems`
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/items/selectItems" \
+  -H "Content-Type: application/json" \
+  -d '{"tin":"123038911","bhfId":"00","lastReqDt":"20000101000000"}'
+```
+
+```javascript JavaScript
+const { data } = await vsdcPost('/items/selectItems', {
+  tin: '123038911', bhfId: '00', lastReqDt: '20000101000000',
+});
+// data.itemList → array of registered products
+```
+
+```php PHP
+<?php
+$result = vsdcPost('/items/selectItems', [
+    'tin' => '123038911', 'bhfId' => '00', 'lastReqDt' => '20000101000000',
+]);
+```
+
+```json Payload
+{
+  "tin": "123038911",
+  "bhfId": "00",
+  "lastReqDt": "20000101000000"
+}
+```
+
+</CodeGroup>
+
+---
+
+## Save item composition
+
+Register bill-of-materials (BOM) for composite products. Used for backup only- not queryable from the server.
+
+`POST /items/saveItemComposition`
+
+<ParamField body="itemCd" type="string" required>Parent item code</ParamField>
+<ParamField body="cpstItemCd" type="string" required>Component item code</ParamField>
+<ParamField body="cpstQty" type="number" required>Quantity of component needed</ParamField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/items/saveItemComposition" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tin": "999958074", "bhfId": "00",
+    "itemCd": "1", "cpstItemCd": "1", "cpstQty": 1,
+    "regrId": "123", "regrNm": "Testing Name"
+  }'
+```
+
+```javascript JavaScript
+await vsdcPost('/items/saveItemComposition', {
+  tin: '999958074', bhfId: '00',
+  itemCd: '1', cpstItemCd: '1', cpstQty: 1,
+  regrId: '123', regrNm: 'Testing Name',
+});
+```
+
+```php PHP
+<?php
+vsdcPost('/items/saveItemComposition', [
+    'tin' => '999958074', 'bhfId' => '00',
+    'itemCd' => '1', 'cpstItemCd' => '1', 'cpstQty' => 1,
+    'regrId' => '123', 'regrNm' => 'Testing Name',
+]);
+```
+
+```json Payload
+{
+  "tin": "999958074",
+  "bhfId": "00",
+  "itemCd": "1",
+  "cpstItemCd": "1",
+  "cpstQty": 1,
+  "regrId": "123",
+  "regrNm": "Testing Name"
+}
+```
+
+</CodeGroup>

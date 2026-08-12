@@ -1,0 +1,207 @@
+---
+title: Glossary
+description: Plain-English definitions for every VSDC field acronym.
+icon: book
+---
+
+<Tip>
+  Fields follow a consistent pattern: abbreviated English words smashed together in camelCase. When in doubt, read it aloud- `bhfId` = "branch ID", `dvcSrlNo` = "device serial number".
+</Tip>
+
+## Authentication (Kayko)
+
+| Term | Full Name | Description |
+|------|-----------|-------------|
+| API key | Business API key | Secret from Kayko **Settings → Enable EBM → Generate API key**. Send as `Authorization: Bearer sk_…` or `x-api-key`. See [API Keys](/concepts/api-keys) |
+| `sk_live_…` / `sk_test_…` | Secret key | Plaintext credential shown once at creation. `test` for training businesses |
+| `pk_live_…` / `pk_test_…` | Key prefix | Public identifier stored with the hashed secret |
+| Scope | API key scope | Permission slice such as `sales`, `items`, `customers` |
+| `allowed_ips` | IP whitelist | Optional IPv4/IPv6/CIDR list that may use the key. Empty = all IPs. Managed with the API key. See [API Keys](/concepts/api-keys) |
+| `ebm_url` | EBM URL | Business VSDC base URL assigned when EBM is enabled |
+
+## Universal fields (appear on almost every request)
+
+| Acronym | Full Name | Type | Example | Description |
+|---------|-----------|------|---------|-------------|
+| `tin` | Taxpayer Identification Number | string(9) | `"100027060"` | Your RRA-registered business TIN |
+| `bhfId` | Branch ID | string(2) | `"00"` | `"00"` = head office. `"01"`–`"99"` = branch locations |
+| `lastReqDt` | Last Request Date/Time | string(14) | `"20250101010000"` | Sync cursor- returns only records changed after this timestamp (`yyyyMMddHHmmss`) |
+| `regrId` | Registrant ID | string(20) | `"1"` | User ID of whoever created the record |
+| `regrNm` | Registrant Name | string(60) | `"Kayko"` | Name of whoever created the record (max 8 chars for sales) |
+| `modrId` | Modifier ID | string(20) | `"1"` | User ID of whoever last modified the record |
+| `modrNm` | Modifier Name | string(60) | `"Kayko"` | Name of whoever last modified the record |
+| `useYn` | Use Yes/No | string(1) | `"Y"` | `"Y"` = active, `"N"` = inactive |
+| `remark` | Remark | string | `null` | Free-text notes |
+
+## Response envelope
+
+| Acronym | Full Name | Description |
+|---------|-----------|-------------|
+| `resultCd` | Result Code | `"000"` = success. See [Response Codes](/reference/response-codes) |
+| `resultMsg` | Result Message | Human-readable status |
+| `resultDt` | Result Date/Time | Server timestamp when the response was generated |
+
+## Device & initialization
+
+| Acronym | Full Name | Description |
+|---------|-----------|-------------|
+| `dvcSrlNo` | Device Serial Number | Unique hardware identifier assigned during RRA equipment registration |
+| `dvcId` | Device ID | Server-assigned device identifier |
+| `sdcId` | SDC ID | Sales Data Controller ID (12 chars) |
+| `mrcNo` | MRC Number | Machine Registration Code (11 chars) |
+| `intrlKey` | Internal Key | Cryptographic key for receipt internal data |
+| `signKey` | Sign Key | Cryptographic key for receipt signatures |
+| `cmcKey` | Communication Key | Key for secure server communication |
+
+## Customer & branch
+
+| Acronym | Full Name | Description |
+|---------|-----------|-------------|
+| `custTin` | Customer TIN | Buyer's 9-digit TIN |
+| `custmTin` | Customer TIN (lookup) | TIN to look up in customer search |
+| `custNm` | Customer Name | Buyer's business or individual name |
+| `custNo` | Customer Number | Your internal customer reference |
+| `custPhone` / `custMblNo` | Customer Mobile Number | Buyer's phone number |
+| `custBhfId` | Customer Branch ID | Branch ID of the customer (for stock transfers) |
+| `bhfNm` | Branch Name | Branch office display name |
+| `hqYn` | Head Quarter Yes/No | `"Y"` if this is the head office |
+| `taxprNm` | Taxpayer Name | Registered business name |
+| `taxprSttsCd` | Taxpayer Status Code | `"A"` = Active, `"D"` = Discarded |
+
+## Items & products
+
+| Acronym | Full Name | Description |
+|---------|-----------|-------------|
+| `itemCd` | Item Code | Unique product identifier. See [Items API- item code format](/api/items#item-code-format) |
+| `itemClsCd` | Item Classification Code | RRA product category (10 digits) |
+| `itemTyCd` | Item Type Code | `"1"` = Raw Material, `"2"` = Finished Product, `"3"` = Service |
+| `itemNm` | Item Name | Product display name |
+| `itemStdNm` | Item Standard Name | Standardized product name (optional) |
+| `orgnNatCd` | Origin Nation Code | Country of origin (e.g. `"RW"` for Rwanda) |
+| `pkgUnitCd` | Packaging Unit Code | How the item is packaged (e.g. `"NT"` = Net, `"BX"` = Box) |
+| `qtyUnitCd` | Quantity Unit Code | Unit of measure (e.g. `"U"` = Pieces, `"KG"` = Kilogram) |
+| `taxTyCd` | Tax Type Code | `"A"` = Exempt, `"B"` = 18% VAT, `"C"`, `"D"` |
+| `bcd` | Barcode | Product barcode (EAN/UPC) |
+| `dftPrc` | Default Price | Standard unit price |
+| `btchNo` | Batch Number | Manufacturing batch identifier |
+| `sftyQty` | Safety Quantity | Minimum stock alert threshold |
+| `isrcAplcbYn` | Insurance Applicable Y/N | Whether insurance applies (pharmacy) |
+| `cpstItemCd` | Composition Item Code | Component item in a BOM |
+| `cpstQty` | Composition Quantity | Quantity of component needed |
+
+## Sales & invoices
+
+| Acronym | Full Name | Description |
+|---------|-----------|-------------|
+| `invcNo` | Invoice Number | Your sequential invoice number |
+| `orgInvcNo` | Original Invoice Number | Original invoice (for refunds/copies- references the source sale) |
+| `salesTyCd` | Sales Type Code | `"N"` = Normal, `"C"` = Copy, `"T"` = Training, `"P"` = Proforma |
+| `rcptTyCd` | Receipt Type Code | `"S"` = Sale, `"R"` = Refund |
+| `pmtTyCd` | Payment Type Code | `"01"` = Cash, `"02"` = Credit, `"06"` = Mobile Money, etc. |
+| `salesSttsCd` | Sales Status Code | `"02"` = Approved, `"04"` = Canceled, `"05"` = Refunded |
+| `pchsSttsCd` | Purchase Status Code | Same progress codes as sales |
+| `cfmDt` | Confirmed Date | Validation timestamp (`yyyyMMddHHmmss`) |
+| `salesDt` | Sales Date | Date of sale (`yyyyMMdd`) |
+| `stockRlsDt` | Stock Released Date | When inventory was deducted |
+| `cnclDt` | Cancel Date | Cancellation timestamp |
+| `cnclReqDt` | Cancel Request Date | When cancellation was requested |
+| `rfdDt` | Refund Date | Refund timestamp |
+| `rfdRsnCd` | Refund Reason Code | Why the refund occurred. See [Enumerations](/reference/enumerations) |
+| `prcOrdCd` | Purchase Order Code | **Mandatory for business customers**, optional for individuals (v1.0.5+) |
+| `prchrAcptcYn` | Purchase Acceptance Y/N | Whether buyer accepted the goods (`"Y"` / `"N"`) |
+
+## Tax amounts
+
+| Acronym | Full Name | Description |
+|---------|-----------|-------------|
+| `taxblAmtA`–`D` | Taxable Amount A–D | Taxable base per tax category |
+| `taxRtA`–`D` | Tax Rate A–D | Rate per category (B is typically `18`) |
+| `taxAmtA`–`D` | Tax Amount A–D | Calculated tax per category |
+| `totTaxblAmt` | Total Taxable Amount | Sum of all taxable amounts |
+| `totTaxAmt` | Total Tax Amount | Sum of all tax amounts |
+| `totAmt` | Total Amount | Grand total (tax-inclusive for cat B) |
+| `totItemCnt` | Total Item Count | Number of line items |
+
+## Line item fields
+
+| Acronym | Full Name | Description |
+|---------|-----------|-------------|
+| `itemSeq` | Item Sequence | Line number (1, 2, 3…) |
+| `pkg` | Package | Number of packages |
+| `qty` | Quantity | Units sold/purchased |
+| `prc` | Price | Unit price |
+| `splyAmt` | Supply Amount | Price × quantity (before discount) |
+| `dcRt` | Discount Rate | Discount percentage |
+| `dcAmt` | Discount Amount | Discount value |
+| `totDcAmt` | Total Discount Amount | Total discount on the line |
+| `taxblAmt` | Taxable Amount | Taxable base for this line |
+| `taxAmt` | Tax Amount | VAT for this line |
+| `itemExprDt` | Item Expiry Date | Expiration date (`yyyyMMdd`) |
+
+## Receipt (EBM signature data)
+
+| Acronym | Full Name | Description |
+|---------|-----------|-------------|
+| `rcptSign` | Receipt Signature | Cryptographic signature printed on the receipt |
+| `intrlData` | Internal Data | Internal receipt verification data |
+| `curRcptNo` | Current Receipt Number | This receipt's sequence number |
+| `totRcptNo` | Total Receipt Number | Cumulative receipt counter |
+| `rcptPbctDt` | Receipt Published Date | When the receipt was issued |
+| `rptNo` | Report Number | Receipt report number (usually = invoice number) |
+| `topMsg` | Top Message | Header text printed on receipt |
+| `btmMsg` | Bottom Message | Footer text printed on receipt |
+| `trdeNm` | Trade Name | Customer trade name on receipt |
+
+## Purchases
+
+| Acronym | Full Name | Description |
+|---------|-----------|-------------|
+| `spplrTin` | Supplier TIN | Seller's TIN |
+| `spplrNm` | Supplier Name | Seller's business name |
+| `spplrBhfId` | Supplier Branch ID | Seller's branch |
+| `spplrInvcNo` | Supplier Invoice Number | Seller's invoice reference |
+| `spplrItemCd` | Supplier Item Code | Seller's product code |
+| `spplrItemClsCd` | Supplier Item Class Code | Seller's classification code |
+| `spplrItemNm` | Supplier Item Name | Seller's product name |
+| `pchsTyCd` | Purchase Type Code | `"N"` = Normal (same as sales type codes) |
+| `pchsDt` | Purchase Date | Date of purchase (`yyyyMMdd`) |
+| `wrhsDt` | Warehousing Date | When goods were received |
+| `regTyCd` | Registration Type Code | `"A"` = Automatic, `"M"` = Manual |
+
+## Stock
+
+| Acronym | Full Name | Description |
+|---------|-----------|-------------|
+| `sarNo` | Stock And Release Number | Stock movement document number |
+| `orgSarNo` | Original SAR Number | Reference to original movement |
+| `sarTyCd` | Stock And Release Type Code | Movement type. See [Stock In/Out Types](/reference/enumerations#stock-inout-type) |
+| `ocrnDt` | Occurrence Date | When the movement happened (`yyyyMMdd`) |
+| `rsdQty` | Residual Quantity | Current stock on hand |
+
+## Import items
+
+| Acronym | Full Name | Description |
+|---------|-----------|-------------|
+| `taskCd` | Task Code | Customs declaration task reference |
+| `dclDe` | Declaration Date | Customs declaration date (`yyyyMMdd`) |
+| `dclNo` | Declaration Number | Customs declaration number |
+| `hsCd` | HS Code | Harmonized System tariff code |
+| `imptItemSttsCd` | Import Item Status Code | `"1"` Unsent, `"2"` Waiting, `"3"` Approved, `"4"` Cancelled |
+| `exptNatCd` | Export Nation Code | Country goods were exported from |
+| `spplrNm` | Supplier Name | Foreign supplier name |
+
+## Insurance (pharmacy)
+
+| Acronym | Full Name | Description |
+|---------|-----------|-------------|
+| `isrccCd` | Insurance Company Code | Insurance provider code |
+| `isrccNm` | Insurance Company Name | Insurance provider name |
+| `isrcRt` | Insurance Rate | Premium rate percentage |
+| `isrcAmt` | Insurance Amount | Insurance amount on a line item |
+
+## Pagination
+
+| Acronym | Full Name | Description |
+|---------|-----------|-------------|
+| `startPageIndex` | Start Page Index | First page to retrieve |
+| `endPageIndex` | End Page Index | Last page to retrieve |

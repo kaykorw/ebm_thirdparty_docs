@@ -1,0 +1,136 @@
+---
+title: Imports
+description: Retrieve and confirm customs import declarations.
+icon: ship
+---
+
+Import items come from RRA's customs system. You pull declarations, convert them to your item catalog, and confirm.
+
+---
+
+## Get imported items
+
+`POST /imports/selectImportItems`
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/imports/selectImportItems" \
+  -H "Content-Type: application/json" \
+  -d '{"tin":"999958074","bhfId":"00","lastReqDt":"20240706192223"}'
+```
+
+```javascript JavaScript
+const { data } = await vsdcPost('/imports/selectImportItems', {
+  tin: '999958074', bhfId: '00', lastReqDt: '20240706192223',
+});
+// data.itemList → customs declarations
+```
+
+```php PHP
+<?php
+$result = vsdcPost('/imports/selectImportItems', [
+    'tin' => '999958074', 'bhfId' => '00', 'lastReqDt' => '20240706192223',
+]);
+```
+
+```json Payload
+{
+  "tin": "999958074",
+  "bhfId": "00",
+  "lastReqDt": "20240706192223"
+}
+```
+
+</CodeGroup>
+
+### Response fields per import item
+
+| Field | Description |
+|-------|-------------|
+| `taskCd` | Customs task reference |
+| `dclDe` | Declaration date |
+| `dclNo` | Declaration number |
+| `hsCd` | HS tariff code |
+| `itemNm` | Declared item name |
+| `qty` / `qtyUnitCd` | Quantity and unit |
+| `invcFcurAmt` / `invcFcurCd` | Foreign currency amount |
+
+---
+
+## Update imported item
+
+Convert a customs declaration into a registered EBM item.
+
+`POST /imports/updateImportItems`
+
+<ParamField body="taskCd" type="string" required>Customs task code</ParamField>
+<ParamField body="dclDe" type="string" required>Declaration date (`yyyyMMdd`)</ParamField>
+<ParamField body="itemSeq" type="number" required>Item sequence in the declaration</ParamField>
+<ParamField body="hsCd" type="string" required>HS code</ParamField>
+<ParamField body="itemClsCd" type="string" required>Your item classification code</ParamField>
+<ParamField body="itemCd" type="string" required>Your item code to assign</ParamField>
+<ParamField body="imptItemSttsCd" type="string" required>Status: `"3"` = Approved, `"4"` = Cancelled</ParamField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/imports/updateImportItems" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tin": "999958074", "bhfId": "00",
+    "taskCd": "2287735", "dclDe": "20200220", "itemSeq": 1,
+    "hsCd": "25201000000",
+    "itemClsCd": "4229311900", "itemCd": "AD2AMU0000024",
+    "imptItemSttsCd": "4",
+    "modrId": "1", "modrNm": "Kayko",
+    "regrId": "1", "regrNm": "Kayko",
+    "remark": "remark"
+  }'
+```
+
+```javascript JavaScript
+await vsdcPost('/imports/updateImportItems', {
+  tin: '999958074', bhfId: '00',
+  taskCd: '2287735', dclDe: '20200220', itemSeq: 1,
+  hsCd: '25201000000',
+  itemClsCd: '4229311900', itemCd: 'AD2AMU0000024',
+  imptItemSttsCd: '4',
+  modrId: '1', modrNm: 'Kayko',
+  regrId: '1', regrNm: 'Kayko',
+});
+```
+
+```php PHP
+<?php
+vsdcPost('/imports/updateImportItems', [
+    'tin' => '999958074', 'bhfId' => '00',
+    'taskCd' => '2287735', 'dclDe' => '20200220', 'itemSeq' => 1,
+    'hsCd' => '25201000000',
+    'itemClsCd' => '4229311900', 'itemCd' => 'AD2AMU0000024',
+    'imptItemSttsCd' => '4',
+    'modrId' => '1', 'modrNm' => 'Kayko',
+    'regrId' => '1', 'regrNm' => 'Kayko',
+]);
+```
+
+```json Payload
+{
+  "tin": "999958074",
+  "bhfId": "00",
+  "taskCd": "2287735",
+  "dclDe": "20200220",
+  "itemSeq": 1,
+  "hsCd": "25201000000",
+  "itemClsCd": "4229311900",
+  "itemCd": "AD2AMU0000024",
+  "imptItemSttsCd": "4",
+  "modrId": "1",
+  "modrNm": "Kayko",
+  "regrId": "1",
+  "regrNm": "Kayko",
+  "remark": "remark"
+}
+```
+
+</CodeGroup>

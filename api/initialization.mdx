@@ -1,0 +1,180 @@
+---
+title: Initialization
+description: Enable EBM and initialize the VSDC device through Kayko /ebm/initialize, never call selectInitInfo directly.
+icon: key
+---
+
+All initialization goes through **Kayko EBM** under `/ebm/initialize`. Device init proxies to VSDC `initializer/selectInitInfo` using the business `ebm_url`.
+
+<Warning>
+  These routes use the **internal** token (`X-API-Token: EBM_INTERNAL_API_TOKEN`), not a business `sk_` API key. Core360 calls them when you Enable EBM in the dashboard.
+</Warning>
+
+## Enable EBM
+
+`POST /initialize/enable`
+
+Provisions a VSDC instance and returns `ebm_url`.
+
+<ParamField body="business_code" type="string" required>
+  Business code (`A–Z`, `0–9`, `_`, `-`), max 100.
+</ParamField>
+
+<ParamField body="redeploy" type="boolean">
+  Force redeploy. Default `false`.
+</ParamField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/initialize/enable" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Token: $EBM_INTERNAL_API_TOKEN" \
+  -d '{
+    "business_code": "ACME01",
+    "redeploy": false
+  }'
+```
+
+```javascript JavaScript
+const res = await fetch(`${BASE_URL}/initialize/enable`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Token': process.env.EBM_INTERNAL_API_TOKEN,
+  },
+  body: JSON.stringify({ business_code: 'ACME01', redeploy: false }),
+}).then((r) => r.json());
+// res.ebm_url → http://localhost:8080/rra/ACME01/
+```
+
+```json Payload
+{
+  "business_code": "ACME01",
+  "redeploy": false
+}
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "ebm_url": "http://localhost:8080/rra/ACME01/",
+  "business_code": "ACME01",
+  "deployment_id": "42",
+  "status_url": "…"
+}
+```
+
+Store `ebm_url`- Kayko EBM proxy calls must send it in the body.
+
+---
+
+## Deployment status
+
+`GET /initialize/status/:deploymentId`
+
+<ParamField path="deploymentId" type="string" required>
+  Numeric deployment id from enable.
+</ParamField>
+
+```bash
+curl -X GET "{{baseUrl}}/initialize/status/42" \
+  -H "X-API-Token: $EBM_INTERNAL_API_TOKEN"
+```
+
+---
+
+## Initialize device
+
+`POST /initialize/init`
+
+Kayko EBM remaps snake_case fields and proxies to VSDC **`initializer/selectInitInfo`**. Returns the **full** VSDC envelope.
+
+<ParamField body="tin" type="string" required>
+  9-digit TIN.
+</ParamField>
+
+<ParamField body="branch_id" type="string" required>
+  2-character branch ID (`00` = head office).
+</ParamField>
+
+<ParamField body="device_serial_number" type="string" required>
+  Device serial from RRA equipment registration.
+</ParamField>
+
+<ParamField body="ebm_url" type="string" required>
+  Business VSDC base URL from enable (allowlisted absolute URL).
+</ParamField>
+
+| Kayko field | Sent to VSDC as |
+|------------|-----------------|
+| `tin` | `tin` |
+| `branch_id` | `bhfId` |
+| `device_serial_number` | `dvcSrlNo` |
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/initialize/init" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Token: $EBM_INTERNAL_API_TOKEN" \
+  -d '{
+    "tin": "122548433",
+    "branch_id": "03",
+    "device_serial_number": "QUA-77379",
+    "ebm_url": "http://localhost:8080/rra/ACME01/"
+  }'
+```
+
+```javascript JavaScript
+const result = await fetch(`${BASE_URL}/initialize/init`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Token': process.env.EBM_INTERNAL_API_TOKEN,
+  },
+  body: JSON.stringify({
+    tin: '122548433',
+    branch_id: '03',
+    device_serial_number: 'QUA-77379',
+    ebm_url: process.env.EBM_URL,
+  }),
+}).then((r) => r.json());
+
+const { intrlKey, signKey, cmcKey } = result.data.info;
+```
+
+```json Payload
+{
+  "tin": "122548433",
+  "branch_id": "03",
+  "device_serial_number": "QUA-77379",
+  "ebm_url": "http://localhost:8080/rra/ACME01/"
+}
+```
+
+</CodeGroup>
+
+### Response `data.info` (inside VSDC envelope)
+
+<ResponseField name="tin" type="string">Taxpayer TIN</ResponseField>
+<ResponseField name="taxprNm" type="string">Registered business name</ResponseField>
+<ResponseField name="bhfId" type="string">Branch ID</ResponseField>
+<ResponseField name="bhfNm" type="string">Branch name</ResponseField>
+<ResponseField name="dvcId" type="string">Server-assigned device ID</ResponseField>
+<ResponseField name="intrlKey" type="string">Internal signing key</ResponseField>
+<ResponseField name="signKey" type="string">Receipt signature key</ResponseField>
+<ResponseField name="cmcKey" type="string">Communication key</ResponseField>
+
+<Check>
+  Call this **once** per device. Signing keys are separate from your business API key (`sk_…`).
+</Check>
+
+## Related
+
+- [API Keys](/concepts/api-keys)- business `sk_` keys for customers/constants
+- [API Overview](/api/overview)- Kayko EBM vs VSDC
+- Playground: [POST /initialize/init](/api-reference/initialize/init)
