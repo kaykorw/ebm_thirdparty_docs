@@ -80,6 +80,8 @@
     );
   }
 
+  var PLAYGROUND_HREF = '/playground/overview';
+
   function buildSelector() {
     var wrapper = document.createElement('div');
     wrapper.id = 'kayko-api-env';
@@ -112,10 +114,20 @@
     return wrapper;
   }
 
-  function placeSelectorNearTheme(wrapper) {
+  function buildPlaygroundButton() {
+    var link = document.createElement('a');
+    link.id = 'kayko-api-playground';
+    link.className = 'kayko-api-playground';
+    link.href = PLAYGROUND_HREF;
+    link.setAttribute('aria-label', 'API Playground');
+    link.textContent = 'API Playground';
+    return link;
+  }
+
+  function placeNearTheme(node) {
     var themeToggle = findThemeToggle();
     if (themeToggle && themeToggle.parentElement) {
-      themeToggle.parentElement.insertBefore(wrapper, themeToggle);
+      themeToggle.parentElement.insertBefore(node, themeToggle);
       return true;
     }
 
@@ -125,23 +137,43 @@
       document.getElementById('navbar');
 
     if (!container) return false;
-    container.appendChild(wrapper);
+    container.appendChild(node);
     return true;
   }
 
-  function injectSelector() {
-    var existing = document.getElementById('kayko-api-env');
+  function ensureNavbarOrder() {
+    var env = document.getElementById('kayko-api-env');
+    var playground = document.getElementById('kayko-api-playground');
     var themeToggle = findThemeToggle();
+    if (!env || !playground) return;
 
-    if (existing) {
-      if (themeToggle && themeToggle.parentElement && existing.nextElementSibling !== themeToggle) {
-        themeToggle.parentElement.insertBefore(existing, themeToggle);
-      }
-      return;
+    var parent = themeToggle && themeToggle.parentElement
+      ? themeToggle.parentElement
+      : env.parentElement;
+    if (!parent) return;
+
+    // Order: API Environment → API Playground → theme toggle
+    if (env.parentElement !== parent) parent.insertBefore(env, themeToggle || null);
+    if (playground.parentElement !== parent || env.nextElementSibling !== playground) {
+      parent.insertBefore(playground, env.nextSibling);
+    }
+    if (themeToggle && playground.nextElementSibling !== themeToggle) {
+      parent.insertBefore(themeToggle, playground.nextSibling);
+    }
+  }
+
+  function injectSelector() {
+    var existingEnv = document.getElementById('kayko-api-env');
+    var existingPlayground = document.getElementById('kayko-api-playground');
+
+    if (!existingEnv) {
+      placeNearTheme(buildSelector());
+    }
+    if (!existingPlayground) {
+      placeNearTheme(buildPlaygroundButton());
     }
 
-    var wrapper = buildSelector();
-    placeSelectorNearTheme(wrapper);
+    ensureNavbarOrder();
   }
 
   function init() {
