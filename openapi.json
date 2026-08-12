@@ -1,22 +1,14 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Kayko VSDC API",
-    "description": "Kayko VSDC / EBM API. Prefer Kayko EBM gateway routes under /ebm for initialize, customers, and constants. Full VSDC domain paths remain documented.",
+    "title": "Kayko EBM API",
+    "description": "Kayko EBM third-party API gateway for RRA EBM 2.1. Authenticate with a business API key. Routes cover initialize, customers, constants, sales, purchases, stock, and more.",
     "version": "1.0.5"
   },
   "servers": [
     {
       "url": "http://localhost:3000/ebm",
       "description": "Local EBM"
-    },
-    {
-      "url": "https://vsdc.kayko.rw/rra-2.1.2.3.8",
-      "description": "Production VSDC"
-    },
-    {
-      "url": "http://localhost:8080",
-      "description": "Local VSDC"
     }
   ],
   "security": [
@@ -91,7 +83,7 @@
         ],
         "operationId": "enable_ebm",
         "summary": "Enable EBM",
-        "description": "Provision a VSDC instance for a business and return `ebm_url`. Called when the dashboard enables EBM. Requires `X-API-Token` (internal), not a business API key.",
+        "description": "Provision EBM for a business and return `ebm_url`. Called when the dashboard enables EBM. Requires `X-API-Token` (internal), not a business API key.",
         "security": [
           {
             "InternalToken": []
@@ -288,7 +280,7 @@
                   "ebm_url": {
                     "type": "string",
                     "format": "uri",
-                    "description": "Business VSDC base URL from Enable EBM"
+                    "description": "Business EBM base URL from Enable EBM"
                   }
                 }
               },
@@ -303,7 +295,7 @@
         },
         "responses": {
           "200": {
-            "description": "Full VSDC envelope",
+            "description": "Full result envelope",
             "content": {
               "application/json": {
                 "example": {
@@ -313,7 +305,7 @@
                   "data": {
                     "info": {
                       "tin": "999000099",
-                      "taxprNm": "TEST VSDC",
+                      "taxprNm": "TEST EBM",
                       "bhfId": "00",
                       "bhfNm": "Headquarter",
                       "dvcId": "9990000997006310",
@@ -414,7 +406,7 @@
         },
         "responses": {
           "200": {
-            "description": "Unwrapped VSDC customer data (or empty)"
+            "description": "Unwrapped customer data (or empty)"
           },
           "401": {
             "description": "Missing/invalid API key",
@@ -591,7 +583,7 @@
         },
         "responses": {
           "200": {
-            "description": "Unwrapped VSDC data"
+            "description": "Unwrapped data"
           },
           "401": {
             "description": "Missing/invalid API key"
@@ -2303,7 +2295,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -2351,7 +2343,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/branches/saveBrancheCustomers', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'custNo' => '999991113',\n    'custTin' => '118620650',\n    'custNm' => 'Kayko Group Ltd',\n    'adrs' => null,\n    'telNo' => null,\n    'email' => null,\n    'faxNo' => null,\n    'useYn' => 'Y',\n    'remark' => null,\n    'regrNm' => 'Admin',\n    'regrId' => 'Admin',\n    'modrNm' => 'Admin',\n    'modrId' => 'Admin'\n]);"
+            "source": "<?php\n$response = ebmPost('/branches/saveBrancheCustomers', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'custNo' => '999991113',\n    'custTin' => '118620650',\n    'custNm' => 'Kayko Group Ltd',\n    'adrs' => null,\n    'telNo' => null,\n    'email' => null,\n    'faxNo' => null,\n    'useYn' => 'Y',\n    'remark' => null,\n    'regrNm' => 'Admin',\n    'regrId' => 'Admin',\n    'modrNm' => 'Admin',\n    'modrId' => 'Admin'\n]);"
           },
           {
             "lang": "json",
@@ -2393,7 +2385,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -2441,7 +2433,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/branches/saveBrancheInsurances', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'isrccCd' => 'ISRCC01',\n    'isrccNm' => 'ISRCC NAME',\n    'modrId' => '123',\n    'modrNm' => 'Modr Name',\n    'regrId' => '123',\n    'regrNm' => 'Regr Name',\n    'isrcRt' => 20,\n    'useYn' => 'Y'\n]);"
+            "source": "<?php\n$response = ebmPost('/branches/saveBrancheInsurances', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'isrccCd' => 'ISRCC01',\n    'isrccNm' => 'ISRCC NAME',\n    'modrId' => '123',\n    'modrNm' => 'Modr Name',\n    'regrId' => '123',\n    'regrNm' => 'Regr Name',\n    'isrcRt' => 20,\n    'useYn' => 'Y'\n]);"
           },
           {
             "lang": "json",
@@ -2487,7 +2479,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -2535,7 +2527,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/branches/saveBrancheUsers', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'userId' => 'userId3',\n    'userNm' => 'User Name3',\n    'pwd' => '12341234',\n    'adrs' => null,\n    'modrId' => '123',\n    'modrNm' => 'Modr Name',\n    'regrId' => '123',\n    'regrNm' => 'Regr Name',\n    'cntc' => null,\n    'authCd' => null,\n    'remark' => null,\n    'useYn' => 'Y'\n]);"
+            "source": "<?php\n$response = ebmPost('/branches/saveBrancheUsers', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'userId' => 'userId3',\n    'userNm' => 'User Name3',\n    'pwd' => '12341234',\n    'adrs' => null,\n    'modrId' => '123',\n    'modrNm' => 'Modr Name',\n    'regrId' => '123',\n    'regrNm' => 'Regr Name',\n    'cntc' => null,\n    'authCd' => null,\n    'remark' => null,\n    'useYn' => 'Y'\n]);"
           },
           {
             "lang": "json",
@@ -2572,7 +2564,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -2620,7 +2612,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/branches/selectBranches', [\n    'tin' => '145515745',\n    'bhfId' => '01',\n    'lastReqDt' => '20210101010000',\n    'startPageIndex' => '1',\n    'endPageIndex' => '10'\n]);"
+            "source": "<?php\n$response = ebmPost('/branches/selectBranches', [\n    'tin' => '145515745',\n    'bhfId' => '01',\n    'lastReqDt' => '20210101010000',\n    'startPageIndex' => '1',\n    'endPageIndex' => '10'\n]);"
           },
           {
             "lang": "json",
@@ -2655,7 +2647,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -2703,7 +2695,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/code/selectCodes', [\n    'tin' => '103093362',\n    'bhfId' => '01',\n    'lastReqDt' => '20250101010000'\n]);"
+            "source": "<?php\n$response = ebmPost('/code/selectCodes', [\n    'tin' => '103093362',\n    'bhfId' => '01',\n    'lastReqDt' => '20250101010000'\n]);"
           },
           {
             "lang": "json",
@@ -2738,7 +2730,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -2786,7 +2778,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/customers/selectCustomer', [\n    'tin' => '121066044',\n    'bhfId' => '02',\n    'custmTin' => '148175665'\n]);"
+            "source": "<?php\n$response = ebmPost('/customers/selectCustomer', [\n    'tin' => '121066044',\n    'bhfId' => '02',\n    'custmTin' => '148175665'\n]);"
           },
           {
             "lang": "json",
@@ -2821,7 +2813,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -2869,7 +2861,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/imports/selectImportItems', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'lastReqDt' => '20240706192223'\n]);"
+            "source": "<?php\n$response = ebmPost('/imports/selectImportItems', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'lastReqDt' => '20240706192223'\n]);"
           },
           {
             "lang": "json",
@@ -2886,7 +2878,7 @@
         ],
         "summary": "Update Import Item",
         "operationId": "save_imported_items",
-        "description": "Confirm and convert a customs import declaration into a registered VSDC product. Assigns an `itemCd` and classification to the imported goods.",
+        "description": "Confirm and convert a customs import declaration into a registered product. Assigns an `itemCd` and classification to the imported goods.",
         "requestBody": {
           "required": true,
           "content": {
@@ -2915,7 +2907,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -2945,7 +2937,7 @@
         },
         "x-mint": {
           "metadata": {
-            "description": "Confirm and convert a customs import declaration into a registered VSDC product. Assigns an `itemCd` and classification to the imported goods."
+            "description": "Confirm and convert a customs import declaration into a registered product. Assigns an `itemCd` and classification to the imported goods."
           },
           "content": "Call after `selectImportItems`. Set `imptItemSttsCd` to confirm the conversion status."
         },
@@ -2963,7 +2955,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/imports/updateImportItems', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'taskCd' => '2287735',\n    'dclDe' => '20200220',\n    'itemSeq' => 1,\n    'hsCd' => '25201000000',\n    'itemClsCd' => '4229311900',\n    'itemCd' => 'AD2AMU0000024',\n    'imptItemSttsCd' => '4',\n    'modrId' => '1',\n    'modrNm' => 'Kayko',\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'remark' => 'remark'\n]);"
+            "source": "<?php\n$response = ebmPost('/imports/updateImportItems', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'taskCd' => '2287735',\n    'dclDe' => '20200220',\n    'itemSeq' => 1,\n    'hsCd' => '25201000000',\n    'itemClsCd' => '4229311900',\n    'itemCd' => 'AD2AMU0000024',\n    'imptItemSttsCd' => '4',\n    'modrId' => '1',\n    'modrNm' => 'Kayko',\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'remark' => 'remark'\n]);"
           },
           {
             "lang": "json",
@@ -2998,7 +2990,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -3046,7 +3038,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/itemClass/selectItemsClass', [\n    'tin' => '147069592',\n    'bhfId' => '00',\n    'lastReqDt' => '20210101000000'\n]);"
+            "source": "<?php\n$response = ebmPost('/itemClass/selectItemsClass', [\n    'tin' => '147069592',\n    'bhfId' => '00',\n    'lastReqDt' => '20210101000000'\n]);"
           },
           {
             "lang": "json",
@@ -3085,7 +3077,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -3133,7 +3125,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/items/saveItemComposition', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'itemCd' => '1',\n    'cpstItemCd' => '1',\n    'cpstQty' => 1,\n    'regrId' => '123',\n    'regrNm' => 'Testing Name'\n]);"
+            "source": "<?php\n$response = ebmPost('/items/saveItemComposition', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'itemCd' => '1',\n    'cpstItemCd' => '1',\n    'cpstQty' => 1,\n    'regrId' => '123',\n    'regrNm' => 'Testing Name'\n]);"
           },
           {
             "lang": "json",
@@ -3150,7 +3142,7 @@
         ],
         "summary": "Save Item",
         "operationId": "save_items",
-        "description": "Register a new product or update an existing one in the VSDC catalog. Every sale line must reference a registered `itemCd`.",
+        "description": "Register a new product or update an existing one in the product catalog. Every sale line must reference a registered `itemCd`.",
         "requestBody": {
           "required": true,
           "content": {
@@ -3192,7 +3184,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -3222,7 +3214,7 @@
         },
         "x-mint": {
           "metadata": {
-            "description": "Register a new product or update an existing one in the VSDC catalog. Every sale line must reference a registered `itemCd`."
+            "description": "Register a new product or update an existing one in the product catalog. Every sale line must reference a registered `itemCd`."
           },
           "content": "Generate `itemCd` using the format `{orgnNatCd}{itemTyCd}{pkgUnitCd}{qtyUnitCd}{sequence}`. See [Items API reference](/api/items#item-code-format)."
         },
@@ -3240,7 +3232,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/items/saveItems', [\n    'tin' => '999202800',\n    'bhfId' => '00',\n    'itemCd' => 'RW2NTU0000001',\n    'itemClsCd' => '8014160101',\n    'itemTyCd' => '2',\n    'itemNm' => 'Coca Cola',\n    'itemStdNm' => null,\n    'orgnNatCd' => 'RW',\n    'pkgUnitCd' => 'NT',\n    'qtyUnitCd' => 'U',\n    'taxTyCd' => 'B',\n    'btchNo' => null,\n    'bcd' => null,\n    'dftPrc' => 118,\n    'grpPrcL1' => null,\n    'grpPrcL2' => null,\n    'grpPrcL3' => null,\n    'grpPrcL4' => null,\n    'grpPrcL5' => null,\n    'addInfo' => null,\n    'sftyQty' => null,\n    'isrcAplcbYn' => 'N',\n    'modrId' => '1',\n    'modrNm' => 'Kayko',\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'useYn' => 'Y'\n]);"
+            "source": "<?php\n$response = ebmPost('/items/saveItems', [\n    'tin' => '999202800',\n    'bhfId' => '00',\n    'itemCd' => 'RW2NTU0000001',\n    'itemClsCd' => '8014160101',\n    'itemTyCd' => '2',\n    'itemNm' => 'Coca Cola',\n    'itemStdNm' => null,\n    'orgnNatCd' => 'RW',\n    'pkgUnitCd' => 'NT',\n    'qtyUnitCd' => 'U',\n    'taxTyCd' => 'B',\n    'btchNo' => null,\n    'bcd' => null,\n    'dftPrc' => 118,\n    'grpPrcL1' => null,\n    'grpPrcL2' => null,\n    'grpPrcL3' => null,\n    'grpPrcL4' => null,\n    'grpPrcL5' => null,\n    'addInfo' => null,\n    'sftyQty' => null,\n    'isrcAplcbYn' => 'N',\n    'modrId' => '1',\n    'modrNm' => 'Kayko',\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'useYn' => 'Y'\n]);"
           },
           {
             "lang": "json",
@@ -3275,7 +3267,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -3323,7 +3315,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/items/selectItems', [\n    'tin' => '123038911',\n    'bhfId' => '00',\n    'lastReqDt' => '20000101000000'\n]);"
+            "source": "<?php\n$response = ebmPost('/items/selectItems', [\n    'tin' => '123038911',\n    'bhfId' => '00',\n    'lastReqDt' => '20000101000000'\n]);"
           },
           {
             "lang": "json",
@@ -3358,7 +3350,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -3406,7 +3398,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/notices/selectNotices', [\n    'tin' => '123038911',\n    'bhfId' => '00',\n    'lastReqDt' => '20210101010000'\n]);"
+            "source": "<?php\n$response = ebmPost('/notices/selectNotices', [\n    'tin' => '123038911',\n    'bhfId' => '00',\n    'lastReqDt' => '20210101010000'\n]);"
           },
           {
             "lang": "json",
@@ -3479,7 +3471,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -3527,7 +3519,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/stock/saveStockItems', [\n    'tin' => '999958074',\n    'regTyCd' => 'M',\n    'useYn' => 'Y',\n    'bhfId' => '00',\n    'remark' => null,\n    'modrId' => '1',\n    'modrNm' => 'Kayko',\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'sarTyCd' => '11',\n    'sarNo' => '106',\n    'orgSarNo' => '00',\n    'custTin' => null,\n    'custNm' => null,\n    'custBhfId' => null,\n    'ocrnDt' => '20240520',\n    'totItemCnt' => 1,\n    'totTaxblAmt' => 1000,\n    'totTaxAmt' => 1000,\n    'totAmt' => 1000,\n    'itemList' => [\n        [\n            'itemSeq' => 1,\n            'itemCd' => 'RW3NTXNOX0000006',\n            'itemClsCd' => '5012161100',\n            'itemNm' => 'Inyange Water',\n            'qtyUnitCd' => 'U',\n            'pkgUnitCd' => 'NT',\n            'bcd' => null,\n            'qty' => 50,\n            'prc' => 10000,\n            'splyAmt' => 1000,\n            'totDcAmt' => 9000,\n            'taxTyCd' => 'B',\n            'taxblAmt' => 1000,\n            'taxAmt' => 152.54,\n            'totAmt' => 1000,\n            'pkg' => 1,\n            'itemExprDt' => '20250101'\n        ]\n    ]\n]);"
+            "source": "<?php\n$response = ebmPost('/stock/saveStockItems', [\n    'tin' => '999958074',\n    'regTyCd' => 'M',\n    'useYn' => 'Y',\n    'bhfId' => '00',\n    'remark' => null,\n    'modrId' => '1',\n    'modrNm' => 'Kayko',\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'sarTyCd' => '11',\n    'sarNo' => '106',\n    'orgSarNo' => '00',\n    'custTin' => null,\n    'custNm' => null,\n    'custBhfId' => null,\n    'ocrnDt' => '20240520',\n    'totItemCnt' => 1,\n    'totTaxblAmt' => 1000,\n    'totTaxAmt' => 1000,\n    'totAmt' => 1000,\n    'itemList' => [\n        [\n            'itemSeq' => 1,\n            'itemCd' => 'RW3NTXNOX0000006',\n            'itemClsCd' => '5012161100',\n            'itemNm' => 'Inyange Water',\n            'qtyUnitCd' => 'U',\n            'pkgUnitCd' => 'NT',\n            'bcd' => null,\n            'qty' => 50,\n            'prc' => 10000,\n            'splyAmt' => 1000,\n            'totDcAmt' => 9000,\n            'taxTyCd' => 'B',\n            'taxblAmt' => 1000,\n            'taxAmt' => 152.54,\n            'totAmt' => 1000,\n            'pkg' => 1,\n            'itemExprDt' => '20250101'\n        ]\n    ]\n]);"
           },
           {
             "lang": "json",
@@ -3562,7 +3554,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -3610,7 +3602,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/stock/selectStockItems', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'lastReqDt' => '20210520000000'\n]);"
+            "source": "<?php\n$response = ebmPost('/stock/selectStockItems', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'lastReqDt' => '20210520000000'\n]);"
           },
           {
             "lang": "json",
@@ -3627,7 +3619,7 @@
         ],
         "summary": "Save Stock Master",
         "operationId": "save_stock_master",
-        "description": "Update the current remaining quantity (`rsdQty`) for a registered item. Keeps VSDC inventory in sync with your physical stock count.",
+        "description": "Update the current remaining quantity (`rsdQty`) for a registered item. Keeps EBM inventory in sync with your physical stock count.",
         "requestBody": {
           "required": true,
           "content": {
@@ -3650,7 +3642,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -3680,9 +3672,9 @@
         },
         "x-mint": {
           "metadata": {
-            "description": "Update the current remaining quantity (`rsdQty`) for a registered item. Keeps VSDC inventory in sync with your physical stock count."
+            "description": "Update the current remaining quantity (`rsdQty`) for a registered item. Keeps EBM inventory in sync with your physical stock count."
           },
-          "content": "Call after `saveStockItems` to reflect the new balance. `rsdQty` is the authoritative on-hand quantity in VSDC."
+          "content": "Call after `saveStockItems` to reflect the new balance. `rsdQty` is the authoritative on-hand quantity in EBM."
         },
         "x-codeSamples": [
           {
@@ -3698,7 +3690,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/stockMaster/saveStockMaster', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'itemCd' => 'RW1NTXU0000006',\n    'rsdQty' => 1,\n    'modrId' => '123',\n    'modrNm' => 'Modr Name',\n    'regrId' => '123',\n    'regrNm' => 'Regr Name'\n]);"
+            "source": "<?php\n$response = ebmPost('/stockMaster/saveStockMaster', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'itemCd' => 'RW1NTXU0000006',\n    'rsdQty' => 1,\n    'modrId' => '123',\n    'modrNm' => 'Modr Name',\n    'regrId' => '123',\n    'regrNm' => 'Regr Name'\n]);"
           },
           {
             "lang": "json",
@@ -3819,7 +3811,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -3867,7 +3859,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/trnsPurchase/savePurchases', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'invcNo' => 18,\n    'orgInvcNo' => 18,\n    'spplrTin' => '105418285',\n    'spplrNm' => 'SUNDOWNER Ltd',\n    'spplrInvcNo' => '17',\n    'regTyCd' => 'A',\n    'pchsTyCd' => 'N',\n    'rcptTyCd' => 'N',\n    'pmtTyCd' => '01',\n    'pchsSttsCd' => '02',\n    'cfmDt' => '20240706165014',\n    'pchsDt' => '20200303',\n    'wrhsDt' => '20240706165014',\n    'cnclReqDt' => null,\n    'cnclDt' => null,\n    'rfdDt' => null,\n    'totItemCnt' => 2,\n    'taxblAmtA' => 0,\n    'taxblAmtB' => 8000,\n    'taxblAmtC' => 0,\n    'taxblAmtD' => 0,\n    'taxRtA' => 0,\n    'taxRtB' => 18,\n    'taxRtC' => 0,\n    'taxRtD' => 0,\n    'taxAmtA' => 0,\n    'taxAmtB' => 1220.34,\n    'taxAmtC' => 0,\n    'taxAmtD' => 0,\n    'totTaxblAmt' => 8000,\n    'totTaxAmt' => 1220.34,\n    'totAmt' => 8000,\n    'remark' => null,\n    'modrId' => '1',\n    'modrNm' => 'Kayko',\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'itemList' => [\n        [\n            'itemSeq' => 1,\n            'itemCd' => 'RW2BQL0000003',\n            'itemClsCd' => '4111363900',\n            'itemNm' => 'Water Jibu 2',\n            'bcd' => null,\n            'spplrItemClsCd' => '5012161100',\n            'spplrItemCd' => 'RW3NTXNOX0000006',\n            'spplrItemNm' => 'Buffet',\n            'pkgUnitCd' => 'BQ',\n            'pkg' => 1,\n            'qtyUnitCd' => 'L',\n            'qty' => 2,\n            'prc' => 100,\n            'splyAmt' => 100,\n            'dcRt' => 0,\n            'dcAmt' => 0,\n            'totDcAmt' => 0,\n            'taxTyCd' => 'B',\n            'taxblAmt' => 7000,\n            'taxAmt' => '2135.59',\n            'totAmt' => 7000,\n            'itemExprDt' => null\n        ],\n        [\n            'itemSeq' => 2,\n            'itemCd' => 'RW2BQL0000003',\n            'itemClsCd' => '4111363900',\n            'itemNm' => 'Water Jibu 2',\n            'bcd' => null,\n            'spplrItemClsCd' => '5020220100',\n            'spplrItemCd' => 'RW2BCXU0000001',\n            'spplrItemNm' => 'Fanta 33 Cl',\n            'pkgUnitCd' => 'BQ',\n            'pkg' => 1,\n            'qtyUnitCd' => 'L',\n            'qty' => 2,\n            'prc' => 100,\n            'splyAmt' => 100,\n            'dcRt' => 0,\n            'dcAmt' => 0,\n            'totDcAmt' => 0,\n            'taxTyCd' => 'B',\n            'taxblAmt' => 1000,\n            'taxAmt' => '305.08',\n            'totAmt' => 1000,\n            'itemExprDt' => null\n        ]\n    ]\n]);"
+            "source": "<?php\n$response = ebmPost('/trnsPurchase/savePurchases', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'invcNo' => 18,\n    'orgInvcNo' => 18,\n    'spplrTin' => '105418285',\n    'spplrNm' => 'SUNDOWNER Ltd',\n    'spplrInvcNo' => '17',\n    'regTyCd' => 'A',\n    'pchsTyCd' => 'N',\n    'rcptTyCd' => 'N',\n    'pmtTyCd' => '01',\n    'pchsSttsCd' => '02',\n    'cfmDt' => '20240706165014',\n    'pchsDt' => '20200303',\n    'wrhsDt' => '20240706165014',\n    'cnclReqDt' => null,\n    'cnclDt' => null,\n    'rfdDt' => null,\n    'totItemCnt' => 2,\n    'taxblAmtA' => 0,\n    'taxblAmtB' => 8000,\n    'taxblAmtC' => 0,\n    'taxblAmtD' => 0,\n    'taxRtA' => 0,\n    'taxRtB' => 18,\n    'taxRtC' => 0,\n    'taxRtD' => 0,\n    'taxAmtA' => 0,\n    'taxAmtB' => 1220.34,\n    'taxAmtC' => 0,\n    'taxAmtD' => 0,\n    'totTaxblAmt' => 8000,\n    'totTaxAmt' => 1220.34,\n    'totAmt' => 8000,\n    'remark' => null,\n    'modrId' => '1',\n    'modrNm' => 'Kayko',\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'itemList' => [\n        [\n            'itemSeq' => 1,\n            'itemCd' => 'RW2BQL0000003',\n            'itemClsCd' => '4111363900',\n            'itemNm' => 'Water Jibu 2',\n            'bcd' => null,\n            'spplrItemClsCd' => '5012161100',\n            'spplrItemCd' => 'RW3NTXNOX0000006',\n            'spplrItemNm' => 'Buffet',\n            'pkgUnitCd' => 'BQ',\n            'pkg' => 1,\n            'qtyUnitCd' => 'L',\n            'qty' => 2,\n            'prc' => 100,\n            'splyAmt' => 100,\n            'dcRt' => 0,\n            'dcAmt' => 0,\n            'totDcAmt' => 0,\n            'taxTyCd' => 'B',\n            'taxblAmt' => 7000,\n            'taxAmt' => '2135.59',\n            'totAmt' => 7000,\n            'itemExprDt' => null\n        ],\n        [\n            'itemSeq' => 2,\n            'itemCd' => 'RW2BQL0000003',\n            'itemClsCd' => '4111363900',\n            'itemNm' => 'Water Jibu 2',\n            'bcd' => null,\n            'spplrItemClsCd' => '5020220100',\n            'spplrItemCd' => 'RW2BCXU0000001',\n            'spplrItemNm' => 'Fanta 33 Cl',\n            'pkgUnitCd' => 'BQ',\n            'pkg' => 1,\n            'qtyUnitCd' => 'L',\n            'qty' => 2,\n            'prc' => 100,\n            'splyAmt' => 100,\n            'dcRt' => 0,\n            'dcAmt' => 0,\n            'totDcAmt' => 0,\n            'taxTyCd' => 'B',\n            'taxblAmt' => 1000,\n            'taxAmt' => '305.08',\n            'totAmt' => 1000,\n            'itemExprDt' => null\n        ]\n    ]\n]);"
           },
           {
             "lang": "json",
@@ -3884,7 +3876,7 @@
         ],
         "summary": "Select Purchases",
         "operationId": "get_purchases",
-        "description": "Pull supplier invoices awaiting your confirmation as a buyer. Returns purchases from other VSDC-registered suppliers changed since `lastReqDt`.",
+        "description": "Pull supplier invoices awaiting your confirmation as a buyer. Returns purchases from other EBM-registered suppliers changed since `lastReqDt`.",
         "requestBody": {
           "required": true,
           "content": {
@@ -3902,7 +3894,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -3932,7 +3924,7 @@
         },
         "x-mint": {
           "metadata": {
-            "description": "Pull supplier invoices awaiting your confirmation as a buyer. Returns purchases from other VSDC-registered suppliers changed since `lastReqDt`."
+            "description": "Pull supplier invoices awaiting your confirmation as a buyer. Returns purchases from other EBM-registered suppliers changed since `lastReqDt`."
           },
           "content": "When a supplier sells to you, their invoice appears here. Review and confirm via `savePurchases`."
         },
@@ -3950,7 +3942,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/trnsPurchase/selectTrnsPurchaseSales', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'lastReqDt' => '20240706204443'\n]);"
+            "source": "<?php\n$response = ebmPost('/trnsPurchase/selectTrnsPurchaseSales', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'lastReqDt' => '20240706204443'\n]);"
           },
           {
             "lang": "json",
@@ -4064,7 +4056,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -4112,7 +4104,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/trnsSales/resendSales', [\n    'tin' => '107993488',\n    'bhfId' => '01',\n    'cfmDt' => '20260609101449',\n    'rfdDt' => null,\n    'cnclDt' => null,\n    'custNm' => 'Customer',\n    'invcNo' => '257',\n    'modrId' => '1',\n    'modrNm' => 'Kayko',\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'remark' => null,\n    'taxRtA' => 0,\n    'taxRtB' => 18,\n    'taxRtC' => 0,\n    'taxRtD' => 0,\n    'totAmt' => 1580000,\n    'custTin' => '788312173',\n    'pmtTyCd' => '06',\n    'receipt' => [\n        'adrs' => null,\n        'rptNo' => '257',\n        'btmMsg' => 'Kayko v.2.3.11',\n        'topMsg' => 'SMATCONS Ltd\nADDRESS Remera, Gasabo, Umujyi wa Kigali, RWANDA\nPHONE +250781620053\n\nTIN 107993488\n',\n        'trdeNm' => 'Customer',\n        'custTin' => null,\n        'rcptSign' => 'P3SKYWLKGFJXFPXZ',\n        'curRcptNo' => 257,\n        'custMblNo' => '788312173',\n        'intrlData' => '2BGSI4XVCRPNPO32PTAZOLND5M',\n        'totRcptNo' => 257,\n        'rcptPbctDt' => '20260609101449',\n        'prchrAcptcYn' => 'Y'\n    ],\n    'salesDt' => '20260609',\n    'taxAmtA' => 0,\n    'taxAmtB' => '241016.95',\n    'taxAmtC' => 0,\n    'taxAmtD' => 0,\n    'itemList' => [\n        [\n            'bcd' => null,\n            'pkg' => 1,\n            'prc' => '15800.00',\n            'qty' => '100.00',\n            'dcRt' => '0.00',\n            'dcAmt' => '0.00',\n            'isrcRt' => null,\n            'itemCd' => 'RW2NTU0000001',\n            'itemNm' => 'Cimerwa cement 32.5',\n            'taxAmt' => '241016.95',\n            'totAmt' => '1580000.00',\n            'isrcAmt' => null,\n            'isrccCd' => null,\n            'isrccNm' => null,\n            'itemSeq' => 1,\n            'splyAmt' => '1580000.00',\n            'taxTyCd' => 'B',\n            'taxblAmt' => '1580000.00',\n            'totDcAmt' => '0.00',\n            'itemClsCd' => '8014160101',\n            'pkgUnitCd' => 'NT',\n            'qtyUnitCd' => 'U'\n        ]\n    ],\n    'prcOrdCd' => null,\n    'rcptTyCd' => 'R',\n    'rfdRsnCd' => '04',\n    'cnclReqDt' => null,\n    'custPhone' => '788312173',\n    'orgInvcNo' => '67',\n    'salesTyCd' => 'N',\n    'taxblAmtA' => 0,\n    'taxblAmtB' => 1580000,\n    'taxblAmtC' => 0,\n    'taxblAmtD' => 0,\n    'totTaxAmt' => '241016.95',\n    'stockRlsDt' => null,\n    'totItemCnt' => 1,\n    'salesSttsCd' => '04',\n    'totTaxblAmt' => 1580000,\n    'prchrAcptcYn' => 'Y'\n]);"
+            "source": "<?php\n$response = ebmPost('/trnsSales/resendSales', [\n    'tin' => '107993488',\n    'bhfId' => '01',\n    'cfmDt' => '20260609101449',\n    'rfdDt' => null,\n    'cnclDt' => null,\n    'custNm' => 'Customer',\n    'invcNo' => '257',\n    'modrId' => '1',\n    'modrNm' => 'Kayko',\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'remark' => null,\n    'taxRtA' => 0,\n    'taxRtB' => 18,\n    'taxRtC' => 0,\n    'taxRtD' => 0,\n    'totAmt' => 1580000,\n    'custTin' => '788312173',\n    'pmtTyCd' => '06',\n    'receipt' => [\n        'adrs' => null,\n        'rptNo' => '257',\n        'btmMsg' => 'Kayko v.2.3.11',\n        'topMsg' => 'SMATCONS Ltd\nADDRESS Remera, Gasabo, Umujyi wa Kigali, RWANDA\nPHONE +250781620053\n\nTIN 107993488\n',\n        'trdeNm' => 'Customer',\n        'custTin' => null,\n        'rcptSign' => 'P3SKYWLKGFJXFPXZ',\n        'curRcptNo' => 257,\n        'custMblNo' => '788312173',\n        'intrlData' => '2BGSI4XVCRPNPO32PTAZOLND5M',\n        'totRcptNo' => 257,\n        'rcptPbctDt' => '20260609101449',\n        'prchrAcptcYn' => 'Y'\n    ],\n    'salesDt' => '20260609',\n    'taxAmtA' => 0,\n    'taxAmtB' => '241016.95',\n    'taxAmtC' => 0,\n    'taxAmtD' => 0,\n    'itemList' => [\n        [\n            'bcd' => null,\n            'pkg' => 1,\n            'prc' => '15800.00',\n            'qty' => '100.00',\n            'dcRt' => '0.00',\n            'dcAmt' => '0.00',\n            'isrcRt' => null,\n            'itemCd' => 'RW2NTU0000001',\n            'itemNm' => 'Cimerwa cement 32.5',\n            'taxAmt' => '241016.95',\n            'totAmt' => '1580000.00',\n            'isrcAmt' => null,\n            'isrccCd' => null,\n            'isrccNm' => null,\n            'itemSeq' => 1,\n            'splyAmt' => '1580000.00',\n            'taxTyCd' => 'B',\n            'taxblAmt' => '1580000.00',\n            'totDcAmt' => '0.00',\n            'itemClsCd' => '8014160101',\n            'pkgUnitCd' => 'NT',\n            'qtyUnitCd' => 'U'\n        ]\n    ],\n    'prcOrdCd' => null,\n    'rcptTyCd' => 'R',\n    'rfdRsnCd' => '04',\n    'cnclReqDt' => null,\n    'custPhone' => '788312173',\n    'orgInvcNo' => '67',\n    'salesTyCd' => 'N',\n    'taxblAmtA' => 0,\n    'taxblAmtB' => 1580000,\n    'taxblAmtC' => 0,\n    'taxblAmtD' => 0,\n    'totTaxAmt' => '241016.95',\n    'stockRlsDt' => null,\n    'totItemCnt' => 1,\n    'salesSttsCd' => '04',\n    'totTaxblAmt' => 1580000,\n    'prchrAcptcYn' => 'Y'\n]);"
           },
           {
             "lang": "json",
@@ -4206,7 +4198,7 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC standard response envelope",
+            "description": "Standard response envelope",
             "content": {
               "application/json": {
                 "schema": {
@@ -4254,7 +4246,7 @@
           {
             "lang": "php",
             "label": "PHP",
-            "source": "<?php\n$response = vsdcPost('/trnsSales/saveSales', [\n    'tin' => '100027060',\n    'bhfId' => '00',\n    'invcNo' => '1799',\n    'orgInvcNo' => '1799',\n    'cfmDt' => '20260303145619',\n    'salesDt' => '20260303',\n    'salesTyCd' => 'N',\n    'rcptTyCd' => 'S',\n    'pmtTyCd' => '02',\n    'salesSttsCd' => '02',\n    'prchrAcptcYn' => 'Y',\n    'custNm' => 'RULIBA CLAYS LTD',\n    'custTin' => '100004527',\n    'totItemCnt' => 1,\n    'taxRtA' => 0,\n    'taxRtB' => 18,\n    'taxRtC' => 0,\n    'taxRtD' => 0,\n    'taxblAmtA' => 0,\n    'taxblAmtB' => 2000,\n    'taxblAmtC' => 0,\n    'taxblAmtD' => 0,\n    'taxAmtA' => 0,\n    'taxAmtB' => 305.08,\n    'taxAmtC' => 0,\n    'taxAmtD' => 0,\n    'totTaxblAmt' => 2000,\n    'totTaxAmt' => 305.08,\n    'totAmt' => 2000,\n    'receipt' => [\n        'rptNo' => '1799',\n        'custTin' => '100004527',\n        'trdeNm' => 'RULIBACLAYSLTD',\n        'topMsg' => 'SONATUBES Ltd\nADDRESS KIGALI\nTIN 100027060',\n        'btmMsg' => 'Kayko v.2.3.11',\n        'prchrAcptcYn' => 'Y'\n    ],\n    'itemList' => [\n        [\n            'itemSeq' => 1,\n            'itemCd' => 'RW2NTU0000642',\n            'itemClsCd' => '8014160101',\n            'itemNm' => 'TOLE PL 2 44X1 22X10',\n            'taxTyCd' => 'B',\n            'qty' => 2,\n            'prc' => 1000,\n            'splyAmt' => 2000,\n            'taxblAmt' => 2000,\n            'taxAmt' => 305.08,\n            'totAmt' => 2000,\n            'pkg' => 1,\n            'pkgUnitCd' => 'NT',\n            'qtyUnitCd' => 'U',\n            'dcRt' => 0,\n            'dcAmt' => 0,\n            'totDcAmt' => 0\n        ]\n    ],\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'modrId' => '1',\n    'modrNm' => 'Kayko'\n]);"
+            "source": "<?php\n$response = ebmPost('/trnsSales/saveSales', [\n    'tin' => '100027060',\n    'bhfId' => '00',\n    'invcNo' => '1799',\n    'orgInvcNo' => '1799',\n    'cfmDt' => '20260303145619',\n    'salesDt' => '20260303',\n    'salesTyCd' => 'N',\n    'rcptTyCd' => 'S',\n    'pmtTyCd' => '02',\n    'salesSttsCd' => '02',\n    'prchrAcptcYn' => 'Y',\n    'custNm' => 'RULIBA CLAYS LTD',\n    'custTin' => '100004527',\n    'totItemCnt' => 1,\n    'taxRtA' => 0,\n    'taxRtB' => 18,\n    'taxRtC' => 0,\n    'taxRtD' => 0,\n    'taxblAmtA' => 0,\n    'taxblAmtB' => 2000,\n    'taxblAmtC' => 0,\n    'taxblAmtD' => 0,\n    'taxAmtA' => 0,\n    'taxAmtB' => 305.08,\n    'taxAmtC' => 0,\n    'taxAmtD' => 0,\n    'totTaxblAmt' => 2000,\n    'totTaxAmt' => 305.08,\n    'totAmt' => 2000,\n    'receipt' => [\n        'rptNo' => '1799',\n        'custTin' => '100004527',\n        'trdeNm' => 'RULIBACLAYSLTD',\n        'topMsg' => 'SONATUBES Ltd\nADDRESS KIGALI\nTIN 100027060',\n        'btmMsg' => 'Kayko v.2.3.11',\n        'prchrAcptcYn' => 'Y'\n    ],\n    'itemList' => [\n        [\n            'itemSeq' => 1,\n            'itemCd' => 'RW2NTU0000642',\n            'itemClsCd' => '8014160101',\n            'itemNm' => 'TOLE PL 2 44X1 22X10',\n            'taxTyCd' => 'B',\n            'qty' => 2,\n            'prc' => 1000,\n            'splyAmt' => 2000,\n            'taxblAmt' => 2000,\n            'taxAmt' => 305.08,\n            'totAmt' => 2000,\n            'pkg' => 1,\n            'pkgUnitCd' => 'NT',\n            'qtyUnitCd' => 'U',\n            'dcRt' => 0,\n            'dcAmt' => 0,\n            'totDcAmt' => 0\n        ]\n    ],\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'modrId' => '1',\n    'modrNm' => 'Kayko'\n]);"
           },
           {
             "lang": "json",

@@ -1,17 +1,16 @@
 ---
 title: Quickstart
-description: Enable EBM, generate an API key, call Kayko EBM routes, then explore the full VSDC API surface.
+description: Enable EBM, generate an API key, and make your first Kayko EBM API call.
 icon: bolt
 ---
-
 
 ## Prerequisites
 
 - A **Kayko business** account with permission to manage settings
-- An approved **VSDC / EBM** registration with RRA (TIN, branch ID, device serial number)
-- Kayko EBM and/or a VSDC instance available for your environment
+- An approved **EBM 2.1** registration with RRA (TIN, branch ID, device serial number)
+- Kayko EBM available for your environment (Local EBM for development)
 
-## Step 1- Enable EBM and generate an API key
+## Step 1 — Enable EBM and generate an API key
 
 In the **Kayko business dashboard**:
 
@@ -19,7 +18,7 @@ In the **Kayko business dashboard**:
 2. **Enable EBM** for your business
 3. **Generate an API key** (service: EBM) and copy the secret immediately
 
-Store the secret as `KAYKO_EBM_API_KEY`. You will send it on Kayko EBM customer/constants calls:
+Store the secret as `KAYKO_EBM_API_KEY`. You will send it on Kayko EBM calls:
 
 ```http
 Authorization: Bearer sk_live_YOUR_SECRET
@@ -31,21 +30,19 @@ See [API Keys & Authentication](/concepts/api-keys) for scopes, IP allowlists, r
   You cannot create an EBM API key until **Enable EBM** succeeds. The plaintext secret is shown once.
 </Warning>
 
-## Step 2- Set your base URL
+## Step 2 — Set your base URL
 
 Select an **API Environment** from the navbar dropdown (or the playground environment picker). Use that value as `BASE_URL` / `{{baseUrl}}`:
 
 | Environment | When to use |
 |-------------|-------------|
-| **Local EBM** | Preferred for live Kayko EBM routes (`/initialize/*`, `/customers/*`, `/constants/*`) |
-| **Production VSDC** | Direct hosted VSDC |
-| **Local VSDC** | Self-hosted WAR |
+| **Local EBM** | Kayko EBM gateway (`http://localhost:3000/ebm`) |
 
 See the [API Playground](/playground/overview) for how examples update when you switch environments.
 
-## Step 3- Look up customers
+## Step 3 — Look up customers
 
-With the **Local EBM** environment selected, look up a customer (API key scope **`customers`**). Kayko proxies to VSDC- do not call `/customers/selectCustomer` on the WAR URL from your ERP when using Kayko EBM.
+With the **Local EBM** environment selected, look up a customer (API key scope **`customers`**):
 
 <CodeGroup>
 
@@ -88,29 +85,12 @@ const data = await fetch(`${BASE_URL}/customers/select`, {
 
 </CodeGroup>
 
-Device initialization is `POST /initialize/init` (internal token)- see [Initialization](/api/initialization). Prefer that over calling `/initializer/selectInitInfo` directly.
+Device initialization is `POST /initialize/init` (internal token) — see [Initialization](/api/initialization). Prefer Kayko EBM routes over any direct RRA paths.
 
-## Step 4- Explore the full API surface
+## Step 4 — Explore the full API surface
 
-Sales, items, stock, purchases, imports, and reference-data docs remain in [API Reference](/api/overview) and the playground. Follow a workflow when you are ready:
+Sales, items, stock, purchases, imports, and reference-data docs are in [API Reference](/api/overview) and the playground. Follow a workflow when you are ready:
 
 - [Sales](/workflows/sales-invoice)
 - [Purchases](/workflows/purchases)
 - [Stock](/workflows/stock-management)
-
-## What's next?
-
-<Steps>
-  <Step title="Read the API keys guide">
-    Bookmark [API Keys & Authentication](/concepts/api-keys).
-  </Step>
-  <Step title="Read the glossary">
-    Bookmark the [Glossary](/glossary).
-  </Step>
-  <Step title="API reference">
-    Full endpoint structure: [API Overview](/api/overview).
-  </Step>
-  <Step title="Playground">
-    Test Kayko EBM routes and the broader VSDC groups: [API Playground](/playground/overview).
-  </Step>
-</Steps>

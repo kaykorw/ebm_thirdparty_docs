@@ -4,21 +4,21 @@ description: How lastReqDt works and best practices for keeping data in sync.
 icon: arrows-rotate
 ---
 
-Many VSDC endpoints are **incremental sync** APIs- they only return records that changed since your last request. Understanding this pattern is critical for a reliable integration.
+Many Kayko EBM endpoints are **incremental sync** APIs — they only return records that changed since your last request. Understanding this pattern is critical for a reliable integration.
 
 ## The `lastReqDt` pattern
 
 ```mermaid
 sequenceDiagram
     participant App
-    participant VSDC
+    participant EBM as Kayko EBM
 
-    App->>VSDC: selectCodes (lastReqDt: "20000101000000")
-    VSDC-->>App: All codes + resultDt: "20260303120000"
+    App->>EBM: selectCodes (lastReqDt: "20000101000000")
+    EBM-->>App: All codes + resultDt: "20260303120000"
     Note over App: Store "20260303120000"
 
-    App->>VSDC: selectCodes (lastReqDt: "20260303120000")
-    VSDC-->>App: Only changed codes + resultDt: "20260304100000"
+    App->>EBM: selectCodes (lastReqDt: "20260303120000")
+    EBM-->>App: Only changed codes + resultDt: "20260304100000"
     Note over App: Store "20260304100000"
 ```
 
@@ -57,7 +57,7 @@ sequenceDiagram
 
 ```javascript
 async function syncCodes(tin, bhfId, lastReqDt) {
-  const response = await vsdcPost('/code/selectCodes', { tin, bhfId, lastReqDt });
+  const response = await ebmPost('/code/selectCodes', { tin, bhfId, lastReqDt });
 
   if (response.resultCd === '000') {
     await saveCodes(response.data.clsList);
@@ -71,7 +71,7 @@ async function syncCodes(tin, bhfId, lastReqDt) {
     return [];
   }
 
-  throw new VSDCError(response.resultCd, response.resultMsg);
+  throw new EbmError(response.resultCd, response.resultMsg);
 }
 ```
 
@@ -81,9 +81,9 @@ async function syncCodes(tin, bhfId, lastReqDt) {
 
 ## Offline considerations
 
-VSDC can issue receipts offline, but with a hard limit:
+Kayko EBM can issue receipts offline, but with a hard limit:
 
-> If there is no internet connection for **24 hours** after VSDC issues a receipt signature, VSDC **stops issuing receipt numbers**.
+> If there is no internet connection for **24 hours** after a receipt signature is issued, the service **stops issuing receipt numbers**.
 
 Plan your architecture accordingly:
 - Queue sales locally when offline

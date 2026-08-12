@@ -53,7 +53,7 @@ Submit a sales transaction and receive receipt signature data.
 <CodeGroup>
 
 ```bash cURL
-curl -X POST "https://vsdc.kayko.rw/rra-2.1.2.3.8/trnsSales/saveSales" \
+curl -X POST "{{baseUrl}}/trnsSales/saveSales" \
   -H "Content-Type: application/json" \
   -d '{
     "tin": "100027060",
@@ -99,7 +99,7 @@ curl -X POST "https://vsdc.kayko.rw/rra-2.1.2.3.8/trnsSales/saveSales" \
 ```
 
 ```javascript JavaScript
-const sale = await vsdcPost('/trnsSales/saveSales', {
+const sale = await ebmPost('/trnsSales/saveSales', {
   tin: '100027060', bhfId: '00',
   invcNo: '1799', orgInvcNo: '1799',
   cfmDt: '20260303145619', salesDt: '20260303',
@@ -126,7 +126,7 @@ console.log(sale.data.rcptSign, sale.data.intrlData);
 
 ```php PHP
 <?php
-$result = vsdcPost('/trnsSales/saveSales', $salePayload);
+$result = ebmPost('/trnsSales/saveSales', $salePayload);
 $signature = $result['data']['rcptSign'];
 $internalData = $result['data']['intrlData'];
 ```
@@ -247,7 +247,7 @@ curl -X POST "{{baseUrl}}/trnsSales/resendSales" \
 
 ```javascript JavaScript
 // Same payload as saveSales, plus receipt signature fields
-await vsdcPost('/trnsSales/resendSales', {
+await ebmPost('/trnsSales/resendSales', {
   ...originalSalePayload,
   receipt: {
     ...originalSalePayload.receipt,
@@ -262,7 +262,7 @@ await vsdcPost('/trnsSales/resendSales', {
 
 ```php PHP
 <?php
-vsdcPost('/trnsSales/resendSales', $resendPayload);
+ebmPost('/trnsSales/resendSales', $resendPayload);
 ```
 
 ```json Payload

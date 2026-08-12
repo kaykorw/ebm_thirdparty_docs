@@ -1,9 +1,8 @@
 ---
 title: API Overview
-description: All VSDC / Kayko EBM endpoints at a glance. Prefer `/ebm` gateway routes where available; full domain structure preserved.
+description: All Kayko EBM endpoints at a glance — initialization, customers, constants, sales, and more.
 icon: code
 ---
-
 
 ## Authentication
 
@@ -21,17 +20,15 @@ x-api-key: sk_live_YOUR_SECRET
 
 Generate the key in the dashboard: **Settings → Enable EBM → Generate API key**. Details: [API Keys & Authentication](/concepts/api-keys).
 
-Prefer Kayko EBM gateway routes under `/ebm` (e.g. `POST /initialize/init`, `POST /customers/select`) over calling VSDC WAR paths such as `/initializer/selectInitInfo` directly.
+Call Kayko EBM gateway routes (for example `POST /initialize/init`, `POST /customers/select`, `GET /constants/countries`). Do not call RRA servers directly.
 
 ## Base URL
 
-Use the **environment dropdown** at the top of any endpoint page to switch between:
+Use the **environment dropdown** at the top of any endpoint page:
 
 | Environment | When to use |
 |-------------|-------------|
-| **Local EBM** | Kayko EBM gateway (preferred for live EBM routes) |
-| **Production VSDC** | Direct hosted VSDC |
-| **Local VSDC** | Self-hosted WAR |
+| **Local EBM** | Kayko EBM gateway (development) |
 
 Code examples use `{{baseUrl}}` and update when you change the environment.
 
@@ -125,7 +122,7 @@ Code examples use `{{baseUrl}}` and update when you change the environment.
 ```
 
 - `resultCd: "000"` → success
-- `resultCd: "001"` → no new data (sync endpoints only- not an error)
+- `resultCd: "001"` → no new data (sync endpoints only — not an error)
 - Anything else → see [Response Codes](/reference/response-codes)
 
 ## Code example pattern
@@ -154,8 +151,7 @@ const res = await fetch(`${BASE_URL}/endpoint`, {
 
 ```php PHP
 <?php
-$response = vsdcPost('/endpoint', [ ... ]); // include Authorization: Bearer in your HTTP client
+$response = ebmPost('/endpoint', [ ... ]); // include Authorization: Bearer in your HTTP client
 ```
-
 
 </CodeGroup>

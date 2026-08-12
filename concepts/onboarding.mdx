@@ -1,78 +1,75 @@
 ---
 title: Onboarding & Technical Policies
-description: RRA application process, deployment requirements, and mandatory technical policies. Covers everything required before your first API call.
+description: RRA application process, Kayko EBM enablement, and mandatory technical policies before your first API call.
 icon: clipboard-check
 ---
 
+## 1.1 What Kayko EBM is
 
-## 1.1 What VSDC is
-
-**Virtual Sales Data Controller (VSDC)** is a communication module that lets private CIS/ERP applications send and receive data (sales, purchases, receipts, stock, etc.) to and from the **RRA EBM 2.1 API server**. It is the bridge between your business software and RRA's tax infrastructure.
+**Kayko EBM** is the API gateway that lets private CIS/ERP applications send and receive data (sales, purchases, receipts, stock, and more) with the **RRA EBM 2.1** tax infrastructure. Your software calls Kayko EBM only — Kayko handles the connection to RRA.
 
 ## 1.2 Environments
 
 | Type | Description |
 |------|-------------|
-| **Production VSDC** | Live environment. Sends/receives data to the RRA EBM API **production** server. All receipts have legal effect. |
-| **Test VSDC** | Development environment. Sends/receives test data to the RRA EBM API **test** server. Used during integration and RRA certification. |
+| **Production** | Live environment. Sends/receives data to the RRA EBM API **production** server. All receipts have legal effect. |
+| **Test** | Development environment. Sends/receives test data to the RRA EBM API **test** server. Used during integration and RRA certification. |
 
-### Technical stack (per RRA spec)
+### Technical stack
 
 | Property | Value |
 |----------|-------|
-| Distributed package | WAR file |
+| Access | Kayko EBM HTTP API |
 | API style | REST |
 | Data format | JSON |
-| Supported web servers | Tomcat, Jetty, Apache HTTP Server |
-| Supported OS | Windows 10+, Linux, Unix |
-| Supported languages | All (via web services) |
+| Authentication | Business API key (`Authorization: Bearer sk_…`) |
+| Supported languages | All (via HTTPS) |
 
 <Note>
-  EBM 2.1 API server addresses (production and test) and VSDC request form URLs are assigned by RRA upon approval. Kayko-hosted deployments use `https://vsdc.kayko.rw/rra-2.1.2.3.8`.
+  EBM 2.1 server addresses (production and test) are assigned by RRA upon approval. Integrators always call the **Kayko EBM** base URL for their environment — see [Introduction](/introduction#base-url).
 </Note>
 
 ---
 
 ## 2.1 Application process
 
-To use VSDC, a taxpayer must complete the following:
+To use Kayko EBM, a taxpayer must complete the following:
 
-1. **Register on MyRRA**- join as a site member at RRA's taxpayer portal
-2. **Apply for EBM 2.1 / VSDC service**- submit a service request after MyRRA membership
-3. **Register equipment**- submit equipment use application; RRA assigns a device serial number (`dvcSrlNo`)
-4. **Receive RRA approval**- RRA approves the VSDC service request
-5. **Deploy the WAR**- RRA provides a WAR file for self-hosted deployments, or use a managed provider (e.g. Kayko)
-6. **Enable EBM in Kayko**- Business dashboard → **Settings → Enable EBM**, then **generate an API key**. See [API Keys & Authentication](/concepts/api-keys)
-7. **Initialize the device**- call `POST /initializer/selectInitInfo` with TIN, branch ID, device serial number, and your API key header
-8. **Receive keys**- VSDC verifies the device with RRA and stores `intrlKey`, `signKey`, `cmcKey`
+1. **Register on MyRRA** — join as a site member at RRA's taxpayer portal
+2. **Apply for EBM 2.1 service** — submit a service request after MyRRA membership
+3. **Register equipment** — submit equipment use application; RRA assigns a device serial number (`dvcSrlNo` / `device_serial_number`)
+4. **Receive RRA approval** — RRA approves the EBM service request
+5. **Enable EBM in Kayko** — Business dashboard → **Settings → Enable EBM**, then **generate an API key**. See [API Keys & Authentication](/concepts/api-keys)
+6. **Initialize the device** — call `POST /initialize/init` with TIN, branch ID, device serial number, and `ebm_url`
+7. **Receive keys** — Kayko EBM verifies the device with RRA and returns `intrlKey`, `signKey`, `cmcKey`
 
 <Warning>
-  Initialization is a **one-time** operation per device. Do not re-initialize unless RRA instructs you to. Your Kayko API key is separate from these device signing keys and must be sent on every HTTP request.
+  Initialization is a **one-time** operation per device. Do not re-initialize unless RRA instructs you to. Your Kayko API key is separate from these device signing keys and must be sent on every HTTP request (except internal `/initialize/*` routes).
 </Warning>
 
 ---
 
 ## 2.2 Technical policies (mandatory)
 
-These four policies are **enforced by VSDC** and must be followed by every integration:
+These four policies are **enforced** and must be followed by every integration:
 
-### Policy 1- VSDC must be running locally
+### Policy 1 — Call Kayko EBM only
 
-For self-hosted deployments, the VSDC WAR must be deployed and running on your web server before any API calls. Your CIS/ERP calls VSDC locally; VSDC calls RRA.
+Your CIS/ERP must call the **Kayko EBM gateway**. Do not call RRA EBM servers directly.
 
-### Policy 2- All EBM communication goes through VSDC
+### Policy 2 — Authenticate every request
 
-Your application must **never** call the RRA EBM API directly. All data exchange is via VSDC web service methods.
+Send a valid business API key (`Authorization: Bearer sk_…` or `x-api-key`) on customer, constants, sales, and other scoped routes. Initialization uses the internal token when Core360 enables EBM.
 
-### Policy 3- Manage `lastReqDt` cursors
+### Policy 3 — Manage `lastReqDt` cursors
 
-When pulling data from RRA, you must send the **date/time of your last successful sync** (`lastReqDt`). After each successful pull, update the cursor to the `resultDt` from the response. Your CIS is responsible for storing and managing these timestamps per endpoint and per branch.
+When pulling data, send the **date/time of your last successful sync** (`lastReqDt`). After each successful pull, update the cursor to the `resultDt` from the response. Your CIS is responsible for storing and managing these timestamps per endpoint and per branch.
 
 See [Data Synchronization](/concepts/data-sync) for implementation details.
 
-### Policy 4- 24-hour offline receipt limit
+### Policy 4 — 24-hour offline receipt limit
 
-> If there is no internet connection for **24 hours** after VSDC issues a receipt signature and internal data, VSDC **stops issuing receipt numbers**.
+> If there is no internet connection for **24 hours** after a receipt signature and internal data are issued, the service **stops issuing receipt numbers**.
 
 This means:
 - Plan for connectivity outages in your POS/ERP architecture
@@ -84,17 +81,18 @@ This means:
 
 ## 2.3 Sample integration code
 
-Code examples in **cURL, JavaScript, and PHP** are provided on each endpoint page. Authenticate Kayko-hosted calls with your API key:
+Code examples in **cURL, JavaScript, and PHP** are provided on each endpoint page. Authenticate with your API key:
 
 ```
-POST http://localhost:8080/initializer/selectInitInfo
+POST {{baseUrl}}/customers/select
 Authorization: Bearer sk_live_YOUR_SECRET
 Content-Type: application/json
 
 {
-  "tin": "999993204",
-  "bhfId": "00",
-  "dvcSrlNo": "dvc999993204"
+  "tin": "100027060",
+  "branch_id": "00",
+  "customer_tin": "100004527",
+  "ebm_url": "http://localhost:8080/rra/ACME01/"
 }
 ```
 

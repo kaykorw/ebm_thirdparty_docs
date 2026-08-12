@@ -29,7 +29,7 @@ curl -X POST "{{baseUrl}}/trnsPurchase/selectTrnsPurchaseSales" \
 ```
 
 ```javascript JavaScript
-const { data } = await vsdcPost('/trnsPurchase/selectTrnsPurchaseSales', {
+const { data } = await ebmPost('/trnsPurchase/selectTrnsPurchaseSales', {
   tin: '999958074', bhfId: '00', lastReqDt: '20240706204443',
 });
 // data.saleList → unconfirmed supplier invoices
@@ -37,7 +37,7 @@ const { data } = await vsdcPost('/trnsPurchase/selectTrnsPurchaseSales', {
 
 ```php PHP
 <?php
-$result = vsdcPost('/trnsPurchase/selectTrnsPurchaseSales', [
+$result = ebmPost('/trnsPurchase/selectTrnsPurchaseSales', [
     'tin' => '999958074', 'bhfId' => '00', 'lastReqDt' => '20240706204443',
 ]);
 ```
@@ -118,7 +118,7 @@ curl -X POST "{{baseUrl}}/trnsPurchase/savePurchases" \
 ```
 
 ```javascript JavaScript
-await vsdcPost('/trnsPurchase/savePurchases', {
+await ebmPost('/trnsPurchase/savePurchases', {
   tin: '999958074', bhfId: '00',
   invcNo: 18, orgInvcNo: 18,
   spplrTin: '105418285', spplrNm: 'SUNDOWNER Ltd',
@@ -136,7 +136,7 @@ await vsdcPost('/trnsPurchase/savePurchases', {
 
 ```php PHP
 <?php
-vsdcPost('/trnsPurchase/savePurchases', $purchasePayload);
+ebmPost('/trnsPurchase/savePurchases', $purchasePayload);
 ```
 
 ```json Payload

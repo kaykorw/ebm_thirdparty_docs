@@ -1,9 +1,8 @@
 ---
 title: Getting Started Workflow
-description: The recommended order of API calls for a new VSDC integration.
+description: The recommended order of API calls for a new Kayko EBM integration.
 icon: list-ol
 ---
-
 
 ```mermaid
 flowchart TD
@@ -27,33 +26,29 @@ In the Kayko business dashboard: **Settings → Enable EBM → Generate API key*
 
 ### 1. Initialize device (once)
 
-`POST /initializer/selectInitInfo`
+`POST /initialize/init`
 
 Authenticate your device and retrieve signing keys. See [Initialization API](/api/initialization).
 
 ### 2. Sync reference codes
 
-`POST /code/selectCodes`
-
-Pull tax types, payment methods, packaging units, quantity units, currencies, and more. Cache these locally- your UI dropdowns depend on them.
+Use `GET /constants/*` (for example taxes, payment modes, packaging, quantity) and cache the results locally — your UI dropdowns depend on them. See [Reference Data](/api/reference-data).
 
 ### 3. Sync item classifications
 
-`POST /itemClass/selectItemsClass`
-
-Get the RRA product category tree. You need a valid `itemClsCd` before registering items.
+Pull product classifications before registering items. You need a valid `itemClsCd` on every product.
 
 ### 4. Register your products
 
 `POST /items/saveItems`
 
-Register each product with a unique `itemCd`. See [Items API- item code format](/api/items#item-code-format).
+Register each product with a unique `itemCd`. See [Items API — item code format](/api/items#item-code-format).
 
 ### 5. Set up branch data (optional but recommended)
 
 | Endpoint | Purpose |
 |----------|---------|
-| `/branches/saveBrancheCustomers` | Back up customer list to RRA |
+| `/customers/create` or `/branches/saveBrancheCustomers` | Back up customer list |
 | `/branches/saveBrancheUsers` | Register branch user accounts |
 | `/branches/saveBrancheInsurances` | Insurance providers (pharmacy only) |
 
@@ -68,7 +63,7 @@ Pick your workflow:
 ## Dependency rules
 
 <Warning>
-  These ordering constraints are enforced by RRA:
+  These ordering constraints are enforced for compliance:
 </Warning>
 
 | Rule | Why |

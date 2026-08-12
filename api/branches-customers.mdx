@@ -12,9 +12,9 @@ icon: building
 <ParamField body="tin" type="string" required>Your 9-digit TIN</ParamField>
 <ParamField body="branch_id" type="string" required>2-character branch ID</ParamField>
 <ParamField body="customer_tin" type="string" required>Customer TIN to look up</ParamField>
-<ParamField body="ebm_url" type="string" required>Business VSDC base URL from Enable EBM</ParamField>
+<ParamField body="ebm_url" type="string" required>Business EBM base URL from Enable EBM</ParamField>
 
-| Request field | VSDC field |
+| Request field | Upstream field |
 |---------------|------------|
 | `tin` | `tin` |
 | `branch_id` | `bhfId` |
@@ -82,7 +82,7 @@ const data = await fetch(`${BASE_URL}/customers/select`, {
 <ParamField body="registrar_id" type="string" required>Registrant ID</ParamField>
 <ParamField body="modifier_name" type="string" required>Modifier name</ParamField>
 <ParamField body="modifier_id" type="string" required>Modifier ID</ParamField>
-<ParamField body="ebm_url" type="string" required>Business VSDC base URL</ParamField>
+<ParamField body="ebm_url" type="string" required>Business EBM base URL</ParamField>
 
 <CodeGroup>
 
@@ -184,7 +184,7 @@ curl -X POST "{{baseUrl}}/branches/saveBrancheCustomers" \
 ```
 
 ```javascript JavaScript
-await vsdcPost('/branches/saveBrancheCustomers', {
+await ebmPost('/branches/saveBrancheCustomers', {
   tin: '999958074', bhfId: '00',
   custNo: '999991113', custTin: '118620650', custNm: 'Kayko Group Ltd',
   useYn: 'Y',
@@ -195,7 +195,7 @@ await vsdcPost('/branches/saveBrancheCustomers', {
 
 ```php PHP
 <?php
-vsdcPost('/branches/saveBrancheCustomers', [
+ebmPost('/branches/saveBrancheCustomers', [
     'tin' => '999958074', 'bhfId' => '00',
     'custNo' => '999991113', 'custTin' => '118620650',
     'custNm' => 'Kayko Group Ltd', 'useYn' => 'Y',
@@ -252,7 +252,7 @@ curl -X POST "{{baseUrl}}/branches/saveBrancheUsers" \
 ```
 
 ```javascript JavaScript
-await vsdcPost('/branches/saveBrancheUsers', {
+await ebmPost('/branches/saveBrancheUsers', {
   tin: '999958074', bhfId: '00',
   userId: 'userId3', userNm: 'User Name3', pwd: '12341234',
   useYn: 'Y',
@@ -263,7 +263,7 @@ await vsdcPost('/branches/saveBrancheUsers', {
 
 ```php PHP
 <?php
-vsdcPost('/branches/saveBrancheUsers', [
+ebmPost('/branches/saveBrancheUsers', [
     'tin' => '999958074', 'bhfId' => '00',
     'userId' => 'userId3', 'userNm' => 'User Name3', 'pwd' => '12341234',
     'useYn' => 'Y',
@@ -320,7 +320,7 @@ curl -X POST "{{baseUrl}}/branches/saveBrancheInsurances" \
 ```
 
 ```javascript JavaScript
-await vsdcPost('/branches/saveBrancheInsurances', {
+await ebmPost('/branches/saveBrancheInsurances', {
   tin: '999958074', bhfId: '00',
   isrccCd: 'ISRCC01', isrccNm: 'RSSB Insurance', isrcRt: 20,
   useYn: 'Y',
@@ -331,7 +331,7 @@ await vsdcPost('/branches/saveBrancheInsurances', {
 
 ```php PHP
 <?php
-vsdcPost('/branches/saveBrancheInsurances', [
+ebmPost('/branches/saveBrancheInsurances', [
     'tin' => '999958074', 'bhfId' => '00',
     'isrccCd' => 'ISRCC01', 'isrccNm' => 'RSSB Insurance', 'isrcRt' => 20,
     'useYn' => 'Y',

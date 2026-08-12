@@ -1,41 +1,31 @@
 ---
 title: Introduction
-description: Official API documentation for the Rwanda Revenue Authority VSDC (Virtual Sales Data Controller) integration.
+description: Official API documentation for the Kayko EBM gateway — connect your ERP/POS to RRA EBM 2.1.
 icon: rocket
 ---
 
 <Note>
-  Official API documentation for the **RRA VSDC** integration (v1.0.5), published by **[Kayko](/contributions/overview)**. Includes field references, workflow guides, calculation formulas, and an [API Playground](/playground/overview) for live testing.
+  Official API documentation for the **Kayko EBM** integration, published by **[Kayko](/contributions/overview)**. Includes field references, workflow guides, calculation formulas, and an [API Playground](/playground/overview) for live testing.
 </Note>
 
-## What is VSDC?
+## What is Kayko EBM?
 
-**VSDC** (Virtual Sales Data Controller) is a bridge between your CIS/ERP application and the **RRA EBM 2.1 API server**. It handles:
+**Kayko EBM** is the API gateway between your CIS/ERP/POS application and the **RRA EBM 2.1** tax infrastructure. Your app talks only to Kayko EBM. It handles:
 
-- Device authentication and cryptographic keys
-- Synchronizing reference codes (tax types, units, currencies, etc.)
+- Business authentication via API keys
+- Device initialization and cryptographic keys
+- Synchronizing reference codes (tax types, units, currencies, and more)
 - Registering items, customers, and branch data
 - Submitting sales invoices and receiving receipt signatures
 - Confirming purchases and managing stock movements
 
 ```mermaid
 flowchart LR
-    ERP["Your ERP / POS"] --> VSDC["VSDC Server"]
-    VSDC --> EBM["RRA EBM 2.1 API"]
-    EBM --> VSDC
-    VSDC --> ERP
+    ERP["Your ERP / POS"] --> Kayko["Kayko EBM API"]
+    Kayko --> RRA["RRA EBM 2.1"]
+    RRA --> Kayko
+    Kayko --> ERP
 ```
-
-## Authentication (Kayko)
-
-Kayko integrations authenticate with a **business API key**, not a per-request password or JWT.
-
-1. Open your **Kayko business dashboard**
-2. Go to **Settings → Enable EBM**
-3. **Generate an API key**
-4. Call the Kayko EBM gateway (`/ebm/…`) with `Authorization: Bearer sk_…` or `x-api-key: sk_…` — see [Base URLs](#base-urls) for your environment
-
-Full details: [API Keys & Authentication](/concepts/api-keys).
 
 ## Documentation overview
 
@@ -44,7 +34,6 @@ See the full [Table of Contents](/table-of-contents) for every page organized by
 | Section | Contents |
 |---------|----------|
 | [API Keys](/concepts/api-keys) | Enable EBM, generate a key, authenticate requests |
-| [Glossary](/glossary) | Field acronyms and definitions |
 | [Workflows](/workflows/getting-started) | Step-by-step sales, purchase, and stock flows |
 | [Calculations](/calculations/overview) | VAT formulas, discounts, and invoice totals |
 | [API Reference](/api/overview) | Full endpoint structure by domain |
@@ -53,37 +42,36 @@ See the full [Table of Contents](/table-of-contents) for every page organized by
 
 ## API at a glance
 
-Kayko EBM (`/ebm`) is live for initialization, customers, and constants. The full domain structure below remains documented.
+All endpoints use **REST over HTTPS** with **JSON** bodies. Most transactional routes are `POST`; reference constants are `GET`.
 
 | Category | Endpoints | Direction |
 |----------|-----------|-----------|
-| [Initialization](/api/initialization) | `/initialize/*` + `selectInitInfo` | Device setup |
-| [Reference Data](/api/reference-data) | Codes, notices, classifications, `GET /constants/*` | Pull / local tables |
+| [Initialization](/api/initialization) | `/initialize/*` | Enable EBM & device setup |
+| [Reference Data](/api/reference-data) | `GET /constants/*` | Pull codes and lookup tables |
 | [Branches & Customers](/api/branches-customers) | `/customers/*` + branch saves | Push & lookup |
-| [Items](/api/items) | 3 | Push & pull product catalog |
-| [Imports](/api/imports) | 2 | Customs import declarations |
-| [Sales](/api/sales) | 2 | Push invoices, get signatures |
-| [Purchases](/api/purchases) | 2 | Pull & confirm supplier invoices |
-| [Stock](/api/stock) | 3 | Inventory in/out & master |
+| [Items](/api/items) | Item register / select / composition | Push & pull catalog |
+| [Imports](/api/imports) | Import select & update | Customs declarations |
+| [Sales](/api/sales) | Save & resend sales | Push invoices, get signatures |
+| [Purchases](/api/purchases) | Select & save purchases | Pull & confirm supplier invoices |
+| [Stock](/api/stock) | Stock in/out & master | Inventory movements |
 
-## Base URLs
+## Base URL
 
 Pick an **API Environment** from the navbar dropdown. Code samples use `{{baseUrl}}` and update when you switch:
 
 | Environment | When to use |
 |-------------|-------------|
-| **Local EBM** | Kayko EBM gateway (preferred for live EBM routes) |
-| **Production VSDC** | Direct hosted VSDC |
-| **Local VSDC** | Self-hosted WAR |
-| **Business `ebm_url`** | Body field for Kayko EBM routes (from Enable EBM), e.g. `…/rra/{business_code}/` |
+| **Local EBM** | Kayko EBM gateway (`http://localhost:3000/ebm`) for development |
+
+Kayko EBM routes that proxy per-business operations also require `ebm_url` in the JSON body (assigned when you Enable EBM), for example `http://localhost:8080/rra/{business_code}/`.
 
 <Warning>
-  If VSDC loses internet connectivity for **24 hours** after issuing a receipt signature, it stops issuing new receipt numbers. Plan for offline resilience in your integration.
+  If the EBM service loses internet connectivity for **24 hours** after issuing a receipt signature, it stops issuing new receipt numbers. Plan for offline resilience in your integration.
 </Warning>
 
 ## Standard response envelope
 
-Every API returns the same top-level structure:
+Transactional endpoints return the same top-level structure:
 
 ```json
 {
@@ -96,20 +84,22 @@ Every API returns the same top-level structure:
 
 | Field | Meaning |
 |-------|---------|
-| `resultCd` | Status code- `000` means success. See [Response Codes](/reference/response-codes). |
+| `resultCd` | Status code — `000` means success. See [Response Codes](/reference/response-codes). |
 | `resultMsg` | Human-readable message |
 | `resultDt` | Server timestamp (`yyyyMMddHHmmss`) |
-| `data` | Payload- shape varies per endpoint. `null` on save operations. |
+| `data` | Payload — shape varies per endpoint. `null` on many save operations. |
+
+Some Kayko EBM routes (for example `/customers/*`) return unwrapped `data`. Auth failures use Kayko’s `{ statusCode, message, errorCode }` shape.
 
 ## Common request fields
 
-Almost every request includes these three fields:
+Almost every request includes these three fields (Kayko EBM may accept snake_case aliases such as `branch_id`):
 
 | Field | Full Name | Example | Notes |
 |-------|-----------|---------|-------|
 | `tin` | Taxpayer Identification Number | `"100027060"` | Your 9-digit RRA TIN |
 | `bhfId` | Branch ID | `"00"` | `"00"` = head office, `"01"`–`"99"` = branches |
-| `lastReqDt` | Last Request Date | `"20250101010000"` | For sync endpoints- only returns records modified after this timestamp |
+| `lastReqDt` | Last Request Date | `"20250101010000"` | For sync endpoints — only returns records modified after this timestamp |
 
 ## Next steps
 
@@ -118,13 +108,10 @@ Almost every request includes these three fields:
     Full documentation map and suggested learning path.
   </Card>
   <Card title="Quickstart" icon="bolt" href="/quickstart">
-    Enable EBM, generate an API key, initialize your device, and make your first call.
+    Enable EBM, generate an API key, and make your first call.
   </Card>
   <Card title="API Keys" icon="key" href="/concepts/api-keys">
     How dashboard enablement and request authentication work.
-  </Card>
-  <Card title="Glossary" icon="book" href="/glossary">
-    Decode every acronym before you write a single line of code.
   </Card>
   <Card title="Sales Workflow" icon="receipt" href="/workflows/sales-invoice">
     End-to-end guide to issuing a compliant EBM invoice.

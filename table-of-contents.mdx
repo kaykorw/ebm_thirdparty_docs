@@ -1,30 +1,21 @@
 ---
 title: Table of Contents
-description: Full map of the Kayko VSDC API documentation- follow in order or jump to any section.
+description: Full map of the Kayko EBM API documentation — follow in order or jump to any section.
 icon: list-tree
----
-
-Use this page as your roadmap. Sections follow a logical learning path from setup through live API testing.
-
-<Card title="New here?" icon="bolt" href="/quickstart">
-  Start with [Quickstart](/quickstart) if you want to initialize your device and make a first API call immediately.
-</Card>
-
 ---
 
 ## Getting Started
 
 | Page | What you'll learn |
 |------|-------------------|
-| [Introduction](/introduction) | What VSDC is, API keys, base URLs, response envelope |
-| [Quickstart](/quickstart) | Enable EBM, generate a key, initialize device, sync codes, register an item |
-| [Glossary](/glossary) | Every field acronym decoded |
+| [Introduction](/introduction) | What Kayko EBM is, API keys, base URL, response envelope |
+| [Quickstart](/quickstart) | Enable EBM, generate a key, make your first call |
 
 ## Core Concepts
 
 | Page | What you'll learn |
 |------|-------------------|
-| [VSDC Overview](/concepts/vsdc-overview) | Architecture and deployment models |
+| [Kayko EBM Overview](/concepts/ebm-overview) | Architecture and how the gateway fits your stack |
 | [API Keys & Authentication](/concepts/api-keys) | Enable EBM in the dashboard and authenticate every request |
 | [Onboarding & Policies](/concepts/onboarding) | RRA registration and technical requirements |
 | [Data Synchronization](/concepts/data-sync) | How `lastReqDt` incremental sync works |
@@ -87,46 +78,3 @@ Use this page as your roadmap. Sections follow a logical learning path from setu
 | **Sales** | Invoices and resend |
 | **Purchases** | Pull and confirm purchases |
 | **Stock** | Movements and stock master |
-
-## Contributors
-
-| Page | Contents |
-|------|----------|
-| [Contributors](/contributions/overview) | Publisher and documentation authors |
-
----
-
-## Suggested learning path
-
-```mermaid
-flowchart TD
-    A[Introduction] --> B[Quickstart]
-    B --> C[API Keys]
-    C --> D[Glossary]
-    D --> E[Workflows]
-    E --> F[Calculations]
-    F --> G[API Reference]
-    G --> H[API Playground]
-    E --> I[Reference Tables]
-```
-
-<Steps>
-  <Step title="Understand the system">
-    Read [Introduction](/introduction) and [VSDC Overview](/concepts/vsdc-overview).
-  </Step>
-  <Step title="Authenticate">
-    Follow [API Keys](/concepts/api-keys): Settings → Enable EBM → generate a key.
-  </Step>
-  <Step title="Connect your device">
-    Follow [Quickstart](/quickstart) and [Onboarding](/concepts/onboarding).
-  </Step>
-  <Step title="Learn the flows">
-    Work through [Workflows](/workflows/getting-started)- sales first.
-  </Step>
-  <Step title="Get the math right">
-    Study [Calculations](/calculations/overview) before going to production.
-  </Step>
-  <Step title="Build and test">
-    Use [API Reference](/api/overview) and the [API Playground](/playground/overview).
-  </Step>
-</Steps>

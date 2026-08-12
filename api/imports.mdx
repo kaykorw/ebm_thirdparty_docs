@@ -21,7 +21,7 @@ curl -X POST "{{baseUrl}}/imports/selectImportItems" \
 ```
 
 ```javascript JavaScript
-const { data } = await vsdcPost('/imports/selectImportItems', {
+const { data } = await ebmPost('/imports/selectImportItems', {
   tin: '999958074', bhfId: '00', lastReqDt: '20240706192223',
 });
 // data.itemList → customs declarations
@@ -29,7 +29,7 @@ const { data } = await vsdcPost('/imports/selectImportItems', {
 
 ```php PHP
 <?php
-$result = vsdcPost('/imports/selectImportItems', [
+$result = ebmPost('/imports/selectImportItems', [
     'tin' => '999958074', 'bhfId' => '00', 'lastReqDt' => '20240706192223',
 ]);
 ```
@@ -90,7 +90,7 @@ curl -X POST "{{baseUrl}}/imports/updateImportItems" \
 ```
 
 ```javascript JavaScript
-await vsdcPost('/imports/updateImportItems', {
+await ebmPost('/imports/updateImportItems', {
   tin: '999958074', bhfId: '00',
   taskCd: '2287735', dclDe: '20200220', itemSeq: 1,
   hsCd: '25201000000',
@@ -103,7 +103,7 @@ await vsdcPost('/imports/updateImportItems', {
 
 ```php PHP
 <?php
-vsdcPost('/imports/updateImportItems', [
+ebmPost('/imports/updateImportItems', [
     'tin' => '999958074', 'bhfId' => '00',
     'taskCd' => '2287735', 'dclDe' => '20200220', 'itemSeq' => 1,
     'hsCd' => '25201000000',

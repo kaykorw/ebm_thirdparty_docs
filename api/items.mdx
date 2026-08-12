@@ -171,7 +171,7 @@ curl -X POST "{{baseUrl}}/items/saveItems" \
 ```
 
 ```javascript JavaScript
-await vsdcPost('/items/saveItems', {
+await ebmPost('/items/saveItems', {
   tin: '999202800', bhfId: '00',
   itemCd: 'RW2NTU0000001',
   itemClsCd: '8014160101',
@@ -191,7 +191,7 @@ await vsdcPost('/items/saveItems', {
 
 ```php PHP
 <?php
-vsdcPost('/items/saveItems', [
+ebmPost('/items/saveItems', [
     'tin' => '999202800', 'bhfId' => '00',
     'itemCd' => 'RW2NTU0000001',
     'itemClsCd' => '8014160101',
@@ -257,7 +257,7 @@ curl -X POST "{{baseUrl}}/items/selectItems" \
 ```
 
 ```javascript JavaScript
-const { data } = await vsdcPost('/items/selectItems', {
+const { data } = await ebmPost('/items/selectItems', {
   tin: '123038911', bhfId: '00', lastReqDt: '20000101000000',
 });
 // data.itemList → array of registered products
@@ -265,7 +265,7 @@ const { data } = await vsdcPost('/items/selectItems', {
 
 ```php PHP
 <?php
-$result = vsdcPost('/items/selectItems', [
+$result = ebmPost('/items/selectItems', [
     'tin' => '123038911', 'bhfId' => '00', 'lastReqDt' => '20000101000000',
 ]);
 ```
@@ -305,7 +305,7 @@ curl -X POST "{{baseUrl}}/items/saveItemComposition" \
 ```
 
 ```javascript JavaScript
-await vsdcPost('/items/saveItemComposition', {
+await ebmPost('/items/saveItemComposition', {
   tin: '999958074', bhfId: '00',
   itemCd: '1', cpstItemCd: '1', cpstQty: 1,
   regrId: '123', regrNm: 'Testing Name',
@@ -314,7 +314,7 @@ await vsdcPost('/items/saveItemComposition', {
 
 ```php PHP
 <?php
-vsdcPost('/items/saveItemComposition', [
+ebmPost('/items/saveItemComposition', [
     'tin' => '999958074', 'bhfId' => '00',
     'itemCd' => '1', 'cpstItemCd' => '1', 'cpstQty' => 1,
     'regrId' => '123', 'regrNm' => 'Testing Name',

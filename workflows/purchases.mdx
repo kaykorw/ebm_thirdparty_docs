@@ -9,16 +9,16 @@ When another business sells to you and registers the sale on EBM, you can **pull
 ```mermaid
 sequenceDiagram
     participant Buyer as Your ERP
-    participant VSDC
-    participant RRA as RRA EBM
+    participant EBM as Kayko EBM
+    participant RRA as RRA EBM 2.1
 
     Note over RRA: Supplier registers sale to your TIN
-    Buyer->>VSDC: POST /trnsPurchase/selectTrnsPurchaseSales
-    VSDC-->>Buyer: Unconfirmed purchase invoices
-    Buyer->>VSDC: POST /trnsPurchase/savePurchases
-    VSDC->>RRA: Confirm purchase
-    RRA-->>VSDC: Acknowledged
-    VSDC-->>Buyer: resultCd: 000
+    Buyer->>EBM: POST /trnsPurchase/selectTrnsPurchaseSales
+    EBM-->>Buyer: Unconfirmed purchase invoices
+    Buyer->>EBM: POST /trnsPurchase/savePurchases
+    EBM->>RRA: Confirm purchase
+    RRA-->>EBM: Acknowledged
+    EBM-->>Buyer: resultCd: 000
 ```
 
 ## Step 1- Pull pending purchases
@@ -53,7 +53,7 @@ const purchases = await fetch(`${BASE_URL}/trnsPurchase/selectTrnsPurchaseSales`
 
 ```php PHP
 <?php
-$response = vsdcPost('/trnsPurchase/selectTrnsPurchaseSales', [
+$response = ebmPost('/trnsPurchase/selectTrnsPurchaseSales', [
     'tin' => '999958074',
     'bhfId' => '00',
     'lastReqDt' => '20240706204443',

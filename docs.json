@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Kayko VSDC API",
+  "name": "Kayko EBM API",
   "logo": {
     "light": "/logo/light.png",
     "dark": "/logo/dark.png",
@@ -18,9 +18,7 @@
     "url": "full",
     "mdx": {
       "server": [
-        "http://localhost:3000/ebm",
-        "https://vsdc.kayko.rw/rra-2.1.2.3.8",
-        "http://localhost:8080"
+        "http://localhost:3000/ebm"
       ]
     },
     "playground": {
@@ -46,15 +44,14 @@
         "pages": [
           "introduction",
           "table-of-contents",
-          "quickstart",
-          "glossary"
+          "quickstart"
         ]
       },
       {
         "group": "Core Concepts",
         "icon": "book-open",
         "pages": [
-          "concepts/vsdc-overview",
+          "concepts/ebm-overview",
           "concepts/api-keys",
           "concepts/onboarding",
           "concepts/data-sync"

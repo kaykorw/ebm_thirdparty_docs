@@ -1,6 +1,6 @@
-# Kayko VSDC ThirdParty API Documentation
+# Kayko EBM Third-Party API Documentation
 
-Official Mintlify documentation for the Rwanda Revenue Authority (RRA) VSDC API (v1.0.5).
+Official Mintlify documentation for the **Kayko EBM API** — the gateway integrators use to connect ERP/POS systems to Rwanda Revenue Authority (RRA) EBM 2.1.
 
 ## Authentication
 
@@ -14,7 +14,7 @@ Integrators authenticate with a business API key from the Kayko dashboard:
 
 | Feature | Details |
 |---------|---------|
-| **21 API endpoints** | Full VSDC coverage with interactive playground |
+| **Kayko EBM gateway** | `/initialize/*`, `/customers/*`, `/constants/*`, plus sales, items, stock, and more |
 | **Code examples** | cURL, JavaScript, and PHP on every endpoint |
 | **Workflows** | Sales, purchases, and stock step-by-step guides |
 | **Calculations** | VAT formulas, discounts, and invoice totals |

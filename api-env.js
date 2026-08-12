@@ -1,9 +1,7 @@
 (function () {
-  var STORAGE_KEY = 'kayko-vsdc-api-base-url';
+  var STORAGE_KEY = 'kayko-ebm-api-base-url';
   var SERVERS = [
     { label: 'Local EBM', url: 'http://localhost:3000/ebm' },
-    { label: 'Production VSDC', url: 'https://vsdc.kayko.rw/rra-2.1.2.3.8' },
-    { label: 'Local VSDC', url: 'http://localhost:8080' },
   ];
 
   function getSelectedUrl() {

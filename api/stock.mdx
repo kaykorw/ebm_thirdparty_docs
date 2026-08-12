@@ -63,7 +63,7 @@ curl -X POST "{{baseUrl}}/stock/saveStockItems" \
 ```
 
 ```javascript JavaScript
-await vsdcPost('/stock/saveStockItems', {
+await ebmPost('/stock/saveStockItems', {
   tin: '999958074', bhfId: '00',
   sarNo: '106', orgSarNo: '00',
   regTyCd: 'M', sarTyCd: '11',
@@ -78,7 +78,7 @@ await vsdcPost('/stock/saveStockItems', {
 
 ```php PHP
 <?php
-vsdcPost('/stock/saveStockItems', $stockPayload);
+ebmPost('/stock/saveStockItems', $stockPayload);
 ```
 
 ```json Payload
@@ -146,7 +146,7 @@ curl -X POST "{{baseUrl}}/stock/selectStockItems" \
 ```
 
 ```javascript JavaScript
-const { data } = await vsdcPost('/stock/selectStockItems', {
+const { data } = await ebmPost('/stock/selectStockItems', {
   tin: '999958074', bhfId: '00', lastReqDt: '20210520000000',
 });
 // data.stockList → movement history
@@ -154,7 +154,7 @@ const { data } = await vsdcPost('/stock/selectStockItems', {
 
 ```php PHP
 <?php
-$result = vsdcPost('/stock/selectStockItems', [
+$result = ebmPost('/stock/selectStockItems', [
     'tin' => '999958074', 'bhfId' => '00', 'lastReqDt' => '20210520000000',
 ]);
 ```
@@ -196,7 +196,7 @@ curl -X POST "{{baseUrl}}/stockMaster/saveStockMaster" \
 ```
 
 ```javascript JavaScript
-await vsdcPost('/stockMaster/saveStockMaster', {
+await ebmPost('/stockMaster/saveStockMaster', {
   tin: '999958074', bhfId: '00',
   itemCd: 'RW1NTXU0000006', rsdQty: 150,
   regrId: '123', regrNm: 'Kayko',
@@ -206,7 +206,7 @@ await vsdcPost('/stockMaster/saveStockMaster', {
 
 ```php PHP
 <?php
-vsdcPost('/stockMaster/saveStockMaster', [
+ebmPost('/stockMaster/saveStockMaster', [
     'tin' => '999958074', 'bhfId' => '00',
     'itemCd' => 'RW1NTXU0000006', 'rsdQty' => 150,
     'regrId' => '123', 'regrNm' => 'Kayko',

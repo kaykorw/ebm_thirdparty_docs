@@ -60,7 +60,7 @@ newQty = previousQty + stockInQty − stockOutQty
 | `rsdQty` | Residual (remaining) quantity |
 | `regrNm` / `modrNm` | Audit fields |
 
-Submit stock master **after** `saveStockItems` to keep VSDC inventory in sync with your ERP.
+Submit stock master **after** `saveStockItems` to keep EBM inventory in sync with your ERP.
 
 ```mermaid
 flowchart LR
@@ -114,7 +114,7 @@ Verification: `8000 × 18/118 = 1220.339…` → **1220.34** ✓
 
 | Endpoint | Direction | Amounts |
 |----------|-----------|---------|
-| `selectTrnsPurchaseSales` | Pull from RRA | Pre-calculated by supplier's VSDC |
+| `selectTrnsPurchaseSales` | Pull from RRA | Pre-calculated by supplier's EBM system |
 | `savePurchases` | Push confirmation | You verify or recalculate before submit |
 | `selectStockItems` | Pull | Current stock movement history |
 | `saveStockItems` | Push | You calculate movement values |
