@@ -4,7 +4,7 @@ description: Interactive testing for Kayko EBM endpoints — auth, environments,
 icon: play
 ---
 
-Use the playground pages in the sidebar to send live requests. Each operation is its own page with pre-filled bodies, auth, and response examples.
+Open this section from the top nav **API Playground** button. Use the **playground sidebar** to pick an endpoint and send live requests — each operation has pre-filled bodies, auth, and response examples.
 
 ## Before you start
 
@@ -40,15 +40,15 @@ Use the playground pages in the sidebar to send live requests. Each operation is
 
 ## Endpoint groups
 
-Each group lists individual playground pages (same pattern as **Select Countries** under Reference Data):
+Each group is in the **playground sidebar** (same pattern as **Select Countries** under Reference Data):
 
 ### Initialization
 
 | Playground page | Path | Auth |
 |-----------------|------|------|
-| Enable EBM | `POST /initialize/enable` | Internal token |
-| Get Deployment Status | `GET /initialize/status/{deploymentId}` | Internal token |
-| Initialize Device | `POST /initialize/init` | Internal token |
+| [Enable EBM](/api-reference/initialize/enable) | `POST /initialize/enable` | Internal token |
+| [Get Deployment Status](/api-reference/initialize/status/{deploymentId}) | `GET /initialize/status/{deploymentId}` | Internal token |
+| [Initialize Device](/api-reference/initialize/init) | `POST /initialize/init` | Internal token |
 
 Docs: [Initialization](/api/initialization)
 
@@ -58,22 +58,22 @@ Each constant is a full playground page with schema, examples, and code samples:
 
 | Playground page | Path |
 |-----------------|------|
-| Select Countries | `GET /constants/countries` |
-| Select Currencies | `GET /constants/currencies` |
-| Select Packaging | `GET /constants/packaging` |
-| Select Quantity | `GET /constants/quantity` |
-| Select Taxes | `GET /constants/taxes` |
-| Select Products | `GET /constants/products` |
-| Select Transactions | `GET /constants/transactions` |
-| Select Sales Receipt Types | `GET /constants/sales-receipt-types` |
-| Select Purchase Receipt Types | `GET /constants/purchase-receipt-types` |
-| Select Payment Modes | `GET /constants/payment-modes` |
-| Select Transaction Progress | `GET /constants/transaction-progress` |
-| Select Registrations | `GET /constants/registrations` |
-| Select Stock Types | `GET /constants/stock-types` |
-| Select Refund Reasons | `GET /constants/refund-reasons` |
-| Select Import Item Statuses | `GET /constants/import-item-statuses` |
-| Select Taxpayer Statuses | `GET /constants/taxpayer-statuses` |
+| [Select Countries](/api-reference/constants/countries) | `GET /constants/countries` |
+| [Select Currencies](/api-reference/constants/currencies) | `GET /constants/currencies` |
+| [Select Packaging](/api-reference/constants/packaging) | `GET /constants/packaging` |
+| [Select Quantity](/api-reference/constants/quantity) | `GET /constants/quantity` |
+| [Select Taxes](/api-reference/constants/taxes) | `GET /constants/taxes` |
+| [Select Products](/api-reference/constants/products) | `GET /constants/products` |
+| [Select Transactions](/api-reference/constants/transactions) | `GET /constants/transactions` |
+| [Select Sales Receipt Types](/api-reference/constants/sales-receipt-types) | `GET /constants/sales-receipt-types` |
+| [Select Purchase Receipt Types](/api-reference/constants/purchase-receipt-types) | `GET /constants/purchase-receipt-types` |
+| [Select Payment Modes](/api-reference/constants/payment-modes) | `GET /constants/payment-modes` |
+| [Select Transaction Progress](/api-reference/constants/transaction-progress) | `GET /constants/transaction-progress` |
+| [Select Registrations](/api-reference/constants/registrations) | `GET /constants/registrations` |
+| [Select Stock Types](/api-reference/constants/stock-types) | `GET /constants/stock-types` |
+| [Select Refund Reasons](/api-reference/constants/refund-reasons) | `GET /constants/refund-reasons` |
+| [Select Import Item Statuses](/api-reference/constants/import-item-statuses) | `GET /constants/import-item-statuses` |
+| [Select Taxpayer Statuses](/api-reference/constants/taxpayer-statuses) | `GET /constants/taxpayer-statuses` |
 
 Docs: [Reference Data](/api/reference-data)
 
@@ -81,23 +81,23 @@ Docs: [Reference Data](/api/reference-data)
 
 | Playground page | Path | Auth |
 |-----------------|------|------|
-| Select Customer | `POST /customers/select` | API key + `customers` |
-| Create Branch Customer | `POST /customers/create` | API key + `customers` |
-| Save Branch User | `POST /branches/saveBrancheUsers` | — |
-| Save Branch Insurance | `POST /branches/saveBrancheInsurances` | — |
-| Save Branch Customer | `POST /branches/saveBrancheCustomers` | — |
+| [Select Customer](/api-reference/customers/select) | `POST /customers/select` | API key + `customers` |
+| [Create Branch Customer](/api-reference/customers/create) | `POST /customers/create` | API key + `customers` |
+| [Save Branch User](/api-reference/branches/saveBrancheUsers) | `POST /branches/saveBrancheUsers` | — |
+| [Save Branch Insurance](/api-reference/branches/saveBrancheInsurances) | `POST /branches/saveBrancheInsurances` | — |
+| [Save Branch Customer](/api-reference/branches/saveBrancheCustomers) | `POST /branches/saveBrancheCustomers` | — |
 
 Docs: [Branches & Customers](/api/branches-customers)
 
 ### Items · Imports · Sales · Purchases · Stock
 
-Full domain pages remain in the playground for the complete API surface:
+Full domain pages remain in the playground sidebar:
 
-- **Items** — `saveItems`, `selectItems`, `saveItemComposition`
-- **Imports** — `selectImportItems`, `updateImportItems`
-- **Sales** — `saveSales`, `resendSales`
-- **Purchases** — `selectTrnsPurchaseSales`, `savePurchases`
-- **Stock** — `saveStockItems`, `selectStockItems`, `saveStockMaster`
+- **Items** — [saveItems](/api-reference/items/saveItems), [selectItems](/api-reference/items/selectItems), [saveItemComposition](/api-reference/items/saveItemComposition)
+- **Imports** — [selectImportItems](/api-reference/imports/selectImportItems), [updateImportItems](/api-reference/imports/updateImportItems)
+- **Sales** — [saveSales](/api-reference/trnsSales/saveSales), [resendSales](/api-reference/trnsSales/resendSales)
+- **Purchases** — [selectTrnsPurchaseSales](/api-reference/trnsPurchase/selectTrnsPurchaseSales), [savePurchases](/api-reference/trnsPurchase/savePurchases)
+- **Stock** — [saveStockItems](/api-reference/stock/saveStockItems), [selectStockItems](/api-reference/stock/selectStockItems), [saveStockMaster](/api-reference/stockMaster/saveStockMaster)
 
 ## What responses look like
 

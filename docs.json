@@ -37,172 +37,184 @@
     }
   },
   "navigation": {
-    "groups": [
+    "tabs": [
       {
-        "group": "Getting Started",
-        "icon": "rocket",
-        "pages": [
-          "introduction",
-          "table-of-contents",
-          "quickstart"
-        ]
-      },
-      {
-        "group": "Core Concepts",
+        "tab": "Documentation",
         "icon": "book-open",
-        "pages": [
-          "concepts/ebm-overview",
-          "concepts/api-keys",
-          "concepts/onboarding",
-          "concepts/data-sync"
-        ]
-      },
-      {
-        "group": "Workflows",
-        "icon": "route",
-        "pages": [
-          "workflows/getting-started",
-          "workflows/sales-invoice",
-          "workflows/purchases",
-          "workflows/stock-management"
-        ]
-      },
-      {
-        "group": "Calculations",
-        "icon": "calculator",
-        "pages": [
-          "calculations/overview",
-          "calculations/vat-formulas",
-          "calculations/line-items",
-          "calculations/discounts",
-          "calculations/invoice-totals",
-          "calculations/stock-and-purchases"
-        ]
-      },
-      {
-        "group": "API Reference",
-        "icon": "code",
-        "pages": [
-          "api/overview",
-          "api/initialization",
-          "api/reference-data",
-          "api/branches-customers",
-          "api/items",
-          "api/imports",
-          "api/sales",
-          "api/purchases",
-          "api/stock"
-        ]
-      },
-      {
-        "group": "Reference Tables",
-        "icon": "table",
-        "pages": [
-          "reference/field-reference",
-          "reference/response-codes",
-          "reference/enumerations",
-          "reference/country-codes",
-          "reference/currency-codes",
-          "reference/changelog"
-        ]
-      },
-      {
-        "group": "API Playground",
-        "icon": "play",
-        "openapi": "openapi.json",
-        "pages": [
-          "playground/overview",
+        "groups": [
           {
-            "group": "Initialization",
-            "icon": "key",
+            "group": "Getting Started",
+            "icon": "rocket",
             "pages": [
-              "POST /initialize/enable",
-              "GET /initialize/status/{deploymentId}",
-              "POST /initialize/init"
+              "introduction",
+              "table-of-contents",
+              "quickstart"
             ]
           },
           {
-            "group": "Reference Data",
-            "icon": "database",
+            "group": "Core Concepts",
+            "icon": "book-open",
             "pages": [
-              "GET /constants/countries",
-              "GET /constants/currencies",
-              "GET /constants/packaging",
-              "GET /constants/quantity",
-              "GET /constants/taxes",
-              "GET /constants/products",
-              "GET /constants/transactions",
-              "GET /constants/sales-receipt-types",
-              "GET /constants/purchase-receipt-types",
-              "GET /constants/payment-modes",
-              "GET /constants/transaction-progress",
-              "GET /constants/registrations",
-              "GET /constants/stock-types",
-              "GET /constants/refund-reasons",
-              "GET /constants/import-item-statuses",
-              "GET /constants/taxpayer-statuses"
+              "concepts/ebm-overview",
+              "concepts/api-keys",
+              "concepts/onboarding",
+              "concepts/data-sync"
             ]
           },
           {
-            "group": "Branches & Customers",
-            "icon": "building",
+            "group": "Workflows",
+            "icon": "route",
             "pages": [
-              "POST /customers/select",
-              "POST /customers/create",
-              "POST /branches/saveBrancheUsers",
-              "POST /branches/saveBrancheInsurances",
-              "POST /branches/saveBrancheCustomers"
+              "workflows/getting-started",
+              "workflows/sales-invoice",
+              "workflows/purchases",
+              "workflows/stock-management"
             ]
           },
           {
-            "group": "Items",
-            "icon": "box",
+            "group": "Calculations",
+            "icon": "calculator",
             "pages": [
-              "POST /items/saveItems",
-              "POST /items/selectItems",
-              "POST /items/saveItemComposition"
+              "calculations/overview",
+              "calculations/vat-formulas",
+              "calculations/line-items",
+              "calculations/discounts",
+              "calculations/invoice-totals",
+              "calculations/stock-and-purchases"
             ]
           },
           {
-            "group": "Imports",
-            "icon": "ship",
+            "group": "API Reference",
+            "icon": "code",
             "pages": [
-              "POST /imports/selectImportItems",
-              "POST /imports/updateImportItems"
+              "api/overview",
+              "api/initialization",
+              "api/reference-data",
+              "api/branches-customers",
+              "api/items",
+              "api/imports",
+              "api/sales",
+              "api/purchases",
+              "api/stock"
             ]
           },
           {
-            "group": "Sales",
-            "icon": "receipt",
+            "group": "Reference Tables",
+            "icon": "table",
             "pages": [
-              "POST /trnsSales/saveSales",
-              "POST /trnsSales/resendSales"
+              "reference/field-reference",
+              "reference/response-codes",
+              "reference/enumerations",
+              "reference/country-codes",
+              "reference/currency-codes",
+              "reference/changelog"
             ]
           },
           {
-            "group": "Purchases",
-            "icon": "cart-shopping",
+            "group": "Contributors",
+            "icon": "users",
             "pages": [
-              "POST /trnsPurchase/selectTrnsPurchaseSales",
-              "POST /trnsPurchase/savePurchases"
-            ]
-          },
-          {
-            "group": "Stock",
-            "icon": "boxes-stacked",
-            "pages": [
-              "POST /stock/saveStockItems",
-              "POST /stock/selectStockItems",
-              "POST /stockMaster/saveStockMaster"
+              "contributions/overview"
             ]
           }
         ]
       },
       {
-        "group": "Contributors",
-        "icon": "users",
-        "pages": [
-          "contributions/overview"
+        "tab": "API Playground",
+        "icon": "play",
+        "groups": [
+          {
+            "group": "API Playground",
+            "icon": "play",
+            "openapi": "openapi.json",
+            "pages": [
+              "playground/overview",
+              {
+                "group": "Initialization",
+                "icon": "key",
+                "pages": [
+                  "POST /initialize/enable",
+                  "GET /initialize/status/{deploymentId}",
+                  "POST /initialize/init"
+                ]
+              },
+              {
+                "group": "Reference Data",
+                "icon": "database",
+                "pages": [
+                  "GET /constants/countries",
+                  "GET /constants/currencies",
+                  "GET /constants/packaging",
+                  "GET /constants/quantity",
+                  "GET /constants/taxes",
+                  "GET /constants/products",
+                  "GET /constants/transactions",
+                  "GET /constants/sales-receipt-types",
+                  "GET /constants/purchase-receipt-types",
+                  "GET /constants/payment-modes",
+                  "GET /constants/transaction-progress",
+                  "GET /constants/registrations",
+                  "GET /constants/stock-types",
+                  "GET /constants/refund-reasons",
+                  "GET /constants/import-item-statuses",
+                  "GET /constants/taxpayer-statuses"
+                ]
+              },
+              {
+                "group": "Branches & Customers",
+                "icon": "building",
+                "pages": [
+                  "POST /customers/select",
+                  "POST /customers/create",
+                  "POST /branches/saveBrancheUsers",
+                  "POST /branches/saveBrancheInsurances",
+                  "POST /branches/saveBrancheCustomers"
+                ]
+              },
+              {
+                "group": "Items",
+                "icon": "box",
+                "pages": [
+                  "POST /items/saveItems",
+                  "POST /items/selectItems",
+                  "POST /items/saveItemComposition"
+                ]
+              },
+              {
+                "group": "Imports",
+                "icon": "ship",
+                "pages": [
+                  "POST /imports/selectImportItems",
+                  "POST /imports/updateImportItems"
+                ]
+              },
+              {
+                "group": "Sales",
+                "icon": "receipt",
+                "pages": [
+                  "POST /trnsSales/saveSales",
+                  "POST /trnsSales/resendSales"
+                ]
+              },
+              {
+                "group": "Purchases",
+                "icon": "cart-shopping",
+                "pages": [
+                  "POST /trnsPurchase/selectTrnsPurchaseSales",
+                  "POST /trnsPurchase/savePurchases"
+                ]
+              },
+              {
+                "group": "Stock",
+                "icon": "boxes-stacked",
+                "pages": [
+                  "POST /stock/saveStockItems",
+                  "POST /stock/selectStockItems",
+                  "POST /stockMaster/saveStockMaster"
+                ]
+              }
+            ]
+          }
         ]
       }
     ]
