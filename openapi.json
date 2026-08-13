@@ -3503,7 +3503,7 @@
           "metadata": {
             "description": "Record a stock in or stock out movement after a sale or purchase. Tracks quantity changes per item with tax amounts."
           },
-          "content": "Use `sarTyCd` set to `\"11\"` for stock out (after sales) and `\"02\"` for stock in (after purchases). See [Stock Workflow](/workflows/stock-management)."
+          "content": "Use `sarTyCd` set to `\"11\"` for stock out (after sales) and `\"02\"` for stock in (after purchases). See [Stock](/api/stock)."
         },
         "x-codeSamples": [
           {
@@ -3843,7 +3843,7 @@
           "metadata": {
             "description": "Confirm a supplier invoice as received. Maps supplier items to your `itemCd` and records the purchase in RRA's system."
           },
-          "content": "Follow with `saveStockItems` (stock in) to update inventory. See [Purchases Workflow](/workflows/purchases)."
+          "content": "Follow with `saveStockItems` (stock in) to update inventory. See [Purchases](/api/purchases)."
         },
         "x-codeSamples": [
           {
@@ -4230,7 +4230,7 @@
           "metadata": {
             "description": "Submit a sales invoice to RRA and receive the EBM receipt signature (`rcptSign`, `intrlData`) required for compliant invoice printing. Supports normal sales, refunds, copies, training, and proforma."
           },
-          "content": "The most critical endpoint. Returns cryptographic data that must be printed on the receipt. See [Sales Workflow](/workflows/sales-invoice) and [VAT Formulas](/calculations/vat-formulas)."
+          "content": "The most critical endpoint. Returns cryptographic data that must be printed on the receipt. See [Sales](/api/sales) and [VAT Formulas](/calculations/vat-formulas)."
         },
         "x-codeSamples": [
           {

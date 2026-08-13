@@ -1,12 +1,18 @@
 ---
 title: Stock
-description: Record stock movements and update inventory master.
+description: Record stock movements, update inventory master, and query movement history.
 icon: boxes-stacked
 ---
 
-<Note>
-  For the full inventory workflow, see [Stock Management Workflow](/workflows/stock-management).
-</Note>
+Stock management in Kayko EBM tracks inventory movements (in/out) and maintains a stock master (current quantities). Every stock operation must follow a sale or purchase.
+
+```mermaid
+flowchart LR
+    Sale["Sale Invoice"] --> StockOut["Stock Out (sarTyCd: 11)"]
+    Purchase["Purchase Confirm"] --> StockIn["Stock In (sarTyCd: 02)"]
+    StockOut --> Master["Update Stock Master"]
+    StockIn --> Master
+```
 
 ---
 
@@ -19,7 +25,7 @@ Record an inventory movement (sale deduction, purchase addition, adjustment, etc
 <ParamField body="sarNo" type="string" required>Stock and release document number</ParamField>
 <ParamField body="orgSarNo" type="string" required>Original SAR number</ParamField>
 <ParamField body="regTyCd" type="string" required>`"A"` Automatic or `"M"` Manual</ParamField>
-<ParamField body="sarTyCd" type="string" required>Movement type- see [Stock In/Out Types](/reference/enumerations#stock-inout-type)</ParamField>
+<ParamField body="sarTyCd" type="string" required>Movement type — see [Stock In/Out Types](/reference/enumerations#stock-inout-type)</ParamField>
 <ParamField body="ocrnDt" type="string" required>Occurrence date (`yyyyMMdd`)</ParamField>
 <ParamField body="totItemCnt" type="number" required>Number of line items</ParamField>
 <ParamField body="itemList" type="array" required>Stock movement line items</ParamField>
@@ -63,22 +69,39 @@ curl -X POST "{{baseUrl}}/stock/saveStockItems" \
 ```
 
 ```javascript JavaScript
-await ebmPost('/stock/saveStockItems', {
-  tin: '999958074', bhfId: '00',
-  sarNo: '106', orgSarNo: '00',
-  regTyCd: 'M', sarTyCd: '11',
-  ocrnDt: '20240520',
-  totItemCnt: 1,
-  totTaxblAmt: 1000, totTaxAmt: 152.54, totAmt: 1000,
-  itemList: [{ /* items */ }],
-  regrId: '1', regrNm: 'Kayko',
-  modrId: '1', modrNm: 'Kayko',
+await fetch(`${BASE_URL}/stock/saveStockItems`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    tin: '999958074',
+    bhfId: '00',
+    sarNo: '106',
+    orgSarNo: '00',
+    regTyCd: 'M',
+    sarTyCd: '11', // 11 = Outgoing Sale
+    ocrnDt: '20240520',
+    totItemCnt: 1,
+    totTaxblAmt: 1000,
+    totTaxAmt: 152.54,
+    totAmt: 1000,
+    itemList: [{ /* ... */ }],
+    regrId: '1', regrNm: 'Kayko',
+    modrId: '1', modrNm: 'Kayko',
+  }),
 });
 ```
 
 ```php PHP
 <?php
-ebmPost('/stock/saveStockItems', $stockPayload);
+$response = ebmPost('/stock/saveStockItems', [
+    'tin' => '999958074',
+    'bhfId' => '00',
+    'sarNo' => '106',
+    'sarTyCd' => '11',
+    'ocrnDt' => date('Ymd'),
+    'itemList' => [/* ... */],
+    // ...
+]);
 ```
 
 ```json Payload
@@ -129,45 +152,20 @@ ebmPost('/stock/saveStockItems', $stockPayload);
 
 </CodeGroup>
 
----
+### Stock movement types (`sarTyCd`)
 
-## Get stock movements
-
-Pull stock movement history (sync endpoint).
-
-`POST /stock/selectStockItems`
-
-<CodeGroup>
-
-```bash cURL
-curl -X POST "{{baseUrl}}/stock/selectStockItems" \
-  -H "Content-Type: application/json" \
-  -d '{"tin":"999958074","bhfId":"00","lastReqDt":"20210520000000"}'
-```
-
-```javascript JavaScript
-const { data } = await ebmPost('/stock/selectStockItems', {
-  tin: '999958074', bhfId: '00', lastReqDt: '20210520000000',
-});
-// data.stockList → movement history
-```
-
-```php PHP
-<?php
-$result = ebmPost('/stock/selectStockItems', [
-    'tin' => '999958074', 'bhfId' => '00', 'lastReqDt' => '20210520000000',
-]);
-```
-
-```json Payload
-{
-  "tin": "999958074",
-  "bhfId": "00",
-  "lastReqDt": "20210520000000"
-}
-```
-
-</CodeGroup>
+| Code | Direction | Meaning |
+|------|-----------|---------|
+| `01` | In | Import |
+| `02` | In | Purchase |
+| `03` | In | Return |
+| `04` | In | Stock movement (transfer in) |
+| `06` | In | Adjustment (in) |
+| `11` | Out | Sale |
+| `12` | Out | Return |
+| `13` | Out | Stock movement (transfer out) |
+| `15` | Out | Discarding |
+| `16` | Out | Adjustment (out) |
 
 ---
 
@@ -219,12 +217,72 @@ ebmPost('/stockMaster/saveStockMaster', [
   "tin": "999958074",
   "bhfId": "00",
   "itemCd": "RW1NTXU0000006",
-  "rsdQty": 1,
+  "rsdQty": 150,
   "modrId": "123",
-  "modrNm": "Modr Name",
+  "modrNm": "Kayko",
   "regrId": "123",
-  "regrNm": "Regr Name"
+  "regrNm": "Kayko"
 }
 ```
 
 </CodeGroup>
+
+---
+
+## Get stock movements
+
+Pull stock movement history for reconciliation (sync endpoint).
+
+`POST /stock/selectStockItems`
+
+<ParamField body="tin" type="string" required>Your TIN</ParamField>
+<ParamField body="bhfId" type="string" required>Branch ID</ParamField>
+<ParamField body="lastReqDt" type="string" required>Sync cursor</ParamField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/stock/selectStockItems" \
+  -H "Content-Type: application/json" \
+  -d '{"tin":"999958074","bhfId":"00","lastReqDt":"20210520000000"}'
+```
+
+```javascript JavaScript
+const { data } = await ebmPost('/stock/selectStockItems', {
+  tin: '999958074', bhfId: '00', lastReqDt: '20210520000000',
+});
+// data.stockList → movement history
+```
+
+```php PHP
+<?php
+$result = ebmPost('/stock/selectStockItems', [
+    'tin' => '999958074', 'bhfId' => '00', 'lastReqDt' => '20210520000000',
+]);
+```
+
+```json Payload
+{
+  "tin": "999958074",
+  "bhfId": "00",
+  "lastReqDt": "20210520000000"
+}
+```
+
+</CodeGroup>
+
+## Ordering constraints
+
+<Warning>
+  Stock operations have strict prerequisites:
+</Warning>
+
+1. **Stock out** requires the related **sale invoice** to be submitted first
+2. **Stock master update** requires the related **stock in/out** to be submitted first
+3. `sarNo` must be unique and sequential per branch
+
+## See also
+
+- [Sales](/api/sales) — submit the sale before stock-out
+- [Purchases](/api/purchases) — confirm purchase before stock-in
+- [Stock In/Out Types](/reference/enumerations#stock-inout-type) — full `sarTyCd` list
