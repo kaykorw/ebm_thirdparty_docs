@@ -106,7 +106,7 @@ Full domain pages remain in the playground sidebar:
 | `/initialize/init` | Full envelope `{ resultCd, resultMsg, resultDt, data }` |
 | `/customers/*` | Unwrapped `data` |
 | `/constants/*` | JSON array of `{ code, sort, name, … }` |
-| Auth failures | Kayko EBM `{ statusCode, message, errorCode }` |
+| Auth failures | Kayko EBM `{ status, message, error }` |
 
 ### Common result codes
 
@@ -121,7 +121,7 @@ Full list: [Response Codes](/reference/response-codes).
 
 ### Common auth errors
 
-| `errorCode` | Meaning |
+| `error` | Meaning |
 |-------------|---------|
 | `API_KEY_REQUIRED` | Missing business key |
 | `API_KEY_INVALID` / `INACTIVE` / `EXPIRED` | Bad or unusable key |

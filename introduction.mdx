@@ -85,7 +85,7 @@ Transactional endpoints return the same top-level structure:
 | `resultDt` | Server timestamp (`yyyyMMddHHmmss`) |
 | `data` | Payload — shape varies per endpoint. `null` on many save operations. |
 
-Some Kayko EBM routes (for example `/customers/*`) return unwrapped `data`. Auth failures use Kayko’s `{ statusCode, message, errorCode }` shape.
+Some Kayko EBM routes (for example `/customers/*`) return unwrapped `data`. Auth failures use Kayko’s `{ status, message, error }` shape.
 
 ## Common request fields
 
