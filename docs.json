@@ -13,6 +13,12 @@
     "light": "#5FB4E4",
     "dark": "#DE37A3"
   },
+  "navbar": {
+    "links": []
+  },
+  "styling": {
+    "css": ["/style.css"]
+  },
   "api": {
     "openapi": "openapi.json",
     "url": "full",
@@ -47,28 +53,23 @@
             "icon": "rocket",
             "pages": [
               "introduction",
-              "table-of-contents",
-              "quickstart"
-            ]
-          },
-          {
-            "group": "Core Concepts",
-            "icon": "book-open",
-            "pages": [
-              "concepts/ebm-overview",
               "concepts/api-keys",
-              "concepts/onboarding",
+              "workflows/getting-started",
               "concepts/data-sync"
             ]
           },
           {
-            "group": "Workflows",
-            "icon": "route",
+            "group": "API",
+            "icon": "code",
             "pages": [
-              "workflows/getting-started",
-              "workflows/sales-invoice",
-              "workflows/purchases",
-              "workflows/stock-management"
+              "api/initialization",
+              "api/reference-data",
+              "api/branches-customers",
+              "api/items",
+              "api/imports",
+              "api/sales",
+              "api/purchases",
+              "api/stock"
             ]
           },
           {
@@ -84,36 +85,22 @@
             ]
           },
           {
-            "group": "API Reference",
-            "icon": "code",
-            "pages": [
-              "api/overview",
-              "api/initialization",
-              "api/reference-data",
-              "api/branches-customers",
-              "api/items",
-              "api/imports",
-              "api/sales",
-              "api/purchases",
-              "api/stock"
-            ]
-          },
-          {
-            "group": "Reference Tables",
+            "group": "Lookup",
             "icon": "table",
             "pages": [
-              "reference/field-reference",
               "reference/response-codes",
               "reference/enumerations",
+              "reference/field-reference",
               "reference/country-codes",
               "reference/currency-codes",
               "reference/changelog"
             ]
           },
           {
-            "group": "Contributors",
-            "icon": "users",
+            "group": "About",
+            "icon": "circle-info",
             "pages": [
+              "concepts/onboarding",
               "contributions/overview"
             ]
           }

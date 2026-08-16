@@ -1,13 +1,36 @@
 ---
 title: Sales
-description: Submit sales invoices to RRA and receive cryptographic receipt data for EBM-compliant printing.
+description: Submit sales invoices to RRA, receive receipt signatures, and handle refunds and resends.
 icon: receipt
 ---
 
+## Overview
 
-<Note>
-  For a step-by-step guide with business rules, see the [Sales Invoice Workflow](/workflows/sales-invoice).
-</Note>
+```mermaid
+sequenceDiagram
+    participant POS as Your POS/ERP
+    participant EBM as Kayko EBM
+    participant RRA as RRA EBM 2.1
+
+    POS->>EBM: POST /trnsSales/saveSales
+    Note over POS,EBM: Invoice data + line items + receipt template
+    EBM->>RRA: Validate & sign
+    RRA-->>EBM: Signature + counters
+    EBM-->>POS: rcptSign, intrlData, curRcptNo
+    Note over POS: Print receipt with signature
+```
+
+## Sale types
+
+All sale types use the same endpoint (`/trnsSales/saveSales`) with different field values:
+
+| Type | `salesTyCd` | `rcptTyCd` | `orgInvcNo` | Notes |
+|------|-------------|------------|-------------|-------|
+| **Normal sale** | `"N"` | `"S"` | Same as `invcNo` | Standard transaction |
+| **Refund** | `"R"` | `"R"` | Original invoice # | Must reference the original sale |
+| **Copy** | `"C"` | `"S"` | Original invoice # | Reprint of existing invoice |
+| **Training** | `"T"` | `"S"` |- | Practice mode, no legal effect |
+| **Proforma** | `"P"` | `"S"` |- | Quote, not a tax document |
 
 ---
 
@@ -88,9 +111,15 @@ curl -X POST "{{baseUrl}}/trnsSales/saveSales" \
       "itemClsCd": "8014160101",
       "itemNm": "TOLE PL 2 44X1 22X10",
       "taxTyCd": "B",
-      "qty": 2, "prc": 1000, "splyAmt": 2000,
-      "taxblAmt": 2000, "taxAmt": 305.08, "totAmt": 2000,
-      "pkg": 1, "pkgUnitCd": "NT", "qtyUnitCd": "U",
+      "qty": 2,
+      "prc": 1000,
+      "splyAmt": 2000,
+      "taxblAmt": 2000,
+      "taxAmt": 305.08,
+      "totAmt": 2000,
+      "pkg": 1,
+      "pkgUnitCd": "NT",
+      "qtyUnitCd": "U",
       "dcRt": 0, "dcAmt": 0, "totDcAmt": 0
     }],
     "regrId": "1", "regrNm": "Kayko",
@@ -99,36 +128,117 @@ curl -X POST "{{baseUrl}}/trnsSales/saveSales" \
 ```
 
 ```javascript JavaScript
-const sale = await ebmPost('/trnsSales/saveSales', {
-  tin: '100027060', bhfId: '00',
-  invcNo: '1799', orgInvcNo: '1799',
-  cfmDt: '20260303145619', salesDt: '20260303',
-  salesTyCd: 'N', rcptTyCd: 'S', pmtTyCd: '02',
-  salesSttsCd: '02', prchrAcptcYn: 'Y',
-  custNm: 'RULIBA CLAYS LTD', custTin: '100004527',
-  totItemCnt: 1,
-  taxRtB: 18, taxblAmtB: 2000, taxAmtB: 305.08,
-  totTaxblAmt: 2000, totTaxAmt: 305.08, totAmt: 2000,
-  receipt: {
-    rptNo: '1799', custTin: '100004527',
-    trdeNm: 'RULIBACLAYSLTD',
-    topMsg: 'SONATUBES Ltd\nADDRESS KIGALI\nTIN 100027060',
-    btmMsg: 'Kayko v.2.3.11', prchrAcptcYn: 'Y',
-  },
-  itemList: [{ /* line items */ }],
-  regrId: '1', regrNm: 'Kayko',
-  modrId: '1', modrNm: 'Kayko',
-});
+const sale = await fetch(`${BASE_URL}/trnsSales/saveSales`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    tin: '100027060',
+    bhfId: '00',
+    invcNo: '1799',
+    orgInvcNo: '1799',
+    cfmDt: formatDateTime(new Date()),  // yyyyMMddHHmmss
+    salesDt: formatDate(new Date()),      // yyyyMMdd
+    salesTyCd: 'N',
+    rcptTyCd: 'S',
+    pmtTyCd: '02',
+    salesSttsCd: '02',
+    prchrAcptcYn: 'Y',
+    custNm: 'RULIBA CLAYS LTD',
+    custTin: '100004527',
+    totItemCnt: 1,
+    taxRtB: 18,
+    taxblAmtB: 2000,
+    taxAmtB: 305.08,
+    totTaxblAmt: 2000,
+    totTaxAmt: 305.08,
+    totAmt: 2000,
+    receipt: {
+      rptNo: '1799',
+      custTin: '100004527',
+      trdeNm: 'RULIBACLAYSLTD',
+      topMsg: 'SONATUBES Ltd\nADDRESS KIGALI\nTIN 100027060',
+      btmMsg: 'Kayko v.2.3.11',
+      prchrAcptcYn: 'Y',
+    },
+    itemList: [{
+      itemSeq: 1,
+      itemCd: 'RW2NTU0000642',
+      itemClsCd: '8014160101',
+      itemNm: 'TOLE PL 2 44X1 22X10',
+      taxTyCd: 'B',
+      qty: 2,
+      prc: 1000,
+      splyAmt: 2000,
+      taxblAmt: 2000,
+      taxAmt: 305.08,
+      totAmt: 2000,
+      pkg: 1,
+      pkgUnitCd: 'NT',
+      qtyUnitCd: 'U',
+      dcRt: 0, dcAmt: 0, totDcAmt: 0,
+    }],
+    regrId: '1', regrNm: 'Kayko',
+    modrId: '1', modrNm: 'Kayko',
+  }),
+}).then(r => r.json());
 
-// Print these on the receipt:
-console.log(sale.data.rcptSign, sale.data.intrlData);
+// Use these on your printed receipt:
+const { rcptSign, intrlData, curRcptNo, totRcptNo } = sale.data;
 ```
 
 ```php PHP
 <?php
-$result = ebmPost('/trnsSales/saveSales', $salePayload);
-$signature = $result['data']['rcptSign'];
-$internalData = $result['data']['intrlData'];
+$sale = [
+    'tin' => '100027060',
+    'bhfId' => '00',
+    'invcNo' => '1799',
+    'orgInvcNo' => '1799',
+    'cfmDt' => date('YmdHis'),
+    'salesDt' => date('Ymd'),
+    'salesTyCd' => 'N',
+    'rcptTyCd' => 'S',
+    'pmtTyCd' => '02',
+    'salesSttsCd' => '02',
+    'prchrAcptcYn' => 'Y',
+    'custNm' => 'RULIBA CLAYS LTD',
+    'custTin' => '100004527',
+    'totItemCnt' => 1,
+    'taxRtB' => 18,
+    'taxblAmtB' => 2000,
+    'taxAmtB' => 305.08,
+    'totTaxblAmt' => 2000,
+    'totTaxAmt' => 305.08,
+    'totAmt' => 2000,
+    'receipt' => [
+        'rptNo' => '1799',
+        'custTin' => '100004527',
+        'trdeNm' => 'RULIBACLAYSLTD',
+        'topMsg' => "SONATUBES Ltd\nADDRESS KIGALI\nTIN 100027060",
+        'btmMsg' => 'Kayko v.2.3.11',
+        'prchrAcptcYn' => 'Y',
+    ],
+    'itemList' => [[
+        'itemSeq' => 1,
+        'itemCd' => 'RW2NTU0000642',
+        'itemClsCd' => '8014160101',
+        'itemNm' => 'TOLE PL 2 44X1 22X10',
+        'taxTyCd' => 'B',
+        'qty' => 2,
+        'prc' => 1000,
+        'splyAmt' => 2000,
+        'taxblAmt' => 2000,
+        'taxAmt' => 305.08,
+        'totAmt' => 2000,
+        'pkg' => 1,
+        'pkgUnitCd' => 'NT',
+        'qtyUnitCd' => 'U',
+        'dcRt' => 0, 'dcAmt' => 0, 'totDcAmt' => 0,
+    ]],
+    'regrId' => '1', 'regrNm' => 'Kayko',
+    'modrId' => '1', 'modrNm' => 'Kayko',
+];
+
+$response = ebmPost('/trnsSales/saveSales', $sale);
 ```
 
 ```json Payload
@@ -220,6 +330,20 @@ TIN 100027060",
   }
 }
 ```
+
+Print `rcptSign` and `intrlData` on the receipt — they're required for EBM compliance.
+
+## Refunds
+
+Refunds use the same endpoint with different codes:
+
+| Field | Normal Sale | Refund |
+|-------|-------------|--------|
+| `salesTyCd` | `"N"` | `"R"` |
+| `rcptTyCd` | `"S"` | `"R"` |
+| `orgInvcNo` | Same as `invcNo` | **Original sale's** `invcNo` |
+| `invcNo` | New sequential # | New sequential # |
+| `rfdRsnCd` | `null` | Required — see [Refund Reasons](/reference/enumerations#refund-reason-code) |
 
 ---
 
@@ -358,3 +482,26 @@ TIN 107993488
 ```
 
 </CodeGroup>
+
+## Business rules
+
+<AccordionGroup>
+  <Accordion title="prcOrdCd — Purchase Order Code (v1.0.5+)">
+    Mandatory when the customer is a **registered business** (has a TIN). Optional for individual/walk-in customers. Missing this for business customers returns error `881`.
+  </Accordion>
+  <Accordion title="regrNm / modrNm — max 8 characters">
+    The registrant and modifier names must not exceed 8 characters on sales transactions.
+  </Accordion>
+  <Accordion title="Invoice numbers must be sequential">
+    `invcNo` must increment. Use the `lastSaleInvcNo` from initialization to know where to start.
+  </Accordion>
+  <Accordion title="Customer TIN validation">
+    Invalid customer TINs return error `884`. Use `/customers/selectCustomer` to verify before selling.
+  </Accordion>
+</AccordionGroup>
+
+## See also
+
+- [Calculations](/calculations/overview) — how to compute amounts
+- [Response Codes](/reference/response-codes) — error handling
+- [Stock](/api/stock) — record stock-out after a sale

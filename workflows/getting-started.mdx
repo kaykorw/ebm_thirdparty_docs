@@ -1,8 +1,19 @@
 ---
-title: Getting Started Workflow
+title: Integration Checklist
 description: The recommended order of API calls for a new Kayko EBM integration.
 icon: list-ol
 ---
+
+## Prerequisites
+
+Before you start integrating, ensure you have:
+
+- RRA MyRRA membership and EBM 2.1 service request approved
+- Equipment registration completed (device serial number)
+- EBM enabled in Kayko Settings and an API key generated
+- TIN, branch ID, and device serial number on hand
+
+For regulatory requirements, see [Onboarding & Policies](/concepts/onboarding).
 
 ```mermaid
 flowchart TD
@@ -56,9 +67,9 @@ Register each product with a unique `itemCd`. See [Items API — item code forma
 
 Pick your workflow:
 
-- **Selling goods?** → [Sales Invoice Workflow](/workflows/sales-invoice)
-- **Confirming supplier invoices?** → [Purchases Workflow](/workflows/purchases)
-- **Managing inventory?** → [Stock Management Workflow](/workflows/stock-management)
+- **Selling goods?** → [Sales](/api/sales)
+- **Confirming supplier invoices?** → [Purchases](/api/purchases)
+- **Managing inventory?** → [Stock](/api/stock)
 
 ## Dependency rules
 
