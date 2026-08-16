@@ -1,88 +1,75 @@
 ---
 title: Branches & Customers
-description: Look up and save customers via Kayko EBM, plus push branch users and insurance to RRA.
+description: Look up and save customers via Kayko EBM, plus branch users and insurance.
 icon: building
 ---
 
+Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` from your business after Enable EBM, so you never put it in the JSON body.
 
-## Select customer (Kayko EBM)
+---
 
-`POST /customers/select`
+## Select customer
 
-<ParamField body="tin" type="string" required>Your 9-digit TIN</ParamField>
-<ParamField body="branch_id" type="string" required>2-character branch ID</ParamField>
-<ParamField body="customer_tin" type="string" required>Customer TIN to look up</ParamField>
-<ParamField body="ebm_url" type="string" required>Business EBM base URL from Enable EBM</ParamField>
+`GET /customers`
 
-| Request field | Upstream field |
-|---------------|------------|
-| `tin` | `tin` |
-| `branch_id` | `bhfId` |
+Requires a business API key with scope `customers`.
+
+<ParamField query="customer_tin" type="string" required>
+  Customer TIN to look up (exactly 9 characters).
+</ParamField>
+
+| Request | Upstream |
+|---------|----------|
+| `x-tin` | `tin` |
+| `x-branch-id` | `bhfId` |
 | `customer_tin` | `custmTin` |
 
 <CodeGroup>
 
 ```bash cURL
-curl -X POST "{{baseUrl}}/customers/select" \
-  -H "Content-Type: application/json" \
+curl -X GET "{{baseUrl}}/customers?customer_tin=100004527" \
   -H "Authorization: Bearer sk_live_YOUR_SECRET" \
-  -d '{
-    "tin": "100027060",
-    "branch_id": "00",
-    "customer_tin": "100004527",
-    "ebm_url": "http://localhost:8080/rra/ACME01/"
-  }'
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00"
 ```
 
 ```javascript JavaScript
-const data = await fetch(`${BASE_URL}/customers/select`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+const data = await fetch(
+  `${BASE_URL}/customers?customer_tin=100004527`,
+  {
+    headers: {
+      Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+      'x-tin': '100027060',
+      'x-branch-id': '00',
+    },
   },
-  body: JSON.stringify({
-    tin: '100027060',
-    branch_id: '00',
-    customer_tin: '100004527',
-    ebm_url: process.env.EBM_URL,
-  }),
-}).then((r) => r.json());
-```
-
-```json Payload
-{
-  "tin": "100027060",
-  "branch_id": "00",
-  "customer_tin": "100004527",
-  "ebm_url": "http://localhost:8080/rra/ACME01/"
-}
+).then((r) => r.json());
 ```
 
 </CodeGroup>
 
 ---
 
-## Create branch customer (Kayko EBM)
+## Create branch customer
 
 `POST /customers/create`
 
-<ParamField body="tin" type="string" required>Your TIN</ParamField>
-<ParamField body="branch_id" type="string" required>Branch ID</ParamField>
-<ParamField body="customer_number" type="string" required>Internal customer number (max 9)</ParamField>
-<ParamField body="customer_tin" type="string" required>Customer TIN</ParamField>
+Use your business API key (scope `customers`). Internal systems may also call this with `X-API-Token`; in that case include `business_code`.
+
+<ParamField body="business_code" type="string">
+  Required only when authenticating with the internal token.
+</ParamField>
+<ParamField body="customer_number" type="string" required>Your internal customer number (max 9)</ParamField>
+<ParamField body="customer_tin" type="string" required>Customer TIN (exactly 9)</ParamField>
 <ParamField body="customer_name" type="string" required>Customer name (max 60)</ParamField>
 <ParamField body="address" type="string">Address</ParamField>
-<ParamField body="telephone_number" type="string">Phone</ParamField>
+<ParamField body="telephone" type="string">Phone</ParamField>
 <ParamField body="email" type="string">Email</ParamField>
 <ParamField body="fax_number" type="string">Fax</ParamField>
-<ParamField body="use_yn" type="string" required>`Y` or `N`</ParamField>
-<ParamField body="remark" type="string">Notes</ParamField>
-<ParamField body="registrar_name" type="string" required>Registrant name</ParamField>
-<ParamField body="registrar_id" type="string" required>Registrant ID</ParamField>
-<ParamField body="modifier_name" type="string" required>Modifier name</ParamField>
-<ParamField body="modifier_id" type="string" required>Modifier ID</ParamField>
-<ParamField body="ebm_url" type="string" required>Business EBM base URL</ParamField>
+<ParamField body="use" type="boolean">Active flag; defaults to `true`</ParamField>
+<ParamField body="notes" type="string">Optional notes</ParamField>
+
+Registrar and modifier fields are set by Kayko for you.
 
 <CodeGroup>
 
@@ -90,18 +77,14 @@ const data = await fetch(`${BASE_URL}/customers/select`, {
 curl -X POST "{{baseUrl}}/customers/create" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
   -d '{
-    "tin": "100027060",
-    "branch_id": "00",
     "customer_number": "C001",
     "customer_tin": "100004527",
     "customer_name": "RULIBA CLAYS LTD",
-    "use_yn": "Y",
-    "registrar_name": "Kayko",
-    "registrar_id": "1",
-    "modifier_name": "Kayko",
-    "modifier_id": "1",
-    "ebm_url": "http://localhost:8080/rra/ACME01/"
+    "telephone": "0780000000",
+    "use": true
   }'
 ```
 
@@ -111,36 +94,30 @@ await fetch(`${BASE_URL}/customers/create`, {
   headers: {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+    'x-tin': '100027060',
+    'x-branch-id': '00',
   },
   body: JSON.stringify({
-    tin: '100027060',
-    branch_id: '00',
     customer_number: 'C001',
     customer_tin: '100004527',
     customer_name: 'RULIBA CLAYS LTD',
-    use_yn: 'Y',
-    registrar_name: 'Kayko',
-    registrar_id: '1',
-    modifier_name: 'Kayko',
-    modifier_id: '1',
-    ebm_url: process.env.EBM_URL,
+    telephone: '0780000000',
+    use: true,
   }),
 });
 ```
 
 ```json Payload
 {
-  "tin": "100027060",
-  "branch_id": "00",
   "customer_number": "C001",
   "customer_tin": "100004527",
   "customer_name": "RULIBA CLAYS LTD",
-  "use_yn": "Y",
-  "registrar_name": "Kayko",
-  "registrar_id": "1",
-  "modifier_name": "Kayko",
-  "modifier_id": "1",
-  "ebm_url": "http://localhost:8080/rra/ACME01/"
+  "address": null,
+  "telephone": "0780000000",
+  "email": null,
+  "fax_number": null,
+  "use": true,
+  "notes": null
 }
 ```
 
@@ -148,146 +125,92 @@ await fetch(`${BASE_URL}/customers/create`, {
 
 ---
 
-## Save branch customer
+## Select branches
 
-`POST /branches/saveBrancheCustomers`
+`GET /branches`
 
-<ParamField body="tin" type="string" required>TIN</ParamField>
-<ParamField body="bhfId" type="string" required>Branch ID</ParamField>
-<ParamField body="custNo" type="string" required>Your internal customer number</ParamField>
-<ParamField body="custTin" type="string" required>Customer TIN</ParamField>
-<ParamField body="custNm" type="string" required>Customer name</ParamField>
-<ParamField body="adrs" type="string">Address</ParamField>
-<ParamField body="telNo" type="string">Phone number</ParamField>
-<ParamField body="email" type="string">Email</ParamField>
-<ParamField body="useYn" type="string" required>`"Y"` or `"N"`</ParamField>
-<ParamField body="regrId" type="string" required>Registrant ID</ParamField>
-<ParamField body="regrNm" type="string" required>Registrant name</ParamField>
-<ParamField body="modrId" type="string" required>Modifier ID</ParamField>
-<ParamField body="modrNm" type="string" required>Modifier name</ParamField>
+Requires scope `branch`, plus `x-last-request-date` (`YYYYMMDDHHmmss`).
 
-<CodeGroup>
+<ParamField query="start_page" type="string">Optional page start (digits only)</ParamField>
+<ParamField query="end_page" type="string">Optional page end (digits only)</ParamField>
 
-```bash cURL
-curl -X POST "{{baseUrl}}/branches/saveBrancheCustomers" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "tin": "999958074",
-    "bhfId": "00",
-    "custNo": "999991113",
-    "custTin": "118620650",
-    "custNm": "Kayko Group Ltd",
-    "useYn": "Y",
-    "regrNm": "Admin", "regrId": "Admin",
-    "modrNm": "Admin", "modrId": "Admin"
-  }'
+```bash
+curl -X GET "{{baseUrl}}/branches?start_page=1&end_page=10" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
+  -H "x-last-request-date: 20250101000000"
 ```
-
-```javascript JavaScript
-await ebmPost('/branches/saveBrancheCustomers', {
-  tin: '999958074', bhfId: '00',
-  custNo: '999991113', custTin: '118620650', custNm: 'Kayko Group Ltd',
-  useYn: 'Y',
-  regrNm: 'Admin', regrId: 'Admin',
-  modrNm: 'Admin', modrId: 'Admin',
-});
-```
-
-```php PHP
-<?php
-ebmPost('/branches/saveBrancheCustomers', [
-    'tin' => '999958074', 'bhfId' => '00',
-    'custNo' => '999991113', 'custTin' => '118620650',
-    'custNm' => 'Kayko Group Ltd', 'useYn' => 'Y',
-    'regrNm' => 'Admin', 'regrId' => 'Admin',
-    'modrNm' => 'Admin', 'modrId' => 'Admin',
-]);
-```
-
-```json Payload
-{
-  "tin": "999958074",
-  "bhfId": "00",
-  "custNo": "999991113",
-  "custTin": "118620650",
-  "custNm": "Kayko Group Ltd",
-  "adrs": null,
-  "telNo": null,
-  "email": null,
-  "faxNo": null,
-  "useYn": "Y",
-  "remark": null,
-  "regrNm": "Admin",
-  "regrId": "Admin",
-  "modrNm": "Admin",
-  "modrId": "Admin"
-}
-```
-
-</CodeGroup>
 
 ---
 
 ## Save branch user
 
-`POST /branches/saveBrancheUsers`
+`POST /branches/users`
 
-<ParamField body="userId" type="string" required>User login ID</ParamField>
-<ParamField body="userNm" type="string" required>User display name</ParamField>
-<ParamField body="pwd" type="string" required>Password</ParamField>
-<ParamField body="authCd" type="string">Authority/role code</ParamField>
+Requires scope `branch`.
+
+<ParamField body="user_id" type="string">
+  Optional. Omit to create (Kayko generates an id); pass the same id to update.
+</ParamField>
+<ParamField body="full_name" type="string" required>Display name</ParamField>
+<ParamField body="password" type="string" required>Password</ParamField>
+<ParamField body="address" type="string">Address</ParamField>
+<ParamField body="telephone" type="string">Phone</ParamField>
+<ParamField body="authority_code" type="string">Role code</ParamField>
+<ParamField body="notes" type="string">Notes</ParamField>
+<ParamField body="use" type="boolean">Defaults to `true`</ParamField>
+
+Success response:
+
+```json
+{
+  "message": "success",
+  "data": { "user_id": "…" }
+}
+```
 
 <CodeGroup>
 
 ```bash cURL
-curl -X POST "{{baseUrl}}/branches/saveBrancheUsers" \
+curl -X POST "{{baseUrl}}/branches/users" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
   -d '{
-    "tin": "999958074", "bhfId": "00",
-    "userId": "userId3", "userNm": "User Name3", "pwd": "12341234",
-    "useYn": "Y",
-    "regrNm": "Admin", "regrId": "123",
-    "modrNm": "Admin", "modrId": "123"
+    "full_name": "User Name",
+    "password": "12341234",
+    "use": true
   }'
 ```
 
 ```javascript JavaScript
-await ebmPost('/branches/saveBrancheUsers', {
-  tin: '999958074', bhfId: '00',
-  userId: 'userId3', userNm: 'User Name3', pwd: '12341234',
-  useYn: 'Y',
-  regrNm: 'Admin', regrId: '123',
-  modrNm: 'Admin', modrId: '123',
+await fetch(`${BASE_URL}/branches/users`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+    'x-tin': '100027060',
+    'x-branch-id': '00',
+  },
+  body: JSON.stringify({
+    full_name: 'User Name',
+    password: '12341234',
+    use: true,
+  }),
 });
-```
-
-```php PHP
-<?php
-ebmPost('/branches/saveBrancheUsers', [
-    'tin' => '999958074', 'bhfId' => '00',
-    'userId' => 'userId3', 'userNm' => 'User Name3', 'pwd' => '12341234',
-    'useYn' => 'Y',
-    'regrNm' => 'Admin', 'regrId' => '123',
-    'modrNm' => 'Admin', 'modrId' => '123',
-]);
 ```
 
 ```json Payload
 {
-  "tin": "999958074",
-  "bhfId": "00",
-  "userId": "userId3",
-  "userNm": "User Name3",
-  "pwd": "12341234",
-  "adrs": null,
-  "modrId": "123",
-  "modrNm": "Modr Name",
-  "regrId": "123",
-  "regrNm": "Regr Name",
-  "cntc": null,
-  "authCd": null,
-  "remark": null,
-  "useYn": "Y"
+  "full_name": "User Name",
+  "password": "12341234",
+  "address": null,
+  "telephone": null,
+  "authority_code": null,
+  "notes": null,
+  "use": true
 }
 ```
 
@@ -299,60 +222,25 @@ ebmPost('/branches/saveBrancheUsers', [
 
 Pharmacy-only. Register insurance providers used by the branch.
 
-`POST /branches/saveBrancheInsurances`
+`POST /branches/insurances`
 
-<ParamField body="isrccCd" type="string" required>Insurance company code</ParamField>
-<ParamField body="isrccNm" type="string" required>Insurance company name</ParamField>
-<ParamField body="isrcRt" type="number" required>Premium rate (e.g. `20` for 20%)</ParamField>
+Requires scope `branch`.
 
-<CodeGroup>
+<ParamField body="insurance_code" type="string" required>Insurance company code</ParamField>
+<ParamField body="insurance_name" type="string" required>Insurance company name</ParamField>
+<ParamField body="insurance_rate" type="number" required>Premium rate from 0 to 100 (for example `20` for 20%)</ParamField>
+<ParamField body="use" type="boolean">Defaults to `true`</ParamField>
 
-```bash cURL
-curl -X POST "{{baseUrl}}/branches/saveBrancheInsurances" \
+```bash
+curl -X POST "{{baseUrl}}/branches/insurances" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
   -d '{
-    "tin": "999958074", "bhfId": "00",
-    "isrccCd": "ISRCC01", "isrccNm": "RSSB Insurance", "isrcRt": 20,
-    "useYn": "Y",
-    "regrNm": "Admin", "regrId": "123",
-    "modrNm": "Admin", "modrId": "123"
+    "insurance_code": "ISRCC01",
+    "insurance_name": "RSSB Insurance",
+    "insurance_rate": 20,
+    "use": true
   }'
 ```
-
-```javascript JavaScript
-await ebmPost('/branches/saveBrancheInsurances', {
-  tin: '999958074', bhfId: '00',
-  isrccCd: 'ISRCC01', isrccNm: 'RSSB Insurance', isrcRt: 20,
-  useYn: 'Y',
-  regrNm: 'Admin', regrId: '123',
-  modrNm: 'Admin', modrId: '123',
-});
-```
-
-```php PHP
-<?php
-ebmPost('/branches/saveBrancheInsurances', [
-    'tin' => '999958074', 'bhfId' => '00',
-    'isrccCd' => 'ISRCC01', 'isrccNm' => 'RSSB Insurance', 'isrcRt' => 20,
-    'useYn' => 'Y',
-    'regrNm' => 'Admin', 'regrId' => '123',
-    'modrNm' => 'Admin', 'modrId' => '123',
-]);
-```
-
-```json Payload
-{
-  "tin": "999958074",
-  "bhfId": "00",
-  "isrccCd": "ISRCC01",
-  "isrccNm": "ISRCC NAME",
-  "modrId": "123",
-  "modrNm": "Modr Name",
-  "regrId": "123",
-  "regrNm": "Regr Name",
-  "isrcRt": 20,
-  "useYn": "Y"
-}
-```
-
-</CodeGroup>

@@ -151,11 +151,12 @@
                 "group": "Branches & Customers",
                 "icon": "building",
                 "pages": [
-                  "POST /customers/select",
+                  "GET /customers",
                   "POST /customers/create",
-                  "POST /branches/saveBrancheUsers",
-                  "POST /branches/saveBrancheInsurances",
-                  "POST /branches/saveBrancheCustomers"
+                  "GET /branches",
+                  "POST /branches/users",
+                  "POST /branches/insurances",
+                  "GET /notices"
                 ]
               },
               {

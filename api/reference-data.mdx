@@ -1,10 +1,10 @@
 ---
 title: Reference Data
-description: Kayko EBM reference tables via GET /constants/*- Select Countries, Taxes, Packaging, and more.
+description: Kayko EBM reference tables via GET /constants/*, plus notices.
 icon: database
 ---
 
-All reference-data endpoints are **`GET /constants/…`** on the Kayko EBM gateway. Authenticate with your business API key (any scope).
+All constant endpoints are **`GET /constants/…`** on the Kayko EBM gateway. Authenticate with your business API key (any scope). Tenant headers are not required for constants.
 
 ```http
 Authorization: Bearer sk_live_YOUR_SECRET
@@ -12,7 +12,16 @@ Authorization: Bearer sk_live_YOUR_SECRET
 x-api-key: sk_live_YOUR_SECRET
 ```
 
-Response is a JSON **array**. Most items are `{ code, sort, name }`. Taxes also include `rate` / `userDfnCd1`. Stock types include `direction` (`in` | `out`).
+Response shape:
+
+```json
+{
+  "message": "success",
+  "data": [ … ]
+}
+```
+
+Most items are `{ code, sort, name }`. Taxes also include `rate` and `user_defined_code`. Stock types include `direction` (`in` | `out`). Currencies return **RWF first**.
 
 ---
 
@@ -50,10 +59,13 @@ $countries = json_decode(curl_exec($ch), true);
 ```
 
 ```json Response
-[
-  { "code": "RW", "sort": 193, "name": "RWANDA" },
-  { "code": "KE", "sort": 115, "name": "KENYA" }
-]
+{
+  "message": "success",
+  "data": [
+    { "code": "RW", "sort": 193, "name": "RWANDA" },
+    { "code": "KE", "sort": 115, "name": "KENYA" }
+  ]
+}
 ```
 
 </CodeGroup>
@@ -84,10 +96,13 @@ const currencies = await fetch(`${BASE_URL}/constants/currencies`, {
 ```
 
 ```json Response
-[
-  { "code": "RWF", "sort": 1, "name": "RWANDAN FRANC" },
-  { "code": "USD", "sort": 2, "name": "US DOLLAR" }
-]
+{
+  "message": "success",
+  "data": [
+    { "code": "RWF", "sort": 1, "name": "RWANDAN FRANC" },
+    { "code": "USD", "sort": 2, "name": "US DOLLAR" }
+  ]
+}
 ```
 
 </CodeGroup>
@@ -114,10 +129,13 @@ const packaging = await fetch(`${BASE_URL}/constants/packaging`, {
 ```
 
 ```json Response
-[
-  { "code": "NT", "sort": 1, "name": "Net" },
-  { "code": "BX", "sort": 2, "name": "Box" }
-]
+{
+  "message": "success",
+  "data": [
+    { "code": "NT", "sort": 1, "name": "Net" },
+    { "code": "BX", "sort": 2, "name": "Box" }
+  ]
+}
 ```
 
 </CodeGroup>
@@ -144,10 +162,13 @@ const quantity = await fetch(`${BASE_URL}/constants/quantity`, {
 ```
 
 ```json Response
-[
-  { "code": "U", "sort": 1, "name": "Pieces/unit" },
-  { "code": "KG", "sort": 2, "name": "Kilogram" }
-]
+{
+  "message": "success",
+  "data": [
+    { "code": "U", "sort": 1, "name": "Pieces/unit" },
+    { "code": "KG", "sort": 2, "name": "Kilogram" }
+  ]
+}
 ```
 
 </CodeGroup>
@@ -164,7 +185,7 @@ Tax type codes (`taxTyCd`) with rates. Category **B** is standard 18% VAT.
 <ResponseField name="sort" type="integer">Display sort order</ResponseField>
 <ResponseField name="name" type="string">Display label</ResponseField>
 <ResponseField name="rate" type="number">Tax rate percent</ResponseField>
-<ResponseField name="userDfnCd1" type="number">User-defined rate mirror</ResponseField>
+<ResponseField name="user_defined_code" type="number">User-defined rate mirror</ResponseField>
 
 <CodeGroup>
 
@@ -180,10 +201,13 @@ const taxes = await fetch(`${BASE_URL}/constants/taxes`, {
 ```
 
 ```json Response
-[
-  { "code": "A", "sort": 1, "name": "A-EX (Exempt)", "rate": 0, "userDfnCd1": 0 },
-  { "code": "B", "sort": 2, "name": "B-18.00%", "rate": 18, "userDfnCd1": 18 }
-]
+{
+  "message": "success",
+  "data": [
+    { "code": "A", "sort": 1, "name": "A-EX (Exempt)", "rate": 0, "user_defined_code": 0 },
+    { "code": "B", "sort": 2, "name": "B-18.00%", "rate": 18, "user_defined_code": 18 }
+  ]
+}
 ```
 
 </CodeGroup>
@@ -204,11 +228,14 @@ curl -X GET "{{baseUrl}}/constants/products" \
 ```
 
 ```json Response
-[
-  { "code": "1", "sort": 1, "name": "Raw Material" },
-  { "code": "2", "sort": 2, "name": "Finished Product" },
-  { "code": "3", "sort": 3, "name": "Service" }
-]
+{
+  "message": "success",
+  "data": [
+    { "code": "1", "sort": 1, "name": "Raw Material" },
+    { "code": "2", "sort": 2, "name": "Finished Product" },
+    { "code": "3", "sort": 3, "name": "Service" }
+  ]
+}
 ```
 
 </CodeGroup>
@@ -229,10 +256,13 @@ curl -X GET "{{baseUrl}}/constants/transactions" \
 ```
 
 ```json Response
-[
-  { "code": "N", "sort": 1, "name": "Normal" },
-  { "code": "R", "sort": 5, "name": "Refund" }
-]
+{
+  "message": "success",
+  "data": [
+    { "code": "N", "sort": 1, "name": "Normal" },
+    { "code": "R", "sort": 5, "name": "Refund" }
+  ]
+}
 ```
 
 </CodeGroup>
@@ -253,10 +283,13 @@ curl -X GET "{{baseUrl}}/constants/sales-receipt-types" \
 ```
 
 ```json Response
-[
-  { "code": "S", "sort": 1, "name": "Sale" },
-  { "code": "R", "sort": 2, "name": "Refund" }
-]
+{
+  "message": "success",
+  "data": [
+    { "code": "S", "sort": 1, "name": "Sale" },
+    { "code": "R", "sort": 2, "name": "Refund" }
+  ]
+}
 ```
 
 </CodeGroup>
@@ -277,10 +310,13 @@ curl -X GET "{{baseUrl}}/constants/purchase-receipt-types" \
 ```
 
 ```json Response
-[
-  { "code": "P", "sort": 1, "name": "Purchase" },
-  { "code": "R", "sort": 2, "name": "Refund" }
-]
+{
+  "message": "success",
+  "data": [
+    { "code": "P", "sort": 1, "name": "Purchase" },
+    { "code": "R", "sort": 2, "name": "Refund" }
+  ]
+}
 ```
 
 </CodeGroup>
@@ -301,10 +337,13 @@ curl -X GET "{{baseUrl}}/constants/payment-modes" \
 ```
 
 ```json Response
-[
-  { "code": "01", "sort": 1, "name": "CASH" },
-  { "code": "06", "sort": 6, "name": "MOBILE MONEY" }
-]
+{
+  "message": "success",
+  "data": [
+    { "code": "01", "sort": 1, "name": "CASH" },
+    { "code": "06", "sort": 6, "name": "MOBILE MONEY" }
+  ]
+}
 ```
 
 </CodeGroup>
@@ -325,10 +364,13 @@ curl -X GET "{{baseUrl}}/constants/transaction-progress" \
 ```
 
 ```json Response
-[
-  { "code": "01", "sort": 1, "name": "Wait for Approval" },
-  { "code": "02", "sort": 2, "name": "Approved" }
-]
+{
+  "message": "success",
+  "data": [
+    { "code": "01", "sort": 1, "name": "Wait for Approval" },
+    { "code": "02", "sort": 2, "name": "Approved" }
+  ]
+}
 ```
 
 </CodeGroup>
@@ -349,10 +391,13 @@ curl -X GET "{{baseUrl}}/constants/registrations" \
 ```
 
 ```json Response
-[
-  { "code": "M", "sort": 1, "name": "Manual" },
-  { "code": "A", "sort": 2, "name": "Auto" }
-]
+{
+  "message": "success",
+  "data": [
+    { "code": "M", "sort": 1, "name": "Manual" },
+    { "code": "A", "sort": 2, "name": "Auto" }
+  ]
+}
 ```
 
 </CodeGroup>
@@ -378,10 +423,13 @@ curl -X GET "{{baseUrl}}/constants/stock-types" \
 ```
 
 ```json Response
-[
-  { "code": "01", "sort": 1, "name": "Import", "direction": "in" },
-  { "code": "11", "sort": 7, "name": "Sale", "direction": "out" }
-]
+{
+  "message": "success",
+  "data": [
+    { "code": "01", "sort": 1, "name": "Import", "direction": "in" },
+    { "code": "11", "sort": 7, "name": "Sale", "direction": "out" }
+  ]
+}
 ```
 
 </CodeGroup>
@@ -402,10 +450,13 @@ curl -X GET "{{baseUrl}}/constants/refund-reasons" \
 ```
 
 ```json Response
-[
-  { "code": "01", "sort": 1, "name": "Missing Quantity" },
-  { "code": "06", "sort": 6, "name": "Refund" }
-]
+{
+  "message": "success",
+  "data": [
+    { "code": "01", "sort": 1, "name": "Missing Quantity" },
+    { "code": "06", "sort": 6, "name": "Refund" }
+  ]
+}
 ```
 
 </CodeGroup>
@@ -426,10 +477,13 @@ curl -X GET "{{baseUrl}}/constants/import-item-statuses" \
 ```
 
 ```json Response
-[
-  { "code": "1", "sort": 1, "name": "Unsent" },
-  { "code": "3", "sort": 3, "name": "Approved" }
-]
+{
+  "message": "success",
+  "data": [
+    { "code": "1", "sort": 1, "name": "Unsent" },
+    { "code": "3", "sort": 3, "name": "Approved" }
+  ]
+}
 ```
 
 </CodeGroup>
@@ -450,13 +504,50 @@ curl -X GET "{{baseUrl}}/constants/taxpayer-statuses" \
 ```
 
 ```json Response
-[
-  { "code": "A", "sort": 1, "name": "Active" },
-  { "code": "D", "sort": 2, "name": "Discarded" }
-]
+{
+  "message": "success",
+  "data": [
+    { "code": "A", "sort": 1, "name": "Active" },
+    { "code": "D", "sort": 2, "name": "Discarded" }
+  ]
+}
 ```
 
 </CodeGroup>
+
+## Select Notices
+
+`GET /notices`
+
+Requires scope `notices`, plus headers `x-tin`, `x-branch-id`, and `x-last-request-date` (`YYYYMMDDHHmmss`).
+
+```bash
+curl -X GET "{{baseUrl}}/notices" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
+  -H "x-last-request-date: 20250101000000"
+```
+
+Mapped response:
+
+```json
+{
+  "message": "success",
+  "data": [
+    {
+      "notice_no": 1,
+      "title": "…",
+      "content": "…",
+      "detail_url": "…",
+      "registrar_name": "…",
+      "registered_at": "…"
+    }
+  ]
+}
+```
+
+---
 
 ## Related
 

@@ -1,12 +1,12 @@
 ---
 title: Introduction
-description: Official API documentation for the Kayko EBM gateway — connect your ERP/POS to RRA EBM 2.1.
+description: Official API documentation for the Kayko EBM gateway. Connect your ERP/POS to RRA EBM 2.1.
 icon: rocket
 ---
 
 ## What is Kayko EBM?
 
-**Kayko EBM** is the API gateway between your CIS/ERP/POS application and **RRA EBM 2.1**. Your app talks only to Kayko — never to RRA directly. Kayko handles authentication, device signing, and protocol translation.
+**Kayko EBM** is the API gateway between your CIS/ERP/POS application and **RRA EBM 2.1**. Your app talks only to Kayko, never to RRA directly. Kayko handles authentication, device signing, and protocol translation.
 
 ```mermaid
 flowchart LR
@@ -20,13 +20,13 @@ flowchart LR
 
 <Steps>
   <Step title="Authenticate">
-    [API Keys](/concepts/api-keys) — enable EBM in the dashboard, generate a key, send it on every request.
+    [API Keys](/concepts/api-keys): enable EBM in the dashboard, generate a key, and send it on every request.
   </Step>
   <Step title="Follow the checklist">
-    [Integration Checklist](/workflows/getting-started) — recommended order of API calls from device init through sales, purchases, and stock.
+    [Integration Checklist](/workflows/getting-started): recommended order of API calls from device init through sales, purchases, and stock.
   </Step>
   <Step title="Build your first flow">
-    Pick the API page that matches what you're building — [Sales](/api/sales), [Purchases](/api/purchases), or [Stock](/api/stock). Each page includes the workflow, field reference, and code examples.
+    Pick the API page that matches what you're building: [Sales](/api/sales), [Purchases](/api/purchases), or [Stock](/api/stock). Each page includes the workflow, field reference, and code examples.
   </Step>
   <Step title="Try it live">
     Switch to the **API Playground** tab to send test requests against any endpoint.
@@ -37,7 +37,15 @@ flowchart LR
 
 Code samples use `{{baseUrl}}`. On playground pages, pick the server from the **environment dropdown** (default: `http://localhost:3000/ebm`).
 
-Routes that proxy to your business EBM instance also need `ebm_url` in the JSON body (assigned when you enable EBM), for example `http://localhost:8080/rra/{business_code}/`.
+Proxied business routes need tenant headers (not `ebm_url` in the body):
+
+| Header | Rule |
+|--------|------|
+| `x-tin` | Your 9-digit TIN |
+| `x-branch-id` | 2-character branch ID (`00` = head office) |
+| `x-last-request-date` | 14 digits `YYYYMMDDHHmmss` on branch select and notices |
+
+Kayko resolves your business `ebm_url` from Core360 after you Enable EBM. You do not send it on later calls.
 
 <Warning>
   If the EBM service loses internet connectivity for **24 hours** after issuing a receipt signature, it stops issuing new receipt numbers. Plan for offline resilience in your integration.
@@ -45,7 +53,7 @@ Routes that proxy to your business EBM instance also need `ebm_url` in the JSON 
 
 ## Standard response
 
-Every transactional endpoint returns the same envelope:
+Many transactional upstream calls use this envelope:
 
 ```json
 {
@@ -61,27 +69,15 @@ Every transactional endpoint returns the same envelope:
 | `resultCd` | `"000"` = success. Anything else → [Response Codes](/reference/response-codes). |
 | `resultMsg` | Human-readable message |
 | `resultDt` | Server timestamp (`yyyyMMddHHmmss`) |
-| `data` | Payload — shape varies per endpoint |
+| `data` | Payload; shape varies per endpoint |
 
-Some Kayko routes (for example `/customers/*`) return unwrapped `data`. Auth failures use `{ statusCode, message, errorCode }`.
-
-## Common request fields
-
-Almost every request includes:
-
-| Field | Example | Notes |
-|-------|---------|-------|
-| `tin` | `"100027060"` | Your 9-digit RRA TIN |
-| `bhfId` | `"00"` | `"00"` = head office, `"01"`–`"99"` = branches |
-| `lastReqDt` | `"20250101010000"` | Sync endpoints only — returns records modified after this timestamp |
-
-Kayko EBM may accept snake_case aliases (for example `branch_id`). Date formats: `yyyyMMddHHmmss` for datetimes, `yyyyMMdd` for dates.
+Some Kayko routes return unwrapped `data`, or a mapped `{ message, data }` list (for example constants and notices). Auth failures use `{ status, message, error }`.
 
 ## Conventions
 
 | Convention | Value |
 |------------|-------|
 | Protocol | HTTPS (HTTP for local dev) |
-| Method | Mostly `POST`; constants use `GET` |
+| Method | Mix of `GET` and `POST` (constants and selects are often `GET`) |
 | Content-Type | `application/json` |
-| Authentication | `Authorization: Bearer sk_…` or `x-api-key` on every request |
+| Authentication | `Authorization: Bearer sk_…` or `x-api-key` on business routes |

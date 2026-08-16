@@ -15,20 +15,16 @@ Switch to the **API Playground** tab and pick an endpoint from the sidebar. Each
   <Step title="Authenticate">
     | Routes | Header |
     |--------|--------|
-    | Customers, constants, sales, items, … | `Authorization: Bearer sk_…` or `x-api-key: sk_…` |
-    | Initialization (`/initialize/*`) | `X-API-Token: <EBM_INTERNAL_API_TOKEN>` |
+    | Customers, constants, branches, notices, … | `Authorization: Bearer sk_…` or `x-api-key: sk_…` |
+    | Initialization (`/initialize/*`) | Prefer `X-API-Token`; a business API key also works |
 
     See [API Keys](/concepts/api-keys) for business key setup.
   </Step>
-  <Step title="Set ebm_url on proxied POSTs">
-    Device init and customer routes need `ebm_url` in the JSON body (from Enable EBM):
-
-    ```
-    http://localhost:8080/rra/{business_code}/
-    ```
+  <Step title="Set tenant headers on proxied routes">
+    Send `x-tin` and `x-branch-id` on customer, branch, notice, and device-init calls. Branch select and notices also need `x-last-request-date` (`YYYYMMDDHHmmss`). You do not send `ebm_url` in the body.
   </Step>
   <Step title="Send">
-    Edit the pre-filled body, click **Send**, and inspect the response panel.
+    Edit the pre-filled body or query, click **Send**, and inspect the response panel.
   </Step>
 </Steps>
 
@@ -36,10 +32,10 @@ Switch to the **API Playground** tab and pick an endpoint from the sidebar. Each
 
 | Kind | Shape |
 |------|-------|
-| Most transactional routes | `{ resultCd, resultMsg, resultDt, data }` |
-| `/customers/*` | Unwrapped `data` |
-| `/constants/*` | JSON array of `{ code, sort, name, … }` |
-| Auth failures | `{ statusCode, message, errorCode }` |
+| Device init | `{ resultCd, resultMsg, resultDt, data }` |
+| Many proxied routes | Unwrapped `data` |
+| `/constants/*`, notices, save user | `{ message, data }` |
+| Auth failures | `{ status, message, error }` |
 
 `resultCd: "000"` = success. Full code list: [Response Codes](/reference/response-codes).
 

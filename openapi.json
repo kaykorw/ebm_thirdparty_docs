@@ -73,6 +73,12 @@
     {
       "name": "Stock",
       "description": "Inventory movements and stock master"
+    },
+    {
+      "name": "Notices"
+    },
+    {
+      "name": "Branches"
     }
   ],
   "paths": {
@@ -83,10 +89,16 @@
         ],
         "operationId": "enable_ebm",
         "summary": "Enable EBM",
-        "description": "Provision EBM for a business and return `ebm_url`. Called when the dashboard enables EBM. Requires `X-API-Token` (internal), not a business API key.",
+        "description": "Provision EBM for a business and return ebm_url. Auth: internal token or API key.",
         "security": [
           {
             "InternalToken": []
+          },
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyHeader": []
           }
         ],
         "requestBody": {
@@ -192,6 +204,12 @@
         "security": [
           {
             "InternalToken": []
+          },
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyHeader": []
           }
         ],
         "parameters": [
@@ -244,10 +262,38 @@
         ],
         "operationId": "initialize_device",
         "summary": "Initialize Device",
-        "description": "Initialize a device using TIN, branch ID, and device serial number. Returns device info and cryptographic keys (intrlKey, signKey, cmcKey). Call once before other EBM operations. Requires X-API-Token.",
+        "description": "Initialize a device. Requires x-tin and x-branch-id. Body: device_serial_number and business_code. ebm_url is resolved from Core360. Auth: internal token or API key.",
         "security": [
           {
             "InternalToken": []
+          },
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
           }
         ],
         "requestBody": {
@@ -257,45 +303,30 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "tin",
-                  "branch_id",
                   "device_serial_number",
-                  "ebm_url"
+                  "business_code"
                 ],
                 "properties": {
-                  "tin": {
-                    "type": "string",
-                    "minLength": 9,
-                    "maxLength": 9
-                  },
-                  "branch_id": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 2
-                  },
                   "device_serial_number": {
                     "type": "string",
                     "maxLength": 100
                   },
-                  "ebm_url": {
+                  "business_code": {
                     "type": "string",
-                    "format": "uri",
-                    "description": "Business EBM base URL from Enable EBM"
+                    "maxLength": 100
                   }
                 }
               },
               "example": {
-                "tin": "122548433",
-                "branch_id": "03",
                 "device_serial_number": "QUA-77379",
-                "ebm_url": "http://localhost:8080/rra/ACME01/"
+                "business_code": "ACME01"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Full result envelope",
+            "description": "Full VSDC result envelope",
             "content": {
               "application/json": {
                 "example": {
@@ -305,163 +336,58 @@
                   "data": {
                     "info": {
                       "tin": "999000099",
-                      "taxprNm": "TEST EBM",
                       "bhfId": "00",
-                      "bhfNm": "Headquarter",
-                      "dvcId": "9990000997006310",
                       "intrlKey": "...",
                       "signKey": "...",
-                      "cmcKey": "...",
-                      "lastSaleInvcNo": 0,
-                      "lastSaleRcptNo": 0
+                      "cmcKey": "..."
                     }
                   }
                 }
               }
             }
           }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "bash",
-            "label": "cURL",
-            "source": "curl -X POST \"{{baseUrl}}/initialize/init\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"X-API-Token: $EBM_INTERNAL_API_TOKEN\" \\\n  -d '{\n  \"tin\": \"122548433\",\n  \"branch_id\": \"03\",\n  \"device_serial_number\": \"QUA-77379\",\n  \"ebm_url\": \"http://localhost:8080/rra/ACME01/\"\n}'"
-          },
-          {
-            "lang": "javascript",
-            "label": "JavaScript",
-            "source": "const result = await fetch(`${BASE_URL}/initialize/init`, {\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json',\n    'X-API-Token': process.env.EBM_INTERNAL_API_TOKEN,\n  },\n  body: JSON.stringify({\n    tin: '122548433',\n    branch_id: '03',\n    device_serial_number: 'QUA-77379',\n    ebm_url: process.env.EBM_URL,\n  }),\n}).then(r => r.json());\nconst { intrlKey, signKey, cmcKey } = result.data.info;"
-          },
-          {
-            "lang": "php",
-            "label": "PHP",
-            "source": "<?php\n$payload = json_encode([\n    'tin' => '122548433',\n    'branch_id' => '03',\n    'device_serial_number' => 'QUA-77379',\n    'ebm_url' => getenv('EBM_URL'),\n]);\n$ch = curl_init($baseUrl . '/initialize/init');\ncurl_setopt_array($ch, [\n    CURLOPT_POST => true,\n    CURLOPT_HTTPHEADER => [\n        'Content-Type: application/json',\n        'X-API-Token: ' . getenv('EBM_INTERNAL_API_TOKEN'),\n    ],\n    CURLOPT_POSTFIELDS => $payload,\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$result = json_decode(curl_exec($ch), true);"
-          },
-          {
-            "lang": "json",
-            "label": "Payload",
-            "source": "{\n  \"tin\": \"122548433\",\n  \"branch_id\": \"03\",\n  \"device_serial_number\": \"QUA-77379\",\n  \"ebm_url\": \"http://localhost:8080/rra/ACME01/\"\n}"
-          }
-        ]
-      }
-    },
-    "/customers/select": {
-      "post": {
-        "tags": [
-          "Branches & Customers"
-        ],
-        "operationId": "select_customer",
-        "summary": "Select Customer",
-        "description": "Look up a customer by TIN. Returns customer name, status, and address details. Requires a business API key with scope `customers`.",
-        "security": [
-          {
-            "ApiKeyBearer": []
-          },
-          {
-            "ApiKeyHeader": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "tin",
-                  "branch_id",
-                  "customer_tin",
-                  "ebm_url"
-                ],
-                "properties": {
-                  "tin": {
-                    "type": "string",
-                    "minLength": 9,
-                    "maxLength": 9
-                  },
-                  "branch_id": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 2
-                  },
-                  "customer_tin": {
-                    "type": "string",
-                    "minLength": 9,
-                    "maxLength": 9
-                  },
-                  "ebm_url": {
-                    "type": "string",
-                    "format": "uri"
-                  }
-                }
-              },
-              "example": {
-                "tin": "100027060",
-                "branch_id": "00",
-                "customer_tin": "100004527",
-                "ebm_url": "http://localhost:8080/rra/ACME01/"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Unwrapped customer data (or empty)"
-          },
-          "401": {
-            "description": "Missing/invalid API key",
-            "content": {
-              "application/json": {
-                "example": {
-                  "status": 401,
-                  "message": "API key is required",
-                  "error": "API_KEY_REQUIRED"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Missing customers scope or IP denied"
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "bash",
-            "label": "cURL",
-            "source": "curl -X POST \"{{baseUrl}}/customers/select\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\" \\\n  -d '{\n  \"tin\": \"100027060\",\n  \"branch_id\": \"00\",\n  \"customer_tin\": \"100004527\",\n  \"ebm_url\": \"http://localhost:8080/rra/ACME01/\"\n}'"
-          },
-          {
-            "lang": "javascript",
-            "label": "JavaScript",
-            "source": "const data = await fetch(`${BASE_URL}/customers/select`, {\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json',\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n  body: JSON.stringify({\n    tin: '100027060',\n    branch_id: '00',\n    customer_tin: '100004527',\n    ebm_url: process.env.EBM_URL,\n  }),\n}).then(r => r.json());"
-          },
-          {
-            "lang": "php",
-            "label": "PHP",
-            "source": "<?php\n$payload = json_encode([\n    'tin' => '100027060',\n    'branch_id' => '00',\n    'customer_tin' => '100004527',\n    'ebm_url' => getenv('EBM_URL'),\n]);\n$ch = curl_init($baseUrl . '/customers/select');\ncurl_setopt_array($ch, [\n    CURLOPT_POST => true,\n    CURLOPT_HTTPHEADER => [\n        'Content-Type: application/json',\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_POSTFIELDS => $payload,\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);"
-          },
-          {
-            "lang": "json",
-            "label": "Payload",
-            "source": "{\n  \"tin\": \"100027060\",\n  \"branch_id\": \"00\",\n  \"customer_tin\": \"100004527\",\n  \"ebm_url\": \"http://localhost:8080/rra/ACME01/\"\n}"
-          }
-        ]
+        }
       }
     },
     "/customers/create": {
       "post": {
         "tags": [
-          "Branches & Customers"
+          "Customers"
         ],
-        "operationId": "create_branch_customer",
-        "summary": "Create Branch Customer",
-        "description": "Create or update a branch customer through Kayko EBM (`/customers/create`). Stores customer TIN, name, and contact details linked to your branch. Requires a business API key with scope `customers`.",
+        "operationId": "create_customer",
+        "summary": "Create branch customer",
+        "description": "API key or internal token. business_code required for internal token path.",
         "security": [
           {
-            "ApiKeyBearer": []
+            "InternalToken": []
+          },
+          {
+            "ApiKeyAuth": []
           },
           {
             "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
           }
         ],
         "requestBody": {
@@ -471,28 +397,13 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "tin",
-                  "branch_id",
                   "customer_number",
                   "customer_tin",
-                  "customer_name",
-                  "use_yn",
-                  "registrar_name",
-                  "registrar_id",
-                  "modifier_name",
-                  "modifier_id",
-                  "ebm_url"
+                  "customer_name"
                 ],
                 "properties": {
-                  "tin": {
-                    "type": "string",
-                    "minLength": 9,
-                    "maxLength": 9
-                  },
-                  "branch_id": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 2
+                  "business_code": {
+                    "type": "string"
                   },
                   "customer_number": {
                     "type": "string",
@@ -509,106 +420,45 @@
                   },
                   "address": {
                     "type": "string",
-                    "maxLength": 100,
                     "nullable": true
                   },
-                  "telephone_number": {
+                  "telephone": {
                     "type": "string",
-                    "maxLength": 20,
                     "nullable": true
                   },
                   "email": {
                     "type": "string",
-                    "format": "email",
-                    "maxLength": 50,
                     "nullable": true
                   },
                   "fax_number": {
                     "type": "string",
-                    "maxLength": 20,
                     "nullable": true
                   },
-                  "use_yn": {
-                    "type": "string",
-                    "enum": [
-                      "Y",
-                      "N"
-                    ]
+                  "use": {
+                    "type": "boolean",
+                    "default": true
                   },
-                  "remark": {
+                  "notes": {
                     "type": "string",
-                    "maxLength": 400,
                     "nullable": true
-                  },
-                  "registrar_name": {
-                    "type": "string",
-                    "maxLength": 60
-                  },
-                  "registrar_id": {
-                    "type": "string",
-                    "maxLength": 20
-                  },
-                  "modifier_name": {
-                    "type": "string",
-                    "maxLength": 60
-                  },
-                  "modifier_id": {
-                    "type": "string",
-                    "maxLength": 20
-                  },
-                  "ebm_url": {
-                    "type": "string",
-                    "format": "uri"
                   }
                 }
               },
               "example": {
-                "tin": "100027060",
-                "branch_id": "00",
                 "customer_number": "C001",
                 "customer_tin": "100004527",
                 "customer_name": "RULIBA CLAYS LTD",
-                "address": "Kigali",
-                "telephone_number": "0780000000",
-                "email": "ops@example.com",
-                "use_yn": "Y",
-                "registrar_name": "Kayko",
-                "registrar_id": "1",
-                "modifier_name": "Kayko",
-                "modifier_id": "1",
-                "ebm_url": "http://localhost:8080/rra/ACME01/"
+                "telephone": "0780000000",
+                "use": true
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Unwrapped data"
-          },
-          "401": {
-            "description": "Missing/invalid API key"
-          },
-          "403": {
-            "description": "Missing customers scope or IP denied"
+            "description": "VSDC data (unwrapped)"
           }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "bash",
-            "label": "cURL",
-            "source": "curl -X POST \"{{baseUrl}}/customers/create\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer sk_live_YOUR_SECRET\" \\\n  -d '{\n  \"tin\": \"100027060\",\n  \"branch_id\": \"00\",\n  \"customer_number\": \"C001\",\n  \"customer_tin\": \"100004527\",\n  \"customer_name\": \"RULIBA CLAYS LTD\",\n  \"use_yn\": \"Y\",\n  \"registrar_name\": \"Kayko\",\n  \"registrar_id\": \"1\",\n  \"modifier_name\": \"Kayko\",\n  \"modifier_id\": \"1\",\n  \"ebm_url\": \"http://localhost:8080/rra/ACME01/\"\n}'"
-          },
-          {
-            "lang": "javascript",
-            "label": "JavaScript",
-            "source": "const data = await fetch(`${BASE_URL}/customers/create`, {\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json',\n    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,\n  },\n  body: JSON.stringify({\n    tin: '100027060',\n    branch_id: '00',\n    customer_number: 'C001',\n    customer_tin: '100004527',\n    customer_name: 'RULIBA CLAYS LTD',\n    use_yn: 'Y',\n    registrar_name: 'Kayko',\n    registrar_id: '1',\n    modifier_name: 'Kayko',\n    modifier_id: '1',\n    ebm_url: process.env.EBM_URL,\n  }),\n}).then(r => r.json());"
-          },
-          {
-            "lang": "json",
-            "label": "Payload",
-            "source": "{\n  \"tin\": \"100027060\",\n  \"branch_id\": \"00\",\n  \"customer_number\": \"C001\",\n  \"customer_tin\": \"100004527\",\n  \"customer_name\": \"RULIBA CLAYS LTD\",\n  \"use_yn\": \"Y\",\n  \"registrar_name\": \"Kayko\",\n  \"registrar_id\": \"1\",\n  \"modifier_name\": \"Kayko\",\n  \"modifier_id\": \"1\",\n  \"ebm_url\": \"http://localhost:8080/rra/ACME01/\"\n}"
-          }
-        ]
+        }
       }
     },
     "/constants/countries": {
@@ -2254,285 +2104,6 @@
             "lang": "php",
             "label": "PHP",
             "source": "<?php\n$ch = curl_init($baseUrl . '/constants/taxpayer-statuses');\ncurl_setopt_array($ch, [\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),\n    ],\n    CURLOPT_RETURNTRANSFER => true,\n]);\n$data = json_decode(curl_exec($ch), true);\ncurl_close($ch);"
-          }
-        ]
-      }
-    },
-    "/branches/saveBrancheCustomers": {
-      "post": {
-        "tags": [
-          "Branches & Customers"
-        ],
-        "summary": "Save Branch Customer",
-        "operationId": "save_branch_customer",
-        "description": "Push a customer record to RRA for backup and sync. Stores customer TIN, name, and contact details linked to your branch.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
-              },
-              "example": {
-                "tin": "999958074",
-                "bhfId": "00",
-                "custNo": "999991113",
-                "custTin": "118620650",
-                "custNm": "Kayko Group Ltd",
-                "adrs": null,
-                "telNo": null,
-                "email": null,
-                "faxNo": null,
-                "useYn": "Y",
-                "remark": null,
-                "regrNm": "Admin",
-                "regrId": "Admin",
-                "modrNm": "Admin",
-                "modrId": "Admin"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Standard response envelope",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "resultCd": {
-                      "type": "string",
-                      "example": "000"
-                    },
-                    "resultMsg": {
-                      "type": "string",
-                      "example": "It is succeeded"
-                    },
-                    "resultDt": {
-                      "type": "string",
-                      "example": "20260303145619"
-                    },
-                    "data": {
-                      "type": "object",
-                      "nullable": true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "x-mint": {
-          "metadata": {
-            "description": "Push a customer record to RRA for backup and sync. Stores customer TIN, name, and contact details linked to your branch."
-          },
-          "content": "Register frequent buyers so their details are available across branches and for B2B invoicing."
-        },
-        "x-codeSamples": [
-          {
-            "lang": "bash",
-            "label": "cURL",
-            "source": "curl -X POST \"{{baseUrl}}/branches/saveBrancheCustomers\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"custNo\": \"999991113\",\n  \"custTin\": \"118620650\",\n  \"custNm\": \"Kayko Group Ltd\",\n  \"adrs\": null,\n  \"telNo\": null,\n  \"email\": null,\n  \"faxNo\": null,\n  \"useYn\": \"Y\",\n  \"remark\": null,\n  \"regrNm\": \"Admin\",\n  \"regrId\": \"Admin\",\n  \"modrNm\": \"Admin\",\n  \"modrId\": \"Admin\"\n}'"
-          },
-          {
-            "lang": "javascript",
-            "label": "JavaScript",
-            "source": "const response = await fetch('{{baseUrl}}/branches/saveBrancheCustomers', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999958074\",\n    \"bhfId\": \"00\",\n    \"custNo\": \"999991113\",\n    \"custTin\": \"118620650\",\n    \"custNm\": \"Kayko Group Ltd\",\n    \"adrs\": null,\n    \"telNo\": null,\n    \"email\": null,\n    \"faxNo\": null,\n    \"useYn\": \"Y\",\n    \"remark\": null,\n    \"regrNm\": \"Admin\",\n    \"regrId\": \"Admin\",\n    \"modrNm\": \"Admin\",\n    \"modrId\": \"Admin\"\n  }),\n}).then(r => r.json());"
-          },
-          {
-            "lang": "php",
-            "label": "PHP",
-            "source": "<?php\n$response = ebmPost('/branches/saveBrancheCustomers', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'custNo' => '999991113',\n    'custTin' => '118620650',\n    'custNm' => 'Kayko Group Ltd',\n    'adrs' => null,\n    'telNo' => null,\n    'email' => null,\n    'faxNo' => null,\n    'useYn' => 'Y',\n    'remark' => null,\n    'regrNm' => 'Admin',\n    'regrId' => 'Admin',\n    'modrNm' => 'Admin',\n    'modrId' => 'Admin'\n]);"
-          },
-          {
-            "lang": "json",
-            "label": "Payload",
-            "source": "{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"custNo\": \"999991113\",\n  \"custTin\": \"118620650\",\n  \"custNm\": \"Kayko Group Ltd\",\n  \"adrs\": null,\n  \"telNo\": null,\n  \"email\": null,\n  \"faxNo\": null,\n  \"useYn\": \"Y\",\n  \"remark\": null,\n  \"regrNm\": \"Admin\",\n  \"regrId\": \"Admin\",\n  \"modrNm\": \"Admin\",\n  \"modrId\": \"Admin\"\n}"
-          }
-        ]
-      }
-    },
-    "/branches/saveBrancheInsurances": {
-      "post": {
-        "tags": [
-          "Branches & Customers"
-        ],
-        "summary": "Save Branch Insurance",
-        "operationId": "save_branch_insurances",
-        "description": "Register an insurance provider for pharmacy integrations. Required when selling items with insurance coverage (`isrcAplcbYn` set to `\"Y\"`).",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
-              },
-              "example": {
-                "tin": "999958074",
-                "bhfId": "00",
-                "isrccCd": "ISRCC01",
-                "isrccNm": "ISRCC NAME",
-                "modrId": "123",
-                "modrNm": "Modr Name",
-                "regrId": "123",
-                "regrNm": "Regr Name",
-                "isrcRt": 20,
-                "useYn": "Y"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Standard response envelope",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "resultCd": {
-                      "type": "string",
-                      "example": "000"
-                    },
-                    "resultMsg": {
-                      "type": "string",
-                      "example": "It is succeeded"
-                    },
-                    "resultDt": {
-                      "type": "string",
-                      "example": "20260303145619"
-                    },
-                    "data": {
-                      "type": "object",
-                      "nullable": true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "x-mint": {
-          "metadata": {
-            "description": "Register an insurance provider for pharmacy integrations. Required when selling items with insurance coverage (`isrcAplcbYn` set to `\"Y\"`)."
-          },
-          "content": "Pharmacy-only endpoint. Set `isrcRt` (coverage rate %) and link via `isrccCd` on sale line items."
-        },
-        "x-codeSamples": [
-          {
-            "lang": "bash",
-            "label": "cURL",
-            "source": "curl -X POST \"{{baseUrl}}/branches/saveBrancheInsurances\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"isrccCd\": \"ISRCC01\",\n  \"isrccNm\": \"ISRCC NAME\",\n  \"modrId\": \"123\",\n  \"modrNm\": \"Modr Name\",\n  \"regrId\": \"123\",\n  \"regrNm\": \"Regr Name\",\n  \"isrcRt\": 20,\n  \"useYn\": \"Y\"\n}'"
-          },
-          {
-            "lang": "javascript",
-            "label": "JavaScript",
-            "source": "const response = await fetch('{{baseUrl}}/branches/saveBrancheInsurances', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999958074\",\n    \"bhfId\": \"00\",\n    \"isrccCd\": \"ISRCC01\",\n    \"isrccNm\": \"ISRCC NAME\",\n    \"modrId\": \"123\",\n    \"modrNm\": \"Modr Name\",\n    \"regrId\": \"123\",\n    \"regrNm\": \"Regr Name\",\n    \"isrcRt\": 20,\n    \"useYn\": \"Y\"\n  }),\n}).then(r => r.json());"
-          },
-          {
-            "lang": "php",
-            "label": "PHP",
-            "source": "<?php\n$response = ebmPost('/branches/saveBrancheInsurances', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'isrccCd' => 'ISRCC01',\n    'isrccNm' => 'ISRCC NAME',\n    'modrId' => '123',\n    'modrNm' => 'Modr Name',\n    'regrId' => '123',\n    'regrNm' => 'Regr Name',\n    'isrcRt' => 20,\n    'useYn' => 'Y'\n]);"
-          },
-          {
-            "lang": "json",
-            "label": "Payload",
-            "source": "{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"isrccCd\": \"ISRCC01\",\n  \"isrccNm\": \"ISRCC NAME\",\n  \"modrId\": \"123\",\n  \"modrNm\": \"Modr Name\",\n  \"regrId\": \"123\",\n  \"regrNm\": \"Regr Name\",\n  \"isrcRt\": 20,\n  \"useYn\": \"Y\"\n}"
-          }
-        ]
-      }
-    },
-    "/branches/saveBrancheUsers": {
-      "post": {
-        "tags": [
-          "Branches & Customers"
-        ],
-        "summary": "Save Branch User",
-        "operationId": "save_branch_user",
-        "description": "Register or update a branch user account on RRA. Pushes user credentials and profile data for backup and synchronization.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
-              },
-              "example": {
-                "tin": "999958074",
-                "bhfId": "00",
-                "userId": "userId3",
-                "userNm": "User Name3",
-                "pwd": "12341234",
-                "adrs": null,
-                "modrId": "123",
-                "modrNm": "Modr Name",
-                "regrId": "123",
-                "regrNm": "Regr Name",
-                "cntc": null,
-                "authCd": null,
-                "remark": null,
-                "useYn": "Y"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Standard response envelope",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "resultCd": {
-                      "type": "string",
-                      "example": "000"
-                    },
-                    "resultMsg": {
-                      "type": "string",
-                      "example": "It is succeeded"
-                    },
-                    "resultDt": {
-                      "type": "string",
-                      "example": "20260303145619"
-                    },
-                    "data": {
-                      "type": "object",
-                      "nullable": true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "x-mint": {
-          "metadata": {
-            "description": "Register or update a branch user account on RRA. Pushes user credentials and profile data for backup and synchronization."
-          },
-          "content": "Used to sync POS operator accounts with RRA's records."
-        },
-        "x-codeSamples": [
-          {
-            "lang": "bash",
-            "label": "cURL",
-            "source": "curl -X POST \"{{baseUrl}}/branches/saveBrancheUsers\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"userId\": \"userId3\",\n  \"userNm\": \"User Name3\",\n  \"pwd\": \"12341234\",\n  \"adrs\": null,\n  \"modrId\": \"123\",\n  \"modrNm\": \"Modr Name\",\n  \"regrId\": \"123\",\n  \"regrNm\": \"Regr Name\",\n  \"cntc\": null,\n  \"authCd\": null,\n  \"remark\": null,\n  \"useYn\": \"Y\"\n}'"
-          },
-          {
-            "lang": "javascript",
-            "label": "JavaScript",
-            "source": "const response = await fetch('{{baseUrl}}/branches/saveBrancheUsers', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999958074\",\n    \"bhfId\": \"00\",\n    \"userId\": \"userId3\",\n    \"userNm\": \"User Name3\",\n    \"pwd\": \"12341234\",\n    \"adrs\": null,\n    \"modrId\": \"123\",\n    \"modrNm\": \"Modr Name\",\n    \"regrId\": \"123\",\n    \"regrNm\": \"Regr Name\",\n    \"cntc\": null,\n    \"authCd\": null,\n    \"remark\": null,\n    \"useYn\": \"Y\"\n  }),\n}).then(r => r.json());"
-          },
-          {
-            "lang": "php",
-            "label": "PHP",
-            "source": "<?php\n$response = ebmPost('/branches/saveBrancheUsers', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'userId' => 'userId3',\n    'userNm' => 'User Name3',\n    'pwd' => '12341234',\n    'adrs' => null,\n    'modrId' => '123',\n    'modrNm' => 'Modr Name',\n    'regrId' => '123',\n    'regrNm' => 'Regr Name',\n    'cntc' => null,\n    'authCd' => null,\n    'remark' => null,\n    'useYn' => 'Y'\n]);"
-          },
-          {
-            "lang": "json",
-            "label": "Payload",
-            "source": "{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"userId\": \"userId3\",\n  \"userNm\": \"User Name3\",\n  \"pwd\": \"12341234\",\n  \"adrs\": null,\n  \"modrId\": \"123\",\n  \"modrNm\": \"Modr Name\",\n  \"regrId\": \"123\",\n  \"regrNm\": \"Regr Name\",\n  \"cntc\": null,\n  \"authCd\": null,\n  \"remark\": null,\n  \"useYn\": \"Y\"\n}"
           }
         ]
       }
@@ -4254,6 +3825,392 @@
             "source": "{\n  \"tin\": \"100027060\",\n  \"bhfId\": \"00\",\n  \"invcNo\": \"1799\",\n  \"orgInvcNo\": \"1799\",\n  \"cfmDt\": \"20260303145619\",\n  \"salesDt\": \"20260303\",\n  \"salesTyCd\": \"N\",\n  \"rcptTyCd\": \"S\",\n  \"pmtTyCd\": \"02\",\n  \"salesSttsCd\": \"02\",\n  \"prchrAcptcYn\": \"Y\",\n  \"custNm\": \"RULIBA CLAYS LTD\",\n  \"custTin\": \"100004527\",\n  \"totItemCnt\": 1,\n  \"taxRtA\": 0,\n  \"taxRtB\": 18,\n  \"taxRtC\": 0,\n  \"taxRtD\": 0,\n  \"taxblAmtA\": 0,\n  \"taxblAmtB\": 2000,\n  \"taxblAmtC\": 0,\n  \"taxblAmtD\": 0,\n  \"taxAmtA\": 0,\n  \"taxAmtB\": 305.08,\n  \"taxAmtC\": 0,\n  \"taxAmtD\": 0,\n  \"totTaxblAmt\": 2000,\n  \"totTaxAmt\": 305.08,\n  \"totAmt\": 2000,\n  \"receipt\": {\n    \"rptNo\": \"1799\",\n    \"custTin\": \"100004527\",\n    \"trdeNm\": \"RULIBACLAYSLTD\",\n    \"topMsg\": \"SONATUBES Ltd\\nADDRESS KIGALI\\nTIN 100027060\",\n    \"btmMsg\": \"Kayko v.2.3.11\",\n    \"prchrAcptcYn\": \"Y\"\n  },\n  \"itemList\": [\n    {\n      \"itemSeq\": 1,\n      \"itemCd\": \"RW2NTU0000642\",\n      \"itemClsCd\": \"8014160101\",\n      \"itemNm\": \"TOLE PL 2 44X1 22X10\",\n      \"taxTyCd\": \"B\",\n      \"qty\": 2,\n      \"prc\": 1000,\n      \"splyAmt\": 2000,\n      \"taxblAmt\": 2000,\n      \"taxAmt\": 305.08,\n      \"totAmt\": 2000,\n      \"pkg\": 1,\n      \"pkgUnitCd\": \"NT\",\n      \"qtyUnitCd\": \"U\",\n      \"dcRt\": 0,\n      \"dcAmt\": 0,\n      \"totDcAmt\": 0\n    }\n  ],\n  \"regrId\": \"1\",\n  \"regrNm\": \"Kayko\",\n  \"modrId\": \"1\",\n  \"modrNm\": \"Kayko\"\n}"
           }
         ]
+      }
+    },
+    "/customers": {
+      "get": {
+        "tags": [
+          "Customers"
+        ],
+        "operationId": "select_customer",
+        "summary": "Select customer",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          },
+          {
+            "name": "customer_tin",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VSDC data (unwrapped)"
+          }
+        }
+      }
+    },
+    "/branches": {
+      "get": {
+        "tags": [
+          "Branches"
+        ],
+        "operationId": "select_branches",
+        "summary": "Select branches",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          },
+          {
+            "name": "x-last-request-date",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{14}$"
+            }
+          },
+          {
+            "name": "start_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            }
+          },
+          {
+            "name": "end_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VSDC data (unwrapped)"
+          }
+        }
+      }
+    },
+    "/branches/users": {
+      "post": {
+        "tags": [
+          "Branches"
+        ],
+        "operationId": "save_branch_user",
+        "summary": "Save branch user",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "full_name",
+                  "password"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "full_name": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "password": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "address": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "telephone": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "authority_code": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "notes": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "use": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              },
+              "example": {
+                "full_name": "User Name",
+                "password": "12341234",
+                "use": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mapped user_id",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "success",
+                  "data": {
+                    "user_id": "abc123"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/branches/insurances": {
+      "post": {
+        "tags": [
+          "Branches"
+        ],
+        "operationId": "save_branch_insurance",
+        "summary": "Save branch insurance",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "insurance_code",
+                  "insurance_name",
+                  "insurance_rate"
+                ],
+                "properties": {
+                  "insurance_code": {
+                    "type": "string",
+                    "maxLength": 10
+                  },
+                  "insurance_name": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "insurance_rate": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "use": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              },
+              "example": {
+                "insurance_code": "ISRCC01",
+                "insurance_name": "RSSB Insurance",
+                "insurance_rate": 20,
+                "use": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VSDC data (unwrapped)"
+          }
+        }
+      }
+    },
+    "/notices": {
+      "get": {
+        "tags": [
+          "Notices"
+        ],
+        "operationId": "select_notices",
+        "summary": "Select notices",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          },
+          {
+            "name": "x-last-request-date",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{14}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mapped notices list",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "success",
+                  "data": [
+                    {
+                      "notice_no": 1,
+                      "title": "Notice",
+                      "content": "...",
+                      "detail_url": "",
+                      "registrar_name": "RRA",
+                      "registered_at": "20250101120000"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
       }
     }
   }

@@ -17,6 +17,7 @@ icon: clock-rotate-left
 | Date | Changes |
 |------|---------|
 | 2026-08 | Documented Kayko business API keys: dashboard **Settings → Enable EBM → Generate API key**, request headers (`Authorization: Bearer` / `x-api-key`), scopes, IP allowlist, and OpenAPI security schemes. New page: [API Keys & Authentication](/concepts/api-keys). |
+| 2026-08 | Synced live gateway contracts: tenant headers (`x-tin`, `x-branch-id`, `x-last-request-date`), no `ebm_url` in request bodies, `GET /customers`, `POST /customers/create`, `GET /branches`, `POST /branches/users`, `POST /branches/insurances`, `GET /notices`, init body `{ device_serial_number, business_code }`, constants `{ message, data }`, and auth errors `{ status, message, error }`. |
 
 ## v1.0.5 changes (May 2023)
 

@@ -4,7 +4,7 @@ description: Enable EBM in the Kayko business dashboard, generate an API key, an
 icon: key
 ---
 
-Kayko protects EBM access with a **business API key**. Device initialization still issues RRA signing keys (`intrlKey`, `signKey`, `cmcKey`) — those are for receipt crypto. The API key is what your integration sends on **every** request to prove it belongs to your business.
+Kayko protects EBM access with a **business API key**. Device initialization still issues RRA signing keys (`intrlKey`, `signKey`, `cmcKey`); those are for receipt crypto. The API key is what your integration sends on **every** request to prove it belongs to your business.
 
 ```mermaid
 flowchart LR
@@ -31,7 +31,7 @@ flowchart LR
     Create a key for the **EBM** service. Choose a name, the scopes your integration needs, and optionally an IP allowlist.
 
     <Warning>
-      The full secret (`sk_live_…` or `sk_test_…`) is shown **once**. Store it in a secrets manager immediately. Kayko only keeps a hash — you cannot retrieve the plaintext later. Rotate the key if it is lost.
+      The full secret (`sk_live_…` or `sk_test_…`) is shown **once**. Store it in a secrets manager immediately. Kayko only keeps a hash, so you cannot retrieve the plaintext later. Rotate the key if it is lost.
     </Warning>
   </Step>
 </Steps>
@@ -51,48 +51,34 @@ Send the secret on every call:
 <CodeGroup>
 
 ```bash cURL
-curl -X POST "{{baseUrl}}/customers/select" \
-  -H "Content-Type: application/json" \
+curl -X GET "{{baseUrl}}/customers?customer_tin=100004527" \
   -H "Authorization: Bearer sk_live_YOUR_SECRET" \
-  -d '{
-    "tin": "100027060",
-    "branch_id": "00",
-    "customer_tin": "100004527",
-    "ebm_url": "http://localhost:8080/rra/ACME01/"
-  }'
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00"
 ```
 
 ```javascript JavaScript
-const response = await fetch(`${BASE_URL}/customers/select`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+const response = await fetch(
+  `${BASE_URL}/customers?customer_tin=100004527`,
+  {
+    headers: {
+      Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+      'x-tin': '100027060',
+      'x-branch-id': '00',
+    },
   },
-  body: JSON.stringify({
-    tin: '100027060',
-    branch_id: '00',
-    customer_tin: '100004527',
-    ebm_url: process.env.EBM_URL,
-  }),
-});
+);
 ```
 
 ```php PHP
 <?php
-$ch = curl_init($baseUrl . '/customers/select');
+$ch = curl_init($baseUrl . '/customers?customer_tin=100004527');
 curl_setopt_array($ch, [
-    CURLOPT_POST => true,
     CURLOPT_HTTPHEADER => [
-        'Content-Type: application/json',
         'Authorization: Bearer ' . getenv('KAYKO_EBM_API_KEY'),
+        'x-tin: 100027060',
+        'x-branch-id: 00',
     ],
-    CURLOPT_POSTFIELDS => json_encode([
-        'tin' => '100027060',
-        'branch_id' => '00',
-        'customer_tin' => '100004527',
-        'ebm_url' => getenv('EBM_URL'),
-    ]),
     CURLOPT_RETURNTRANSFER => true,
 ]);
 ```
@@ -108,7 +94,7 @@ Supported headers:
 
 Do **not** put the secret in the query string or request body.
 
-Initialization routes (`/initialize/*`) use the internal `X-API-Token` instead — Core360 calls those when you Enable EBM. See [Initialization](/api/initialization).
+Initialization routes (`/initialize/*`) prefer the internal `X-API-Token` (a business API key also works). Core360 uses the internal token when you Enable EBM. See [Initialization](/api/initialization).
 
 ## Scopes
 
@@ -174,7 +160,7 @@ Rotated keys inherit the previous allowlist. Only **active** keys accept add/rem
 | Business API key (`sk_…`) | Kayko dashboard | Authenticate your app to Kayko EBM on each HTTP request |
 | `intrlKey` / `signKey` / `cmcKey` | RRA via device init | Receipt signing and device crypto (managed by Kayko EBM) |
 
-You still run [device initialization](/api/initialization) once per device. The API key does **not** replace that step — it gates access to the integration.
+You still run [device initialization](/api/initialization) once per device. The API key does **not** replace that step; it gates access to the integration.
 
 ## Next steps
 
