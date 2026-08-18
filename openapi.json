@@ -47,12 +47,12 @@
       "description": "Enable EBM, check deployment status, and initialize the device via Kayko EBM."
     },
     {
-      "name": "Reference Data",
-      "description": "Kayko EBM GET /constants/* tables- Select Countries, Taxes, Packaging, and more."
+      "name": "Constants",
+      "description": "Kayko EBM GET /constants/* tables: countries, taxes, packaging, and more."
     },
     {
-      "name": "Branches & Customers",
-      "description": "Select and create customers via Kayko EBM, plus branch users and insurance."
+      "name": "Customers",
+      "description": "Look up and create customers via Kayko EBM."
     },
     {
       "name": "Items",
@@ -464,10 +464,10 @@
     "/constants/countries": {
       "get": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "operationId": "select_countries",
-        "summary": "Select Countries",
+        "summary": "Get Countries",
         "description": "Return the list of country codes used for fields such as `orgnNatCd`. Requires a business API key.",
         "security": [
           {
@@ -562,10 +562,10 @@
     "/constants/currencies": {
       "get": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "operationId": "select_currencies",
-        "summary": "Select Currencies",
+        "summary": "Get Currencies",
         "description": "Return currency codes used for invoice foreign-currency fields such as `invcFcurCd`. Requires a business API key.",
         "security": [
           {
@@ -660,10 +660,10 @@
     "/constants/packaging": {
       "get": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "operationId": "select_packaging",
-        "summary": "Select Packaging",
+        "summary": "Get Packaging",
         "description": "Return packaging unit codes (`pkgUnitCd`) such as NT, BX, CT. Requires a business API key.",
         "security": [
           {
@@ -758,10 +758,10 @@
     "/constants/quantity": {
       "get": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "operationId": "select_quantity",
-        "summary": "Select Quantity",
+        "summary": "Get Quantity",
         "description": "Return quantity unit codes (`qtyUnitCd`) such as U, KG, L. Requires a business API key.",
         "security": [
           {
@@ -856,10 +856,10 @@
     "/constants/taxes": {
       "get": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "operationId": "select_taxes",
-        "summary": "Select Taxes",
+        "summary": "Get Taxes",
         "description": "Return tax type codes (`taxTyCd`) with rates. Category B is standard 18% VAT. Requires a business API key.",
         "security": [
           {
@@ -976,10 +976,10 @@
     "/constants/products": {
       "get": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "operationId": "select_products",
-        "summary": "Select Products",
+        "summary": "Get Products",
         "description": "Return product / item type codes (itemTyCd) such as raw material, finished product, and service. Requires a business API key.",
         "security": [
           {
@@ -1074,10 +1074,10 @@
     "/constants/transactions": {
       "get": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "operationId": "select_transactions",
-        "summary": "Select Transactions",
+        "summary": "Get Transactions",
         "description": "Return sales transaction type codes (`salesTyCd`). Requires a business API key.",
         "security": [
           {
@@ -1182,10 +1182,10 @@
     "/constants/sales-receipt-types": {
       "get": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "operationId": "select_sales_receipt_types",
-        "summary": "Select Sales Receipt Types",
+        "summary": "Get Sales Receipt Types",
         "description": "Return sales receipt type codes (`rcptTyCd`). Requires a business API key.",
         "security": [
           {
@@ -1275,10 +1275,10 @@
     "/constants/purchase-receipt-types": {
       "get": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "operationId": "select_purchase_receipt_types",
-        "summary": "Select Purchase Receipt Types",
+        "summary": "Get Purchase Receipt Types",
         "description": "Return purchase receipt type codes. Requires a business API key.",
         "security": [
           {
@@ -1368,10 +1368,10 @@
     "/constants/payment-modes": {
       "get": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "operationId": "select_payment_modes",
-        "summary": "Select Payment Modes",
+        "summary": "Get Payment Modes",
         "description": "Return payment method codes (`pmtTyCd`). Requires a business API key.",
         "security": [
           {
@@ -1486,10 +1486,10 @@
     "/constants/transaction-progress": {
       "get": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "operationId": "select_transaction_progress",
-        "summary": "Select Transaction Progress",
+        "summary": "Get Transaction Progress",
         "description": "Return transaction progress / sales status codes (`salesSttsCd`). Requires a business API key.",
         "security": [
           {
@@ -1594,10 +1594,10 @@
     "/constants/registrations": {
       "get": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "operationId": "select_registrations",
-        "summary": "Select Registrations",
+        "summary": "Get Registrations",
         "description": "Return registration type codes. Requires a business API key.",
         "security": [
           {
@@ -1687,10 +1687,10 @@
     "/constants/stock-types": {
       "get": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "operationId": "select_stock_types",
-        "summary": "Select Stock Types",
+        "summary": "Get Stock Types",
         "description": "Return stock in/out type codes with direction (`in` / `out`). Requires a business API key.",
         "security": [
           {
@@ -1797,10 +1797,10 @@
     "/constants/refund-reasons": {
       "get": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "operationId": "select_refund_reasons",
-        "summary": "Select Refund Reasons",
+        "summary": "Get Refund Reasons",
         "description": "Return refund reason codes used on credit notes / refunds. Requires a business API key.",
         "security": [
           {
@@ -1915,10 +1915,10 @@
     "/constants/import-item-statuses": {
       "get": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "operationId": "select_import_item_statuses",
-        "summary": "Select Import Item Statuses",
+        "summary": "Get Import Item Statuses",
         "description": "Return customs import item status codes (`imptItemSttsCd`). Requires a business API key.",
         "security": [
           {
@@ -2018,10 +2018,10 @@
     "/constants/taxpayer-statuses": {
       "get": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "operationId": "select_taxpayer_statuses",
-        "summary": "Select Taxpayer Statuses",
+        "summary": "Get Taxpayer Statuses",
         "description": "Return taxpayer status codes (`taxprSttsCd`). Requires a business API key.",
         "security": [
           {
@@ -2111,7 +2111,7 @@
     "/branches/selectBranches": {
       "post": {
         "tags": [
-          "Reference Data"
+          "Branches"
         ],
         "summary": "Select Branches",
         "operationId": "get_branches",
@@ -2196,7 +2196,7 @@
     "/code/selectCodes": {
       "post": {
         "tags": [
-          "Reference Data"
+          "Constants"
         ],
         "summary": "Select Codes",
         "operationId": "get_codes",
@@ -2279,7 +2279,7 @@
     "/customers/selectCustomer": {
       "post": {
         "tags": [
-          "Reference Data"
+          "Customers"
         ],
         "summary": "Select Customer",
         "operationId": "get_customers",
@@ -2539,7 +2539,7 @@
     "/itemClass/selectItemsClass": {
       "post": {
         "tags": [
-          "Reference Data"
+          "Items"
         ],
         "summary": "Select Item Classification",
         "operationId": "get_item_classification",
@@ -2899,7 +2899,7 @@
     "/notices/selectNotices": {
       "post": {
         "tags": [
-          "Reference Data"
+          "Notices"
         ],
         "summary": "Select Notices",
         "operationId": "get_notices",
@@ -3833,7 +3833,7 @@
           "Customers"
         ],
         "operationId": "select_customer",
-        "summary": "Select customer",
+        "summary": "Get customer",
         "security": [
           {
             "ApiKeyAuth": []
@@ -3887,7 +3887,7 @@
           "Branches"
         ],
         "operationId": "select_branches",
-        "summary": "Select branches",
+        "summary": "Get branches",
         "security": [
           {
             "ApiKeyAuth": []
@@ -4149,7 +4149,7 @@
           "Notices"
         ],
         "operationId": "select_notices",
-        "summary": "Select notices",
+        "summary": "Get notices",
         "security": [
           {
             "ApiKeyAuth": []

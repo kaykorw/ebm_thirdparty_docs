@@ -1,0 +1,127 @@
+---
+title: Branches
+description: List branches, save branch users, and register insurance providers via Kayko EBM.
+icon: building
+---
+
+Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` from your business after Enable EBM, so you never put it in the JSON body.
+
+All routes require a business API key with scope `branch`.
+
+---
+
+## Get branches
+
+`GET /branches`
+
+Also requires `x-last-request-date` (`YYYYMMDDHHmmss`).
+
+<ParamField query="start_page" type="string">Optional page start (digits only)</ParamField>
+<ParamField query="end_page" type="string">Optional page end (digits only)</ParamField>
+
+```bash
+curl -X GET "{{baseUrl}}/branches?start_page=1&end_page=10" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
+  -H "x-last-request-date: 20250101000000"
+```
+
+---
+
+## Save branch user
+
+`POST /branches/users`
+
+<ParamField body="user_id" type="string">
+  Optional. Omit to create (Kayko generates an id); pass the same id to update.
+</ParamField>
+<ParamField body="full_name" type="string" required>Display name</ParamField>
+<ParamField body="password" type="string" required>Password</ParamField>
+<ParamField body="address" type="string">Address</ParamField>
+<ParamField body="telephone" type="string">Phone</ParamField>
+<ParamField body="authority_code" type="string">Role code</ParamField>
+<ParamField body="notes" type="string">Notes</ParamField>
+<ParamField body="use" type="boolean">Defaults to `true`</ParamField>
+
+Success response:
+
+```json
+{
+  "message": "success",
+  "data": { "user_id": "…" }
+}
+```
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/branches/users" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
+  -d '{
+    "full_name": "User Name",
+    "password": "12341234",
+    "use": true
+  }'
+```
+
+```javascript JavaScript
+await fetch(`${BASE_URL}/branches/users`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+    'x-tin': '100027060',
+    'x-branch-id': '00',
+  },
+  body: JSON.stringify({
+    full_name: 'User Name',
+    password: '12341234',
+    use: true,
+  }),
+});
+```
+
+```json Payload
+{
+  "full_name": "User Name",
+  "password": "12341234",
+  "address": null,
+  "telephone": null,
+  "authority_code": null,
+  "notes": null,
+  "use": true
+}
+```
+
+</CodeGroup>
+
+---
+
+## Save branch insurance
+
+Pharmacy-only. Register insurance providers used by the branch.
+
+`POST /branches/insurances`
+
+<ParamField body="insurance_code" type="string" required>Insurance company code</ParamField>
+<ParamField body="insurance_name" type="string" required>Insurance company name</ParamField>
+<ParamField body="insurance_rate" type="number" required>Premium rate from 0 to 100 (for example `20` for 20%)</ParamField>
+<ParamField body="use" type="boolean">Defaults to `true`</ParamField>
+
+```bash
+curl -X POST "{{baseUrl}}/branches/insurances" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
+  -d '{
+    "insurance_code": "ISRCC01",
+    "insurance_name": "RSSB Insurance",
+    "insurance_rate": 20,
+    "use": true
+  }'
+```

@@ -1,5 +1,5 @@
 ---
-title: Reference Data
+title: Constants
 description: Kayko EBM reference tables via GET /constants/*, plus notices.
 icon: database
 ---
@@ -25,7 +25,7 @@ Most items are `{ code, sort, name }`. Taxes also include `rate` and `user_defin
 
 ---
 
-## Select Countries
+## Get Countries
 
 `GET /constants/countries`
 
@@ -72,7 +72,7 @@ $countries = json_decode(curl_exec($ch), true);
 
 ---
 
-## Select Currencies
+## Get Currencies
 
 `GET /constants/currencies`
 
@@ -109,7 +109,7 @@ const currencies = await fetch(`${BASE_URL}/constants/currencies`, {
 
 ---
 
-## Select Packaging
+## Get Packaging
 
 `GET /constants/packaging`
 
@@ -142,7 +142,7 @@ const packaging = await fetch(`${BASE_URL}/constants/packaging`, {
 
 ---
 
-## Select Quantity
+## Get Quantity
 
 `GET /constants/quantity`
 
@@ -175,7 +175,7 @@ const quantity = await fetch(`${BASE_URL}/constants/quantity`, {
 
 ---
 
-## Select Taxes
+## Get Taxes
 
 `GET /constants/taxes`
 
@@ -214,7 +214,7 @@ const taxes = await fetch(`${BASE_URL}/constants/taxes`, {
 
 ---
 
-## Select Products
+## Get Products
 
 `GET /constants/products`
 
@@ -242,7 +242,7 @@ curl -X GET "{{baseUrl}}/constants/products" \
 
 ---
 
-## Select Transactions
+## Get Transactions
 
 `GET /constants/transactions`
 
@@ -269,7 +269,7 @@ curl -X GET "{{baseUrl}}/constants/transactions" \
 
 ---
 
-## Select Sales Receipt Types
+## Get Sales Receipt Types
 
 `GET /constants/sales-receipt-types`
 
@@ -296,7 +296,7 @@ curl -X GET "{{baseUrl}}/constants/sales-receipt-types" \
 
 ---
 
-## Select Purchase Receipt Types
+## Get Purchase Receipt Types
 
 `GET /constants/purchase-receipt-types`
 
@@ -323,7 +323,7 @@ curl -X GET "{{baseUrl}}/constants/purchase-receipt-types" \
 
 ---
 
-## Select Payment Modes
+## Get Payment Modes
 
 `GET /constants/payment-modes`
 
@@ -350,7 +350,7 @@ curl -X GET "{{baseUrl}}/constants/payment-modes" \
 
 ---
 
-## Select Transaction Progress
+## Get Transaction Progress
 
 `GET /constants/transaction-progress`
 
@@ -377,7 +377,7 @@ curl -X GET "{{baseUrl}}/constants/transaction-progress" \
 
 ---
 
-## Select Registrations
+## Get Registrations
 
 `GET /constants/registrations`
 
@@ -404,7 +404,7 @@ curl -X GET "{{baseUrl}}/constants/registrations" \
 
 ---
 
-## Select Stock Types
+## Get Stock Types
 
 `GET /constants/stock-types`
 
@@ -436,7 +436,7 @@ curl -X GET "{{baseUrl}}/constants/stock-types" \
 
 ---
 
-## Select Refund Reasons
+## Get Refund Reasons
 
 `GET /constants/refund-reasons`
 
@@ -463,7 +463,7 @@ curl -X GET "{{baseUrl}}/constants/refund-reasons" \
 
 ---
 
-## Select Import Item Statuses
+## Get Import Item Statuses
 
 `GET /constants/import-item-statuses`
 
@@ -490,7 +490,7 @@ curl -X GET "{{baseUrl}}/constants/import-item-statuses" \
 
 ---
 
-## Select Taxpayer Statuses
+## Get Taxpayer Statuses
 
 `GET /constants/taxpayer-statuses`
 
@@ -515,7 +515,7 @@ curl -X GET "{{baseUrl}}/constants/taxpayer-statuses" \
 
 </CodeGroup>
 
-## Select Notices
+## Get Notices
 
 `GET /notices`
 
@@ -553,4 +553,4 @@ Mapped response:
 
 - [Enumerations](/reference/enumerations)
 - [Country codes](/reference/country-codes) · [Currency codes](/reference/currency-codes)
-- Playground: open any **Select …** page under Reference Data
+- Playground: open any **Get …** page under Constants

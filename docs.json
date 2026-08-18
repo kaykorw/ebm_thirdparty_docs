@@ -63,8 +63,9 @@
             "icon": "code",
             "pages": [
               "api/initialization",
-              "api/reference-data",
-              "api/branches-customers",
+              "api/constants",
+              "api/customers",
+              "api/branches",
               "api/items",
               "api/imports",
               "api/sales",
@@ -126,7 +127,7 @@
                 ]
               },
               {
-                "group": "Reference Data",
+                "group": "Constants",
                 "icon": "database",
                 "pages": [
                   "GET /constants/countries",
@@ -144,19 +145,25 @@
                   "GET /constants/stock-types",
                   "GET /constants/refund-reasons",
                   "GET /constants/import-item-statuses",
-                  "GET /constants/taxpayer-statuses"
+                  "GET /constants/taxpayer-statuses",
+                  "GET /notices"
                 ]
               },
               {
-                "group": "Branches & Customers",
-                "icon": "building",
+                "group": "Customers",
+                "icon": "users",
                 "pages": [
                   "GET /customers",
-                  "POST /customers/create",
+                  "POST /customers/create"
+                ]
+              },
+              {
+                "group": "Branches",
+                "icon": "building",
+                "pages": [
                   "GET /branches",
                   "POST /branches/users",
-                  "POST /branches/insurances",
-                  "GET /notices"
+                  "POST /branches/insurances"
                 ]
               },
               {

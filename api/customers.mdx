@@ -1,0 +1,124 @@
+---
+title: Customers
+description: Look up and create branch customers via Kayko EBM.
+icon: users
+---
+
+Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` from your business after Enable EBM, so you never put it in the JSON body.
+
+---
+
+## Get customer
+
+`GET /customers`
+
+Requires a business API key with scope `customers`.
+
+<ParamField query="customer_tin" type="string" required>
+  Customer TIN to look up (exactly 9 characters).
+</ParamField>
+
+| Request | Upstream |
+|---------|----------|
+| `x-tin` | `tin` |
+| `x-branch-id` | `bhfId` |
+| `customer_tin` | `custmTin` |
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "{{baseUrl}}/customers?customer_tin=100004527" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00"
+```
+
+```javascript JavaScript
+const data = await fetch(
+  `${BASE_URL}/customers?customer_tin=100004527`,
+  {
+    headers: {
+      Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+      'x-tin': '100027060',
+      'x-branch-id': '00',
+    },
+  },
+).then((r) => r.json());
+```
+
+</CodeGroup>
+
+---
+
+## Create customer
+
+`POST /customers/create`
+
+Use your business API key (scope `customers`). Internal systems may also call this with `X-API-Token`; in that case include `business_code`.
+
+<ParamField body="business_code" type="string">
+  Required only when authenticating with the internal token.
+</ParamField>
+<ParamField body="customer_number" type="string" required>Your internal customer number (max 9)</ParamField>
+<ParamField body="customer_tin" type="string" required>Customer TIN (exactly 9)</ParamField>
+<ParamField body="customer_name" type="string" required>Customer name (max 60)</ParamField>
+<ParamField body="address" type="string">Address</ParamField>
+<ParamField body="telephone" type="string">Phone</ParamField>
+<ParamField body="email" type="string">Email</ParamField>
+<ParamField body="fax_number" type="string">Fax</ParamField>
+<ParamField body="use" type="boolean">Active flag; defaults to `true`</ParamField>
+<ParamField body="notes" type="string">Optional notes</ParamField>
+
+Registrar and modifier fields are set by Kayko for you.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/customers/create" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
+  -d '{
+    "customer_number": "C001",
+    "customer_tin": "100004527",
+    "customer_name": "RULIBA CLAYS LTD",
+    "telephone": "0780000000",
+    "use": true
+  }'
+```
+
+```javascript JavaScript
+await fetch(`${BASE_URL}/customers/create`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+    'x-tin': '100027060',
+    'x-branch-id': '00',
+  },
+  body: JSON.stringify({
+    customer_number: 'C001',
+    customer_tin: '100004527',
+    customer_name: 'RULIBA CLAYS LTD',
+    telephone: '0780000000',
+    use: true,
+  }),
+});
+```
+
+```json Payload
+{
+  "customer_number": "C001",
+  "customer_tin": "100004527",
+  "customer_name": "RULIBA CLAYS LTD",
+  "address": null,
+  "telephone": "0780000000",
+  "email": null,
+  "fax_number": null,
+  "use": true,
+  "notes": null
+}
+```
+
+</CodeGroup>
