@@ -43,9 +43,11 @@ Proxied business routes need tenant headers (not `ebm_url` in the body):
 |--------|------|
 | `x-tin` | Your 9-digit TIN |
 | `x-branch-id` | 2-character branch ID (`00` = head office) |
-| `x-last-request-date` | 14 digits `YYYYMMDDHHmmss` on branch select and notices |
+| `x-last-request-date` | 14 digits `YYYYMMDDHHmmss` on `GET /branches`, `GET /notices`, `GET /items`, `GET /imports`, `GET /purchases`, and `GET /stocks` |
 
 Kayko resolves your business `ebm_url` from Core360 after you Enable EBM. You do not send it on later calls.
+
+Item create/update/deactivate, import confirm, and purchase confirm must use head office `x-branch-id: 00`.
 
 <Warning>
   If the EBM service loses internet connectivity for **24 hours** after issuing a receipt signature, it stops issuing new receipt numbers. Plan for offline resilience in your integration.
@@ -78,6 +80,6 @@ Some Kayko routes return unwrapped `data`, or a mapped `{ message, data }` list 
 | Convention | Value |
 |------------|-------|
 | Protocol | HTTPS (HTTP for local dev) |
-| Method | Mix of `GET` and `POST` (constants and selects are often `GET`) |
+| Method | Mix of `GET`, `POST`, `PUT`, `DELETE` (lists are `GET`) |
 | Content-Type | `application/json` |
 | Authentication | `Authorization: Bearer sk_…` or `x-api-key` on business routes |

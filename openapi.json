@@ -4212,6 +4212,1013 @@
           }
         }
       }
+    },
+    "/items": {
+      "post": {
+        "tags": [
+          "Items"
+        ],
+        "operationId": "create_item",
+        "summary": "Create item",
+        "description": "Head office only (`x-branch-id: 00`). Omit `item_code` to allocate the next code for the prefix.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2,
+              "example": "00"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "item_classification_code": "8014160101",
+                "item_type": "2",
+                "item_name": "Coca Cola",
+                "origin_country": "RW",
+                "packaging_unit": "NT",
+                "quantity_unit": "U",
+                "tax_type": "B",
+                "default_price": 118
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Allocated item code",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "success",
+                  "data": {
+                    "item_code": "RW2NTU0000001"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "operationId": "list_items",
+        "summary": "List items",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          },
+          {
+            "name": "x-last-request-date",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{14}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mapped item list",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "success",
+                  "data": [
+                    {
+                      "item_code": "RW2NTU0000001",
+                      "item_name": "Coca Cola",
+                      "tax_type": "B",
+                      "use": true
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/{item_code}": {
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "operationId": "get_item",
+        "summary": "Get item",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mapped item"
+          },
+          "404": {
+            "description": "EBM_ITEM_NOT_FOUND"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Items"
+        ],
+        "operationId": "update_item",
+        "summary": "Update item",
+        "description": "Head office only.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2,
+              "example": "00"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mapped item_code"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Items"
+        ],
+        "operationId": "deactivate_item",
+        "summary": "Deactivate item",
+        "description": "Head office only. Does not recycle the code.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2,
+              "example": "00"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mapped item_code"
+          }
+        }
+      }
+    },
+    "/imports": {
+      "get": {
+        "tags": [
+          "Imports"
+        ],
+        "operationId": "list_imports",
+        "summary": "List imports",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          },
+          {
+            "name": "x-last-request-date",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{14}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mapped import list"
+          }
+        }
+      }
+    },
+    "/imports/confirm": {
+      "post": {
+        "tags": [
+          "Imports"
+        ],
+        "operationId": "confirm_import",
+        "summary": "Confirm import",
+        "description": "Head office only. No quantity — qty comes from GET /imports. Cancelled lines skip stock.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2,
+              "example": "00"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "task_code": "TASK001",
+                "declaration_date": "20240706",
+                "item_sequence": 1,
+                "hs_code": "22021000",
+                "item_classification_code": "8014160101",
+                "item_code": "RW2NTU0000001",
+                "status": "approved"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mapped confirmation"
+          }
+        }
+      }
+    },
+    "/sales": {
+      "post": {
+        "tags": [
+          "Sales"
+        ],
+        "operationId": "submit_sale",
+        "summary": "Submit sale",
+        "description": "Kayko sends orgInvcNo 0 and tax rates A–D plus E/F/TT. Stock-out is queued after VSDC 000.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "invoice_no": 1799,
+                "payment_method": "credit",
+                "customer_tin": "100004527",
+                "customer_name": "RULIBA CLAYS LTD",
+                "purchase_order_code": "PO0001",
+                "sales_date": "20260303",
+                "items": [
+                  {
+                    "item_code": "RW2NTU0000642",
+                    "item_name": "TOLE PL 2 44X1 22X10",
+                    "packaging_unit": "NT",
+                    "packages": 1,
+                    "quantity_unit": "U",
+                    "quantity": 2,
+                    "price": 1000,
+                    "tax_type": "B"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Signed sale with print fields",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "success",
+                  "data": {
+                    "invoice_no": 1799,
+                    "original_invoice_no": 0,
+                    "receipt_type": "sale",
+                    "status": "approved",
+                    "replayed": false,
+                    "print": {
+                      "receipt_no": 12,
+                      "receipt_signature": "…",
+                      "internal_data": "…"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "EBM_SALE_PERSIST_FAILED or EBM_SALES_STORE_UNAVAILABLE"
+          }
+        }
+      }
+    },
+    "/sales/refund": {
+      "post": {
+        "tags": [
+          "Sales"
+        ],
+        "operationId": "refund_sale",
+        "summary": "Refund sale",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "invoice_no": 1800,
+                "original_invoice_no": 1799,
+                "payment_method": "credit",
+                "refund_reason": "wrong_quantity",
+                "items": [
+                  {
+                    "item_code": "RW2NTU0000642",
+                    "item_name": "TOLE PL 2 44X1 22X10",
+                    "packaging_unit": "NT",
+                    "packages": 1,
+                    "quantity_unit": "U",
+                    "quantity": 2,
+                    "price": 1000,
+                    "tax_type": "B"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Signed refund"
+          }
+        }
+      }
+    },
+    "/sales/resend": {
+      "post": {
+        "tags": [
+          "Sales"
+        ],
+        "operationId": "resend_sale",
+        "summary": "Resend sale",
+        "description": "Use after EBM_SALE_PERSIST_FAILED. Keep the same invoice_no.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "invoice_no": 1799,
+                "receipt": {
+                  "receipt_signature": "…",
+                  "internal_data": "…",
+                  "receipt_no": 12,
+                  "total_receipt_no": 12
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Replayed sale"
+          }
+        }
+      }
+    },
+    "/sales/{invoice_no}": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "operationId": "get_sale",
+        "summary": "Get sale",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "invoice_no",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stored invoice and print fields"
+          }
+        }
+      }
+    },
+    "/purchases": {
+      "get": {
+        "tags": [
+          "Purchases"
+        ],
+        "operationId": "list_purchases",
+        "summary": "List purchases",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          },
+          {
+            "name": "x-last-request-date",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{14}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mapped purchase list"
+          }
+        }
+      }
+    },
+    "/purchases/confirm": {
+      "post": {
+        "tags": [
+          "Purchases"
+        ],
+        "operationId": "confirm_purchase",
+        "summary": "Confirm purchase",
+        "description": "Head office only. Normal purchases send orgInvcNo 0. Stock-in is queued after VSDC 000.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2,
+              "example": "00"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "invoice_no": 501,
+                "registration_type": "automatic",
+                "payment_method": "credit",
+                "supplier_tin": "100004527",
+                "supplier_name": "RULIBA CLAYS LTD",
+                "supplier_invoice_no": 1799,
+                "purchase_date": "20260303",
+                "items": [
+                  {
+                    "item_code": "RW2NTU0000001",
+                    "item_classification_code": "8014160101",
+                    "item_name": "Coca Cola",
+                    "packaging_unit": "NT",
+                    "packages": 1,
+                    "quantity_unit": "U",
+                    "quantity": 10,
+                    "price": 118,
+                    "tax_type": "B"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mapped confirmation"
+          }
+        }
+      }
+    },
+    "/stocks": {
+      "get": {
+        "tags": [
+          "Stock"
+        ],
+        "operationId": "list_stocks",
+        "summary": "List stock movements",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          },
+          {
+            "name": "x-last-request-date",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{14}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mapped movement list"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Stock"
+        ],
+        "operationId": "save_stock_movement",
+        "summary": "Save stock movement",
+        "description": "Manual adjustments only. Sales, purchases, and imports enqueue stock automatically after VSDC 000.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "sar_no": 106,
+                "stock_type": "adjustment",
+                "occurrence_date": "20240520",
+                "items": [
+                  {
+                    "item_code": "RW2NTU0000001",
+                    "item_classification_code": "8014160101",
+                    "item_name": "Coca Cola",
+                    "packaging_unit": "NT",
+                    "packages": 1,
+                    "quantity_unit": "U",
+                    "quantity": 5,
+                    "price": 118,
+                    "tax_type": "B"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mapped movement"
+          }
+        }
+      }
+    },
+    "/stocks/master": {
+      "post": {
+        "tags": [
+          "Stock"
+        ],
+        "operationId": "save_stock_master",
+        "summary": "Save stock master",
+        "description": "Absolute remaining_quantity. Seed before selling so auto movements can update the ledger.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "item_code": "RW2NTU0000001",
+                "remaining_quantity": 100
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mapped remaining quantity"
+          }
+        }
+      }
     }
   }
 }

@@ -4,267 +4,196 @@ description: Pull supplier invoices registered to your TIN and confirm them as p
 icon: cart-shopping
 ---
 
-When another business sells to you and registers the sale on EBM, you can **pull** that invoice and **confirm** it as a purchase. This is essential for input VAT claims and stock adjustments.
+Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` from your business after Enable EBM, so you never put it in the JSON body.
+
+Requires a business API key with scope `purchase`.
+
+When another business sells to you on EBM, you **list** those invoices and **confirm** them. Confirmation is required for input VAT and for automatic stock-in.
 
 ```mermaid
 sequenceDiagram
     participant Buyer as Your ERP
-    participant EBM as Kayko EBM
-    participant RRA as RRA EBM 2.1
+    participant Kayko as Kayko EBM
+    participant RRA as RRA VSDC
 
-    Note over RRA: Supplier registers sale to your TIN
-    Buyer->>EBM: POST /trnsPurchase/selectTrnsPurchaseSales
-    EBM-->>Buyer: Unconfirmed purchase invoices
-    Buyer->>EBM: POST /trnsPurchase/savePurchases
-    EBM->>RRA: Confirm purchase
-    RRA-->>EBM: Acknowledged
-    EBM-->>Buyer: resultCd: 000
+    Note over RRA: Supplier registers a sale to your TIN
+    Buyer->>Kayko: GET /purchases
+    Kayko-->>Buyer: Unconfirmed supplier invoices
+    Buyer->>Kayko: POST /purchases/confirm
+    Kayko->>RRA: Confirm purchase
+    RRA-->>Kayko: resultCd 000
+    Kayko-->>Buyer: Mapped confirmation
+    Note over Kayko: Stock-in posted later (not in this request)
 ```
+
+<Warning>
+  Confirm must use head office `x-branch-id: 00`. Other branches receive `403` / `EBM_HEAD_OFFICE_REQUIRED`. List works for any allowed branch.
+</Warning>
 
 ---
 
-## Get purchases
+## List purchases
 
-Pull sales transactions registered to your TIN that haven't been confirmed yet.
+`GET /purchases`
 
-`POST /trnsPurchase/selectTrnsPurchaseSales`
-
-<ParamField body="tin" type="string" required>Your TIN (as the buyer)</ParamField>
-<ParamField body="bhfId" type="string" required>Your branch ID</ParamField>
-<ParamField body="lastReqDt" type="string" required>Sync cursor</ParamField>
+Send `x-last-request-date` (`YYYYMMDDHHmmss`). First sync: `20000101000000`.
 
 <CodeGroup>
 
 ```bash cURL
-curl -X POST "{{baseUrl}}/trnsPurchase/selectTrnsPurchaseSales" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "tin": "999958074",
-    "bhfId": "00",
-    "lastReqDt": "20240706204443"
-  }'
+curl -X GET "{{baseUrl}}/purchases" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
+  -H "x-last-request-date: 20000101000000"
 ```
 
 ```javascript JavaScript
-const purchases = await fetch(`${BASE_URL}/trnsPurchase/selectTrnsPurchaseSales`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    tin: '999958074',
-    bhfId: '00',
-    lastReqDt: '20240706204443',
-  }),
-}).then(r => r.json());
-
-// purchases.data.saleList — array of unconfirmed supplier invoices
-```
-
-```php PHP
-<?php
-$response = ebmPost('/trnsPurchase/selectTrnsPurchaseSales', [
-    'tin' => '999958074',
-    'bhfId' => '00',
-    'lastReqDt' => '20240706204443',
-]);
-
-foreach ($response['data']['saleList'] as $sale) {
-    echo $sale['spplrNm'] . ' - Invoice #' . $sale['spplrInvcNo'];
-}
-```
-
-```json Payload
-{
-  "tin": "999958074",
-  "bhfId": "00",
-  "lastReqDt": "20240706204443"
-}
+const data = await fetch(`${BASE_URL}/purchases`, {
+  headers: {
+    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+    'x-tin': '100027060',
+    'x-branch-id': '00',
+    'x-last-request-date': '20000101000000',
+  },
+}).then((r) => r.json());
 ```
 
 </CodeGroup>
 
-### Response structure
+Response: `{ message, data: Purchase[] }`. Empty lists return `{ "message": "No purchases found", "data": [] }`.
 
-Each item in `saleList` contains the supplier's sale data:
+Each purchase includes supplier identity, payment/receipt labels, tax buckets A–D as returned by VSDC, and `items[]` with your mapped line fields (`item_code`, `quantity`, `tax_type`, `supplier_item_code`, …).
 
-| Field | Description |
-|-------|-------------|
-| `spplrTin` | Supplier's TIN |
-| `spplrNm` | Supplier's name |
-| `spplrInvcNo` | Supplier's invoice number |
-| `prcOrdCd` | Purchase order code (if provided by supplier) |
-| `itemList` | Line items with supplier item codes |
+Map supplier lines to **your** registered `item_code` before confirm. Confirm rejects unknown items.
 
 ---
 
-## Save purchase
+## Confirm purchase
 
-Confirm a purchase transaction. Map the supplier's items to your own `itemCd` before submitting.
+`POST /purchases/confirm`
 
-`POST /trnsPurchase/savePurchases`
+Kayko maps snake_case labels to VSDC codes. For a normal purchase, Kayko sends upstream `orgInvcNo: 0`. For a refund, send `receipt_type: refund` and `original_invoice_no` of the purchase you are reversing.
 
-<ParamField body="invcNo" type="number" required>Your purchase invoice number</ParamField>
-<ParamField body="orgInvcNo" type="number" required>Original invoice number</ParamField>
-<ParamField body="spplrTin" type="string">Supplier TIN</ParamField>
-<ParamField body="spplrNm" type="string">Supplier name</ParamField>
-<ParamField body="spplrInvcNo" type="string">Supplier's invoice number</ParamField>
-<ParamField body="regTyCd" type="string" required>`"A"` Automatic or `"M"` Manual</ParamField>
-<ParamField body="pchsTyCd" type="string" required>`"N"` Normal</ParamField>
-<ParamField body="rcptTyCd" type="string" required>`"P"` Purchase or `"R"` Refund</ParamField>
-<ParamField body="pmtTyCd" type="string" required>Payment method code</ParamField>
-<ParamField body="pchsSttsCd" type="string" required>`"02"` Approved</ParamField>
-<ParamField body="pchsDt" type="string" required>Purchase date (`yyyyMMdd`)</ParamField>
-<ParamField body="itemList" type="array" required>Line items with your `itemCd` mapped</ParamField>
+<ParamField body="invoice_no" type="integer" required>Your sequential purchase invoice number</ParamField>
+<ParamField body="original_invoice_no" type="integer">Required when `receipt_type` is `refund`</ParamField>
+<ParamField body="registration_type" type="string" required>`automatic` or `manual`</ParamField>
+<ParamField body="payment_method" type="string" required>Label: `cash`, `credit`, `cash_credit`, `bank_check`, `card`, `mobile_money`, `other`</ParamField>
+<ParamField body="transaction_type" type="string">`normal` (default), `copy`, `proforma`, `training`</ParamField>
+<ParamField body="receipt_type" type="string">`purchase` (default) or `refund`</ParamField>
+<ParamField body="status" type="string">Usually `approved`</ParamField>
+<ParamField body="supplier_tin" type="string">Required for automatic registration (9 digits)</ParamField>
+<ParamField body="supplier_branch_id" type="string">Supplier branch (2 chars)</ParamField>
+<ParamField body="supplier_name" type="string">Supplier name</ParamField>
+<ParamField body="supplier_invoice_no" type="integer">Supplier invoice number (required for automatic)</ParamField>
+<ParamField body="supplier_sdc_id" type="string">Supplier SDC ID</ParamField>
+<ParamField body="purchase_date" type="string">`YYYYMMDD`; defaults to today</ParamField>
+<ParamField body="confirmed_at" type="string">`YYYYMMDDHHmmss`</ParamField>
+<ParamField body="items" type="array" required>Line items (see below)</ParamField>
+
+Optional header totals (`taxable_amount_a`–`tt`, `tax_amount_*`, `total_*`) — omit them to let Kayko compute from lines. If you send them, they must match. Kayko always forwards live VSDC tax rates including **E** (0), **F** (tourism 3%), and **TT** (3%).
+
+### Line items
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `item_code` | Y | Must already be registered |
+| `item_classification_code` | Y | 10 digits |
+| `item_name` | Y | |
+| `packaging_unit` | Y | |
+| `packages` | Y | |
+| `quantity_unit` | Y | |
+| `quantity` | Y | Positive |
+| `price` | Y | Tax-inclusive unit price |
+| `tax_type` | Y | `A`–`D`, `E`, `F`, `TT` |
+| `supply_amount`, `discount_*`, `taxable_amount`, `tax_amount`, `total_amount` | N | Computed if omitted |
+| `supplier_item_code` / `supplier_item_name` / `supplier_item_classification_code` | N | Supplier cross-reference |
+| `expiry_date` | N | `YYYYMMDD` |
 
 <CodeGroup>
 
 ```bash cURL
-curl -X POST "{{baseUrl}}/trnsPurchase/savePurchases" \
+curl -X POST "{{baseUrl}}/purchases/confirm" \
   -H "Content-Type: application/json" \
-  -d @purchase-confirm.json
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
+  -d '{
+    "invoice_no": 501,
+    "registration_type": "automatic",
+    "payment_method": "credit",
+    "supplier_tin": "100004527",
+    "supplier_name": "RULIBA CLAYS LTD",
+    "supplier_invoice_no": 1799,
+    "purchase_date": "20260303",
+    "items": [{
+      "item_code": "RW2NTU0000001",
+      "item_classification_code": "8014160101",
+      "item_name": "Coca Cola",
+      "packaging_unit": "NT",
+      "packages": 1,
+      "quantity_unit": "U",
+      "quantity": 10,
+      "price": 118,
+      "tax_type": "B"
+    }]
+  }'
 ```
 
 ```javascript JavaScript
-const confirmation = {
-  tin: '999958074',
-  bhfId: '00',
-  invcNo: 18,
-  orgInvcNo: 18,
-  spplrTin: '105418285',
-  spplrNm: 'SUNDOWNER Ltd',
-  spplrInvcNo: '17',
-  regTyCd: 'A',
-  pchsTyCd: 'N',
-  rcptTyCd: 'N',
-  pmtTyCd: '01',
-  pchsSttsCd: '02',
-  cfmDt: '20240706165014',
-  pchsDt: '20200303',
-  totItemCnt: 2,
-  taxblAmtB: 8000,
-  taxRtB: 18,
-  taxAmtB: 1220.34,
-  totTaxblAmt: 8000,
-  totTaxAmt: 1220.34,
-  totAmt: 8000,
-  itemList: [/* mapped items */],
-  regrId: '1', regrNm: 'Kayko',
-  modrId: '1', modrNm: 'Kayko',
-};
-
-await fetch(`${BASE_URL}/trnsPurchase/savePurchases`, {
+await fetch(`${BASE_URL}/purchases/confirm`, {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(confirmation),
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+    'x-tin': '100027060',
+    'x-branch-id': '00',
+  },
+  body: JSON.stringify({
+    invoice_no: 501,
+    registration_type: 'automatic',
+    payment_method: 'credit',
+    supplier_tin: '100004527',
+    supplier_name: 'RULIBA CLAYS LTD',
+    supplier_invoice_no: 1799,
+    purchase_date: '20260303',
+    items: [
+      {
+        item_code: 'RW2NTU0000001',
+        item_classification_code: '8014160101',
+        item_name: 'Coca Cola',
+        packaging_unit: 'NT',
+        packages: 1,
+        quantity_unit: 'U',
+        quantity: 10,
+        price: 118,
+        tax_type: 'B',
+      },
+    ],
+  }),
 });
-```
-
-```php PHP
-<?php
-// Map supplier items to your itemCd before confirming
-$confirmation = [
-    'tin' => '999958074',
-    'bhfId' => '00',
-    'spplrTin' => '105418285',
-    'spplrNm' => 'SUNDOWNER Ltd',
-    'spplrInvcNo' => '17',
-    'regTyCd' => 'A',
-    'pchsTyCd' => 'N',
-    'pchsSttsCd' => '02',
-    'pchsDt' => date('Ymd'),
-    // ... tax totals and itemList
-];
-ebmPost('/trnsPurchase/savePurchases', $confirmation);
 ```
 
 ```json Payload
 {
-  "tin": "999958074",
-  "bhfId": "00",
-  "invcNo": 18,
-  "orgInvcNo": 18,
-  "spplrTin": "105418285",
-  "spplrNm": "SUNDOWNER Ltd",
-  "spplrInvcNo": "17",
-  "regTyCd": "A",
-  "pchsTyCd": "N",
-  "rcptTyCd": "N",
-  "pmtTyCd": "01",
-  "pchsSttsCd": "02",
-  "cfmDt": "20240706165014",
-  "pchsDt": "20200303",
-  "wrhsDt": "20240706165014",
-  "cnclReqDt": null,
-  "cnclDt": null,
-  "rfdDt": null,
-  "totItemCnt": 2,
-  "taxblAmtA": 0,
-  "taxblAmtB": 8000,
-  "taxblAmtC": 0,
-  "taxblAmtD": 0,
-  "taxRtA": 0,
-  "taxRtB": 18,
-  "taxRtC": 0,
-  "taxRtD": 0,
-  "taxAmtA": 0,
-  "taxAmtB": 1220.34,
-  "taxAmtC": 0,
-  "taxAmtD": 0,
-  "totTaxblAmt": 8000,
-  "totTaxAmt": 1220.34,
-  "totAmt": 8000,
-  "remark": null,
-  "modrId": "1",
-  "modrNm": "Kayko",
-  "regrId": "1",
-  "regrNm": "Kayko",
-  "itemList": [
+  "invoice_no": 501,
+  "registration_type": "automatic",
+  "payment_method": "credit",
+  "supplier_tin": "100004527",
+  "supplier_name": "RULIBA CLAYS LTD",
+  "supplier_invoice_no": 1799,
+  "purchase_date": "20260303",
+  "items": [
     {
-      "itemSeq": 1,
-      "itemCd": "RW2BQL0000003",
-      "itemClsCd": "4111363900",
-      "itemNm": "Water Jibu 2",
-      "bcd": null,
-      "spplrItemClsCd": "5012161100",
-      "spplrItemCd": "RW3NTXNOX0000006",
-      "spplrItemNm": "Buffet",
-      "pkgUnitCd": "BQ",
-      "pkg": 1,
-      "qtyUnitCd": "L",
-      "qty": 2,
-      "prc": 100,
-      "splyAmt": 100,
-      "dcRt": 0,
-      "dcAmt": 0,
-      "totDcAmt": 0,
-      "taxTyCd": "B",
-      "taxblAmt": 7000,
-      "taxAmt": "2135.59",
-      "totAmt": 7000,
-      "itemExprDt": null
-    },
-    {
-      "itemSeq": 2,
-      "itemCd": "RW2BQL0000003",
-      "itemClsCd": "4111363900",
-      "itemNm": "Water Jibu 2",
-      "bcd": null,
-      "spplrItemClsCd": "5020220100",
-      "spplrItemCd": "RW2BCXU0000001",
-      "spplrItemNm": "Fanta 33 Cl",
-      "pkgUnitCd": "BQ",
-      "pkg": 1,
-      "qtyUnitCd": "L",
-      "qty": 2,
-      "prc": 100,
-      "splyAmt": 100,
-      "dcRt": 0,
-      "dcAmt": 0,
-      "totDcAmt": 0,
-      "taxTyCd": "B",
-      "taxblAmt": 1000,
-      "taxAmt": "305.08",
-      "totAmt": 1000,
-      "itemExprDt": null
+      "item_code": "RW2NTU0000001",
+      "item_classification_code": "8014160101",
+      "item_name": "Coca Cola",
+      "packaging_unit": "NT",
+      "packages": 1,
+      "quantity_unit": "U",
+      "quantity": 10,
+      "price": 118,
+      "tax_type": "B"
     }
   ]
 }
@@ -272,33 +201,6 @@ ebmPost('/trnsPurchase/savePurchases', $confirmation);
 
 </CodeGroup>
 
-## Item mapping
+Response `{ message, data }` includes `invoice_no`, `original_invoice_no` (`0` for a normal purchase), supplier fields, and mapped labels (`registration_type`, `receipt_type`, `payment_method`, `status`).
 
-When confirming, you must map supplier items to your catalog:
-
-| Supplier field | Your field | Notes |
-|----------------|------------|-------|
-| `spplrItemCd` | `itemCd` | Your registered product code |
-| `spplrItemClsCd` | `itemClsCd` | Your classification code |
-| `spplrItemNm` | `itemNm` | Can use supplier name or your own |
-
-## Purchase receipt types
-
-| `rcptTyCd` | Meaning |
-|------------|---------|
-| `P` | Purchase |
-| `R` | Refund after purchase |
-
-## Common errors
-
-| Code | Meaning | Fix |
-|------|---------|-----|
-| `881` | Purchase is mandatory | `prcOrdCd` required for business customers |
-| `882` | Purchase code is invalid | Verify the `prcOrdCd` with the supplier |
-| `883` | Purchase already used | This purchase was already confirmed |
-| `884` | Invalid customer TIN | Check `spplrTin` / `custTin` values |
-
-## See also
-
-- [Stock](/api/stock) — adjust inventory after confirming
-- [Calculations — Stock & Purchases](/calculations/stock-and-purchases) — amount formulas
+After VSDC `000`, Kayko enqueues stock-in (`purchase`). Purchase refunds enqueue stock-out (`return` / type `12`). Services (`item_type` `3`) are skipped. Seed `POST /stocks/master` first so remaining quantity can update. Do not nest stock in this HTTP request.

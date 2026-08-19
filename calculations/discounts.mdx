@@ -1,18 +1,18 @@
 ---
 title: Discount Calculations
-description: How dcRt, dcAmt, and totDcAmt affect taxable amounts.
+description: How discount_rate, discount_amount, and total_discount_amount affect taxable amounts.
 icon: tag
 ---
 
-Discounts reduce the taxable base before VAT is extracted. Every line item carries three discount fields:
+Discounts reduce the taxable base before VAT is extracted. On Kayko requests send `discount_rate`, `discount_amount`, and `total_discount_amount`. Kayko maps them to VSDC `dcRt`, `dcAmt`, and `totDcAmt`.
 
-| Field | Full name | Type | Description |
-|-------|-----------|------|-------------|
-| `dcRt` | Discount rate | % | Percentage discount (0–100) |
-| `dcAmt` | Discount amount | RWF | Absolute discount value |
-| `totDcAmt` | Total discount amount | RWF | Total discount applied to the line |
+| Kayko field | VSDC | Type | Description |
+|-------------|------|------|-------------|
+| `discount_rate` | `dcRt` | % | Percentage discount (0–100) |
+| `discount_amount` | `dcAmt` | RWF | Absolute discount value |
+| `total_discount_amount` | `totDcAmt` | RWF | Total discount applied to the line |
 
-When no discount applies, set all three to `0`.
+When no discount applies, omit them or send `0`. Kayko fills missing pairs (rate from amount, or amount from rate).
 
 ## Calculation order
 

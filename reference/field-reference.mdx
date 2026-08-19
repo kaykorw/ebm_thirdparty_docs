@@ -1,12 +1,32 @@
 ---
 title: Complete Field Reference
-description: Exhaustive request and response field tables from the official RRA EBM / API field specification (v1.0.5).
+description: Upstream VSDC field tables (spec v1.0.5) plus Kayko gateway name mapping.
 icon: table-columns
 ---
 
 <Note>
-  Field names in this reference match the JSON API schema. On `saveItems`, `itemCd` is the item code (20 chars) and `itemClsCd` is the classification code (10 chars).
+  **Kayko requests use snake_case** (`item_code`, `invoice_no`, `payment_method`). Tables below are the **upstream VSDC** names Kayko sends after mapping. You do not send `tin` / `bhfId` in JSON — use headers `x-tin` and `x-branch-id`.
 </Note>
+
+### Kayko → VSDC (common)
+
+| Kayko | VSDC |
+|-------|------|
+| `item_code` | `itemCd` |
+| `item_classification_code` | `itemClsCd` |
+| `item_name` | `itemNm` |
+| `tax_type` | `taxTyCd` |
+| `packaging_unit` / `packages` | `pkgUnitCd` / `pkg` |
+| `quantity_unit` / `quantity` | `qtyUnitCd` / `qty` |
+| `price` | `prc` |
+| `supply_amount` | `splyAmt` |
+| `taxable_amount` / `tax_amount` / `total_amount` | `taxblAmt` / `taxAmt` / `totAmt` |
+| `invoice_no` | `invcNo` |
+| `original_invoice_no` | `orgInvcNo` (**`0` on a normal sale or purchase**; original number on refunds) |
+| `payment_method` | `pmtTyCd` |
+| `remaining_quantity` | `rsdQty` (absolute remaining qty) |
+
+Live VSDC also expects header rates **E, F, TT** (not in PDF v1.0.5). Kayko always sends `taxRtE: 0.00`, `taxRtF: 3.00`, `taxRtTt: 3.00` as JSON numbers.
 
 ---
 
@@ -56,7 +76,9 @@ icon: table-columns
 
 ## Reference Data {#reference-data}
 
-### `POST /code/selectCodes`- Request (`CodeReq`)
+### `GET /constants/*` (upstream `code/selectCodes`)
+
+Kayko serves reference tables as `GET /constants/taxes`, `/payment-modes`, `/packaging`, and similar. The table below is the VSDC code-class payload Kayko maps from.
 
 | Field | Type | Required | Max Len |
 |-------|------|----------|---------|
@@ -95,7 +117,7 @@ icon: table-columns
 | `mjrTgYn` | CHAR | 1 | Major target flag |
 | `useYn` | CHAR | 1 | Active flag |
 
-### `POST /customers/selectCustomer`- Request (`CustReq`)
+### `GET /customers` (upstream `customers/selectCustomer`)
 
 | Field | Type | Required | Max Len |
 |-------|------|----------|---------|
@@ -209,14 +231,14 @@ icon: table-columns
 
 ## Items {#items}
 
-### `POST /items/saveItems`- Request (`ItemSaveReq`)
+### `POST /items` (upstream `items/saveItems`) — Request (`ItemSaveReq`)
 
 | Field | Type | Required | Max Len | Format |
 |-------|------|----------|---------|--------|
 | `tin` | CHAR | Y | 9 | |
 | `bhfId` | CHAR | Y | 2 | |
 | `itemCd` | CHAR | Y | 20 | See [item code format](/api/items#item-code-format) |
-| `itemClsCd` | CHAR | Y | 10 | From `/itemClass/selectItemsClass` |
+| `itemClsCd` | CHAR | Y | 10 | 10-digit classification (`item_classification_code`) |
 | `itemTyCd` | CHAR | Y | 5 | [Product Type](/reference/enumerations#product-type) |
 | `itemNm` | CHAR | Y | 200 | |
 | `itemStdNm` | CHAR | N | 200 | Standard name |
@@ -235,7 +257,7 @@ icon: table-columns
 | `regrNm/Id` | CHAR | Y | 60/20 | |
 | `modrNm/Id` | CHAR | Y | 60/20 | |
 
-### `POST /items/selectItems`- Response `data.itemList[]`
+### `GET /items` (upstream `items/selectItems`) — Response `data.itemList[]`
 
 All save fields plus:
 
@@ -244,27 +266,15 @@ All save fields plus:
 | `regBhfId` | CHAR | 2 | Branch that registered the item |
 | `rraModYn` | CHAR | 1 | RRA modified classification flag |
 
-### `POST /items/saveItemComposition`- Request (`ItemCpstSaveReq`)
+### Item composition (not exposed on Kayko)
 
-| Field | Type | Required | Max Len |
-|-------|------|----------|---------|
-| `tin` | CHAR | Y | 9 |
-| `bhfId` | CHAR | Y | 2 |
-| `itemCd` | CHAR | Y | 20 | Parent item |
-| `cpstItemCd` | CHAR | Y | 20 | Component item |
-| `cpstQty` | NUMBER | Y |- | Component quantity |
-| `regrNm` | CHAR | Y | 60 |
-| `regrId` | CHAR | Y | 20 |
-
-<Note>
-  Item composition is stored for backup/restoration only. It cannot be queried back from the server.
-</Note>
+There is no composition route on the gateway. Upstream VSDC stored composition for backup only and it cannot be queried back.
 
 ---
 
 ## Imports {#imports}
 
-### `POST /imports/selectImportItems`- Response `data.itemList[]`
+### `GET /imports` (upstream `imports/selectImportItems`) — Response `data.itemList[]`
 
 | Field | Type | Max Len | Notes |
 |-------|------|---------|-------|
@@ -289,7 +299,7 @@ All save fields plus:
 | `invcFcurCd` | CHAR | 5 | [Currency](/reference/currency-codes) |
 | `invcFcurExcrt` | NUMBER | 18,2 | Exchange rate |
 
-### `POST /imports/updateImportItems`- Request (`ImptItemSaveReq`)
+### `POST /imports/confirm` (upstream `imports/updateImportItems`) — Request (`ImptItemSaveReq`)
 
 | Field | Type | Required | Max Len |
 |-------|------|----------|---------|
@@ -310,14 +320,14 @@ All save fields plus:
 
 ## Sales {#sales}
 
-### `POST /trnsSales/saveSales`- Request (`TrnsSalesSaveReq`)
+### `POST /sales` (upstream `trnsSales/saveSales`) — Request (`TrnsSalesSaveReq`)
 
 | Field | Type | Required | Max Len | Format |
 |-------|------|----------|---------|--------|
 | `tin` | CHAR | Y | 9 | |
 | `bhfId` | CHAR | Y | 2 | |
 | `invcNo` | NUMBER | Y | 38 | |
-| `orgInvcNo` | NUMBER | Y | 38 | Original invoice (for refunds) |
+| `orgInvcNo` | NUMBER | Y | 38 | **Must be `0` on a normal sale.** Refunds use the original `invcNo`. Never set this equal to `invcNo` on a new sale (VSDC `910`). |
 | `custTin` | CHAR | N | 9 | |
 | `custNm` | CHAR | N | 60 | |
 | `custPhone` | CHAR | N | 20 | |
@@ -335,8 +345,13 @@ All save fields plus:
 | `rfdRsnCd` | CHAR | N | 5 | [Refund Reason](/reference/enumerations#refund-reason-code) |
 | `totItemCnt` | NUMBER | Y | 10 | |
 | `taxblAmtA`–`D` | NUMBER | Y | 18,2 | Per tax category |
-| `taxRtA`–`D` | NUMBER | Y | 7,2 | Per tax category |
+| `taxblAmtE`, `F`, `Tt` | NUMBER | Y | 18,2 | Live VSDC (not in PDF v1.0.5). Usually `0` |
+| `taxRtA`–`D` | NUMBER | Y | 7,2 | Per tax category (`18.00` for B) |
+| `taxRtE` | NUMBER | Y | 7,2 | Reserved; Kayko sends `0.00` |
+| `taxRtF` | NUMBER | Y | 7,2 | Tourism tax; Kayko sends `3.00` |
+| `taxRtTt` | NUMBER | Y | 7,2 | Kayko sends `3.00` |
 | `taxAmtA`–`D` | NUMBER | Y | 18,2 | Per tax category |
+| `taxAmtE`, `F`, `Tt` | NUMBER | Y | 18,2 | Usually `0` |
 | `totTaxblAmt` | NUMBER | Y | 18,2 | |
 | `totTaxAmt` | NUMBER | Y | 18,2 | |
 | `totAmt` | NUMBER | Y | 18,2 | |
@@ -401,7 +416,7 @@ All save fields plus:
 
 ## Purchases {#purchases}
 
-### `POST /trnsPurchase/selectTrnsPurchaseSales`- Response `data.saleList[]`
+### `GET /purchases` (upstream `trnsPurchase/selectTrnsPurchaseSales`) — Response `data.saleList[]`
 
 | Field | Type | Max Len | Notes |
 |-------|------|---------|-------|
@@ -419,7 +434,7 @@ All save fields plus:
 | `stockRlsDt` | CHAR | 19 | |
 | `totItemCnt` | NUMBER | 10 | |
 | `taxblAmtA`–`D` | NUMBER | 18,2 | |
-| `taxRtA`–`D` | NUMBER | 7,2 | |
+| `taxRtA`–`D` | NUMBER | 7,2 | Live devices also return/expect E, F, TT rates |
 | `taxAmtA`–`D` | NUMBER | 18,2 | |
 | `totTaxblAmt` | NUMBER | 18,2 | |
 | `totTaxAmt` | NUMBER | 18,2 | |
@@ -427,14 +442,14 @@ All save fields plus:
 | `remark` | CHAR | 400 | |
 | `itemList[]` |- |- | Same line-item fields as sales |
 
-### `POST /trnsPurchase/savePurchases`- Request (`TrnsPurchaseSaveReq`)
+### `POST /purchases/confirm` (upstream `trnsPurchase/savePurchases`) — Request (`TrnsPurchaseSaveReq`)
 
 | Field | Type | Required | Max Len |
 |-------|------|----------|---------|
 | `tin` | CHAR | Y | 9 |
 | `bhfId` | CHAR | Y | 2 |
 | `invcNo` | NUMBER | Y | 38 |
-| `orgInvcNo` | NUMBER | Y | 38 |
+| `orgInvcNo` | NUMBER | Y | 38 | **`0` on a normal purchase.** Refunds use the original purchase invoice number. |
 | `spplrTin` | CHAR | N | 9 |
 | `spplrBhfId` | CHAR | N | 2 |
 | `spplrNm` | CHAR | N | 60 |
@@ -450,7 +465,7 @@ All save fields plus:
 | `wrhsDt` | CHAR | N | 14 | Warehousing date |
 | `cnclReqDt/cnclDt/rfdDt` | CHAR | N | 14 | |
 | `totItemCnt` | NUMBER | Y | 10 | |
-| Tax fields |- | Y | Same as sales |
+| Tax fields |- | Y | Same as sales, including live `taxRtE` / `taxRtF` / `taxRtTt` |
 | `remark` | CHAR | N | 400 | |
 | `regrNm/Id, modrNm/Id` | CHAR | Y | 60/20 | |
 
@@ -484,7 +499,7 @@ All save fields plus:
 
 ## Stock {#stock}
 
-### `POST /stock/saveStockItems`- Request (`StockIOSaveReq`)
+### `POST /stocks` (upstream `stock/saveStockItems`) — Request (`StockIOSaveReq`)
 
 | Field | Type | Required | Max Len | Format |
 |-------|------|----------|---------|--------|
@@ -527,7 +542,7 @@ All save fields plus:
 | `taxAmt` | NUMBER | Y | 18,2 |
 | `totAmt` | NUMBER | Y | 18,2 |
 
-### `POST /stockMaster/saveStockMaster`- Request (`StockMstSaveReq`)
+### `POST /stocks/master` (upstream `stockMaster/saveStockMaster`) — Request (`StockMstSaveReq`)
 
 | Field | Type | Required | Max Len |
 |-------|------|----------|---------|
@@ -537,6 +552,6 @@ All save fields plus:
 | `rsdQty` | NUMBER | Y | 13,2 |
 | `regrNm/Id, modrNm/Id` | CHAR | Y | 60/20 |
 
-### `POST /stock/selectStockItems`- Response `data.stockList[]`
+### `GET /stocks` (upstream `stock/selectStockItems`) — Response `data.stockList[]`
 
 Same header fields as save (`custTin`, `custBhfId`, `sarNo`, `ocrnDt`, totals, `remark`) plus nested `itemList[]` matching stock line items above.

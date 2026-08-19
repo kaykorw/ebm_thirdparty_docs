@@ -1,150 +1,234 @@
 ---
 title: Stock
-description: Record stock movements, update inventory master, and query movement history.
+description: Seed remaining quantity, list movements, and post manual adjustments. Sales, purchases, and imports enqueue stock automatically.
 icon: boxes-stacked
 ---
 
-Stock management in Kayko EBM tracks inventory movements (in/out) and maintains a stock master (current quantities). Every stock operation must follow a sale or purchase.
+Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` from your business after Enable EBM, so you never put it in the JSON body.
+
+Requires a business API key with scope `stocks`. Any allowed branch may call these routes.
+
+Kayko posts stock **after** a signed sale, confirmed purchase, or approved import — as a **later independent VSDC call**. A failed stock post does not roll back a sale that already returned `000`. Do not nest a stock save in the same HTTP request as sale / purchase / import confirm.
 
 ```mermaid
 flowchart LR
-    Sale["Sale Invoice"] --> StockOut["Stock Out (sarTyCd: 11)"]
-    Purchase["Purchase Confirm"] --> StockIn["Stock In (sarTyCd: 02)"]
-    StockOut --> Master["Update Stock Master"]
-    StockIn --> Master
+    Master["POST /stocks/master"] --> Sale["POST /sales"]
+    Master --> Purchase["POST /purchases/confirm"]
+    Master --> Import["POST /imports/confirm"]
+    Sale --> AutoOut["Auto stock-out 11"]
+    Purchase --> AutoIn["Auto stock-in 02"]
+    Import --> AutoImp["Auto stock-in 01"]
 ```
+
+Seed **remaining quantity** with `POST /stocks/master` first. Auto movements update the ledger **only if** a master row already exists. `remaining_quantity` is the **absolute** on-hand quantity, not a delta. Negative values are rejected.
+
+Services (`item_type` `3`) never generate stock movements.
 
 ---
 
-## Save stock in/out
+## What Kayko posts automatically
 
-Record an inventory movement (sale deduction, purchase addition, adjustment, etc.).
+| Trigger | After VSDC `000` | Stock type (upstream) |
+|---------|------------------|------------------------|
+| Sale | Stock-out | `11` Sale |
+| Sale refund | Stock-in | `03` Return |
+| Purchase confirm | Stock-in | `02` Purchase |
+| Purchase refund | Stock-out | `12` Return |
+| Import confirm (`approved`) | Stock-in | `01` Import |
+| Import confirm (`cancelled`) | Skipped | — |
 
-`POST /stock/saveStockItems`
+Import confirm has no quantity; Kayko uses quantity from `GET /imports`. Refunds wait for the original movement number (`orgSarNo`) instead of sending `0`.
 
-<ParamField body="sarNo" type="string" required>Stock and release document number</ParamField>
-<ParamField body="orgSarNo" type="string" required>Original SAR number</ParamField>
-<ParamField body="regTyCd" type="string" required>`"A"` Automatic or `"M"` Manual</ParamField>
-<ParamField body="sarTyCd" type="string" required>Movement type — see [Stock In/Out Types](/reference/enumerations#stock-inout-type)</ParamField>
-<ParamField body="ocrnDt" type="string" required>Occurrence date (`yyyyMMdd`)</ParamField>
-<ParamField body="totItemCnt" type="number" required>Number of line items</ParamField>
-<ParamField body="itemList" type="array" required>Stock movement line items</ParamField>
+Use `POST /stocks` only for **manual** adjustments (processing, discarding, transfers, corrections) that are not covered by the automatic chain.
+
+---
+
+## List stock movements
+
+`GET /stocks`
+
+Send `x-last-request-date` (`YYYYMMDDHHmmss`). First sync: `20000101000000`.
 
 <CodeGroup>
 
 ```bash cURL
-curl -X POST "{{baseUrl}}/stock/saveStockItems" \
+curl -X GET "{{baseUrl}}/stocks" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
+  -H "x-last-request-date: 20000101000000"
+```
+
+```javascript JavaScript
+const data = await fetch(`${BASE_URL}/stocks`, {
+  headers: {
+    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+    'x-tin': '100027060',
+    'x-branch-id': '00',
+    'x-last-request-date': '20000101000000',
+  },
+}).then((r) => r.json());
+```
+
+</CodeGroup>
+
+Response: `{ message, data: Movement[] }`. Empty lists return `{ "message": "No stock movements found", "data": [] }`.
+
+Each movement includes `sar_no`, `original_sar_no`, `stock_type` (label), `direction` (`in` / `out`), `occurrence_date`, and `items[]`.
+
+---
+
+## Save stock master
+
+`POST /stocks/master`
+
+Call this once per item (and after large physical counts) so remaining quantity is known before auto movements run.
+
+<ParamField body="item_code" type="string" required>Registered item code</ParamField>
+<ParamField body="remaining_quantity" type="number" required>Absolute remaining quantity (2 decimals, not negative)</ParamField>
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/stocks/master" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
   -d '{
-    "tin": "999958074",
-    "bhfId": "00",
-    "sarNo": "106",
-    "orgSarNo": "00",
-    "regTyCd": "M",
-    "sarTyCd": "11",
-    "ocrnDt": "20240520",
-    "totItemCnt": 1,
-    "totTaxblAmt": 1000,
-    "totTaxAmt": 152.54,
-    "totAmt": 1000,
-    "itemList": [{
-      "itemSeq": 1,
-      "itemCd": "RW3NTXNOX0000006",
-      "itemClsCd": "5012161100",
-      "itemNm": "Inyange Water",
-      "qty": 50,
-      "prc": 10000,
-      "splyAmt": 1000,
-      "taxTyCd": "B",
-      "taxblAmt": 1000,
-      "taxAmt": 152.54,
-      "totAmt": 1000,
-      "pkg": 1,
-      "pkgUnitCd": "NT",
-      "qtyUnitCd": "U"
-    }],
-    "regrId": "1", "regrNm": "Kayko",
-    "modrId": "1", "modrNm": "Kayko"
+    "item_code": "RW2NTU0000001",
+    "remaining_quantity": 100
   }'
 ```
 
 ```javascript JavaScript
-await fetch(`${BASE_URL}/stock/saveStockItems`, {
+await fetch(`${BASE_URL}/stocks/master`, {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+    'x-tin': '100027060',
+    'x-branch-id': '00',
+  },
   body: JSON.stringify({
-    tin: '999958074',
-    bhfId: '00',
-    sarNo: '106',
-    orgSarNo: '00',
-    regTyCd: 'M',
-    sarTyCd: '11', // 11 = Outgoing Sale
-    ocrnDt: '20240520',
-    totItemCnt: 1,
-    totTaxblAmt: 1000,
-    totTaxAmt: 152.54,
-    totAmt: 1000,
-    itemList: [{ /* ... */ }],
-    regrId: '1', regrNm: 'Kayko',
-    modrId: '1', modrNm: 'Kayko',
+    item_code: 'RW2NTU0000001',
+    remaining_quantity: 100,
   }),
 });
 ```
 
-```php PHP
-<?php
-$response = ebmPost('/stock/saveStockItems', [
-    'tin' => '999958074',
-    'bhfId' => '00',
-    'sarNo' => '106',
-    'sarTyCd' => '11',
-    'ocrnDt' => date('Ymd'),
-    'itemList' => [/* ... */],
-    // ...
-]);
+```json Payload
+{
+  "item_code": "RW2NTU0000001",
+  "remaining_quantity": 100
+}
+```
+
+</CodeGroup>
+
+Response:
+
+```json
+{
+  "message": "success",
+  "data": {
+    "item_code": "RW2NTU0000001",
+    "remaining_quantity": 100
+  }
+}
+```
+
+---
+
+## Save stock movement (manual)
+
+`POST /stocks`
+
+<ParamField body="sar_no" type="integer" required>Your stock-and-release document number</ParamField>
+<ParamField body="stock_type" type="string" required>Label, e.g. `sale`, `purchase`, `import`, `adjustment`, `processing`, `discarding`, `return`. Transfers use movement types that require `customer_tin` / `customer_branch_id`.</ParamField>
+<ParamField body="occurrence_date" type="string" required>`YYYYMMDD`</ParamField>
+<ParamField body="items" type="array" required>Movement lines</ParamField>
+<ParamField body="original_sar_no" type="integer">Original movement number (refunds / reversals)</ParamField>
+<ParamField body="registration_type" type="string">`automatic` or `manual`</ParamField>
+<ParamField body="customer_tin" type="string">Required for branch transfers</ParamField>
+<ParamField body="customer_branch_id" type="string">Required for branch transfers (2 chars)</ParamField>
+<ParamField body="customer_name" type="string">Counterparty name</ParamField>
+<ParamField body="notes" type="string">Optional notes</ParamField>
+
+Line fields: `item_code`, `item_classification_code`, `item_name`, `packaging_unit`, `packages`, `quantity_unit`, `quantity`, `price`, `tax_type`. Amounts (`supply_amount`, `taxable_amount`, `tax_amount`, `total_amount`) are optional and computed when omitted.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "{{baseUrl}}/stocks" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
+  -d '{
+    "sar_no": 106,
+    "stock_type": "adjustment",
+    "occurrence_date": "20240520",
+    "items": [{
+      "item_code": "RW2NTU0000001",
+      "item_classification_code": "8014160101",
+      "item_name": "Coca Cola",
+      "packaging_unit": "NT",
+      "packages": 1,
+      "quantity_unit": "U",
+      "quantity": 5,
+      "price": 118,
+      "tax_type": "B"
+    }]
+  }'
+```
+
+```javascript JavaScript
+await fetch(`${BASE_URL}/stocks`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+    'x-tin': '100027060',
+    'x-branch-id': '00',
+  },
+  body: JSON.stringify({
+    sar_no: 106,
+    stock_type: 'adjustment',
+    occurrence_date: '20240520',
+    items: [
+      {
+        item_code: 'RW2NTU0000001',
+        item_classification_code: '8014160101',
+        item_name: 'Coca Cola',
+        packaging_unit: 'NT',
+        packages: 1,
+        quantity_unit: 'U',
+        quantity: 5,
+        price: 118,
+        tax_type: 'B',
+      },
+    ],
+  }),
+});
 ```
 
 ```json Payload
 {
-  "tin": "999958074",
-  "regTyCd": "M",
-  "useYn": "Y",
-  "bhfId": "00",
-  "remark": null,
-  "modrId": "1",
-  "modrNm": "Kayko",
-  "regrId": "1",
-  "regrNm": "Kayko",
-  "sarTyCd": "11",
-  "sarNo": "106",
-  "orgSarNo": "00",
-  "custTin": null,
-  "custNm": null,
-  "custBhfId": null,
-  "ocrnDt": "20240520",
-  "totItemCnt": 1,
-  "totTaxblAmt": 1000,
-  "totTaxAmt": 1000,
-  "totAmt": 1000,
-  "itemList": [
+  "sar_no": 106,
+  "stock_type": "adjustment",
+  "occurrence_date": "20240520",
+  "items": [
     {
-      "itemSeq": 1,
-      "itemCd": "RW3NTXNOX0000006",
-      "itemClsCd": "5012161100",
-      "itemNm": "Inyange Water",
-      "qtyUnitCd": "U",
-      "pkgUnitCd": "NT",
-      "bcd": null,
-      "qty": 50,
-      "prc": 10000,
-      "splyAmt": 1000,
-      "totDcAmt": 9000,
-      "taxTyCd": "B",
-      "taxblAmt": 1000,
-      "taxAmt": 152.54,
-      "totAmt": 1000,
-      "pkg": 1,
-      "itemExprDt": "20250101"
+      "item_code": "RW2NTU0000001",
+      "item_classification_code": "8014160101",
+      "item_name": "Coca Cola",
+      "packaging_unit": "NT",
+      "packages": 1,
+      "quantity_unit": "U",
+      "quantity": 5,
+      "price": 118,
+      "tax_type": "B"
     }
   ]
 }
@@ -152,137 +236,6 @@ $response = ebmPost('/stock/saveStockItems', [
 
 </CodeGroup>
 
-### Stock movement types (`sarTyCd`)
+Response `{ message, data }` includes `sar_no`, `original_sar_no`, `stock_type`, and `registration_type`.
 
-| Code | Direction | Meaning |
-|------|-----------|---------|
-| `01` | In | Import |
-| `02` | In | Purchase |
-| `03` | In | Return |
-| `04` | In | Stock movement (transfer in) |
-| `06` | In | Adjustment (in) |
-| `11` | Out | Sale |
-| `12` | Out | Return |
-| `13` | Out | Stock movement (transfer out) |
-| `15` | Out | Discarding |
-| `16` | Out | Adjustment (out) |
-
----
-
-## Save stock master
-
-Update the current remaining quantity for an item. Must be called **after** the related stock in/out.
-
-`POST /stockMaster/saveStockMaster`
-
-<ParamField body="itemCd" type="string" required>Item code</ParamField>
-<ParamField body="rsdQty" type="number" required>Remaining quantity on hand</ParamField>
-
-<CodeGroup>
-
-```bash cURL
-curl -X POST "{{baseUrl}}/stockMaster/saveStockMaster" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "tin": "999958074",
-    "bhfId": "00",
-    "itemCd": "RW1NTXU0000006",
-    "rsdQty": 150,
-    "regrId": "123", "regrNm": "Kayko",
-    "modrId": "123", "modrNm": "Kayko"
-  }'
-```
-
-```javascript JavaScript
-await ebmPost('/stockMaster/saveStockMaster', {
-  tin: '999958074', bhfId: '00',
-  itemCd: 'RW1NTXU0000006', rsdQty: 150,
-  regrId: '123', regrNm: 'Kayko',
-  modrId: '123', modrNm: 'Kayko',
-});
-```
-
-```php PHP
-<?php
-ebmPost('/stockMaster/saveStockMaster', [
-    'tin' => '999958074', 'bhfId' => '00',
-    'itemCd' => 'RW1NTXU0000006', 'rsdQty' => 150,
-    'regrId' => '123', 'regrNm' => 'Kayko',
-    'modrId' => '123', 'modrNm' => 'Kayko',
-]);
-```
-
-```json Payload
-{
-  "tin": "999958074",
-  "bhfId": "00",
-  "itemCd": "RW1NTXU0000006",
-  "rsdQty": 150,
-  "modrId": "123",
-  "modrNm": "Kayko",
-  "regrId": "123",
-  "regrNm": "Kayko"
-}
-```
-
-</CodeGroup>
-
----
-
-## Get stock movements
-
-Pull stock movement history for reconciliation (sync endpoint).
-
-`POST /stock/selectStockItems`
-
-<ParamField body="tin" type="string" required>Your TIN</ParamField>
-<ParamField body="bhfId" type="string" required>Branch ID</ParamField>
-<ParamField body="lastReqDt" type="string" required>Sync cursor</ParamField>
-
-<CodeGroup>
-
-```bash cURL
-curl -X POST "{{baseUrl}}/stock/selectStockItems" \
-  -H "Content-Type: application/json" \
-  -d '{"tin":"999958074","bhfId":"00","lastReqDt":"20210520000000"}'
-```
-
-```javascript JavaScript
-const { data } = await ebmPost('/stock/selectStockItems', {
-  tin: '999958074', bhfId: '00', lastReqDt: '20210520000000',
-});
-// data.stockList → movement history
-```
-
-```php PHP
-<?php
-$result = ebmPost('/stock/selectStockItems', [
-    'tin' => '999958074', 'bhfId' => '00', 'lastReqDt' => '20210520000000',
-]);
-```
-
-```json Payload
-{
-  "tin": "999958074",
-  "bhfId": "00",
-  "lastReqDt": "20210520000000"
-}
-```
-
-</CodeGroup>
-
-## Ordering constraints
-
-<Warning>
-  Stock operations have strict prerequisites:
-</Warning>
-
-1. **Stock out** requires the related **sale invoice** to be submitted first
-2. **Stock master update** requires the related **stock in/out** to be submitted first
-3. `sarNo` must be unique and sequential per branch
-
-## See also
-
-- [Sales](/api/sales) — submit the sale before stock-out
-- [Purchases](/api/purchases) — confirm purchase before stock-in
-- [Stock In/Out Types](/reference/enumerations#stock-inout-type) — full `sarTyCd` list
+Codes and directions: [Stock In/Out Type](/reference/enumerations#stock-inout-type) and `GET /constants/stock-types`.

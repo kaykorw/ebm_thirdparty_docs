@@ -1,21 +1,28 @@
 ---
 title: VAT Formulas
-description: Tax categories, the 18/118 extraction formula, and multi-category invoice math.
+description: Tax categories A–D plus live E/F/TT rates, the 18/118 extraction formula, and multi-category invoice math.
 icon: percent
 ---
 
-Rwanda's EBM system uses four tax categories. In practice, **category B (18% VAT)** covers most goods and services. Amounts are **tax-inclusive**- the price the customer pays already contains VAT.
+Rwanda EBM uses tax-inclusive prices. Kayko maps your snake_case fields (`tax_type`, `taxable_amount`, `tax_amount`) to VSDC `taxTyCd` / `taxblAmt` / `taxAmt`. Live devices require header **rates** for A–D **and** E, F, and TT.
+
+You can omit line and header tax amounts on Kayko requests. Kayko computes them and always sends rates as JSON **numbers with two decimals** (NUMBER 7,2), e.g. `"taxRtF":3.00` not `3` or `"3"`.
 
 ## Tax categories
 
-| Code | Name | Rate (`taxRt*`) | `taxAmt` formula |
-|------|------|-----------------|------------------|
-| `A` | A-EX (Exempt) | 0% | `taxAmt = 0` |
-| `B` | B-18% (Standard VAT) | 18% | `taxAmt = taxblAmt × 18 / 118` |
-| `C` | C (Zero-rated) | 0% | `taxAmt = 0` |
-| `D` | D (Other) | 0% | `taxAmt = 0` |
+| Code | Name | Rate | Line `tax_amount` |
+|------|------|------|-------------------|
+| `A` | A-EX (Exempt) | 0% | `0` |
+| `B` | B-18% (Standard VAT) | 18% | `taxable_amount × 18 / 118` |
+| `C` | C (Zero-rated) | 0% | `0` |
+| `D` | D (Non-VAT) | 0% | `0` |
+| `E` | E (reserved) | 0% | `0` |
+| `F` | F (Tourism tax) | 3% | `taxable_amount × 3 / 103` when the line uses `F` |
+| `TT` | TT | 3% | Same extraction when the line uses `TT` |
 
-Sync live rates via `POST /code/selectCodes` (code class for tax types). The `userDfnCd1` field on tax type codes carries the rate percentage.
+Most goods use **`B`**. Kayko still sends `taxRtE: 0.00`, `taxRtF: 3.00`, and `taxRtTt: 3.00` on every sale/purchase even when those buckets are empty. Spec PDF v1.0.5 documents A–D only; current VSDC firmware expects F/TT or it returns `910`.
+
+Live rates: `GET /constants/taxes` (`code`, `name`, `rate`).
 
 ## Why 18/118 and not 18%?
 
@@ -30,12 +37,12 @@ V = T × (rate / (100 + rate))
 For 18% VAT:
 
 ```
-taxAmt = taxblAmt × 18 / 118
+tax_amount = taxable_amount × 18 / 118
 ```
 
 ### Derivation
 
-Let **T** = tax-inclusive total (what `taxblAmt` stores for category B).
+Let **T** = tax-inclusive total (what `taxable_amount` stores for category B).
 
 ```
 T = netPrice + VAT
@@ -50,88 +57,73 @@ VAT = T − netPrice
 ```
 
 <Note>
-  Do **not** calculate `taxAmt = taxblAmt × 0.18`. That treats the amount as tax-exclusive and will produce wrong values that RRA rejects.
+  Do **not** calculate `tax_amount = taxable_amount × 0.18`. That treats the amount as tax-exclusive and VSDC rejects the invoice (`910`).
 </Note>
 
-## Worked example- single line, category B
+## Worked example — single line, category B
 
 Selling **2 units** at **1,000 RWF** each (tax-inclusive):
 
-| Step | Field | Formula | Result |
-|------|-------|---------|--------|
-| 1 | `prc` | Unit price (inclusive) | 1,000.00 |
-| 2 | `qty` | Quantity | 2 |
-| 3 | `splyAmt` | `prc × qty` | 2,000.00 |
-| 4 | `taxblAmt` | Same as `splyAmt` (no discount) | 2,000.00 |
-| 5 | `taxAmt` | `2,000 × 18 / 118` | **305.08** |
-| 6 | `totAmt` | Same as `taxblAmt` | 2,000.00 |
+| Step | Kayko field | Formula | Result |
+|------|-------------|---------|--------|
+| 1 | `price` | Unit price (inclusive) | 1,000.00 |
+| 2 | `quantity` | Quantity | 2 |
+| 3 | `supply_amount` | `price × quantity` | 2,000.00 |
+| 4 | `taxable_amount` | Same as supply (no discount) | 2,000.00 |
+| 5 | `tax_amount` | `2,000 × 18 / 118` | **305.08** |
+| 6 | `total_amount` | Same as taxable | 2,000.00 |
 
 Verification: `2,000 × 18 ÷ 118 = 305.0847…` → rounded to **305.08**.
 
 ### Invoice header for this sale
 
-| Field | Value | How derived |
-|-------|-------|-------------|
-| `taxblAmtB` | 2,000.00 | Sum of B lines' `taxblAmt` |
-| `taxRtB` | 18 | Rate for category B |
-| `taxAmtB` | 305.08 | Sum of B lines' `taxAmt` |
-| `taxblAmtA/C/D` | 0 | No lines in those categories |
-| `taxAmtA/C/D` | 0 |- |
-| `totTaxblAmt` | 2,000.00 | `taxblAmtA + B + C + D` |
-| `totTaxAmt` | 305.08 | `taxAmtA + B + C + D` |
-| `totAmt` | 2,000.00 | Grand total (what customer pays) |
+Kayko field → VSDC field:
 
-## Categories A, C, D- zero VAT
+| Kayko | VSDC | Value |
+|-------|------|-------|
+| `taxable_amount_b` | `taxblAmtB` | 2,000.00 |
+| (computed) | `taxRtB` | 18.00 |
+| `tax_amount_b` | `taxAmtB` | 305.08 |
+| `taxable_amount_a/c/d/e/f/tt` | `taxblAmt*` | 0 |
+| `total_taxable_amount` | `totTaxblAmt` | 2,000.00 |
+| `total_tax_amount` | `totTaxAmt` | 305.08 |
+| `total_amount` | `totAmt` | 2,000.00 |
 
-For exempt, zero-rated, or other categories:
+Always include rates E/F/TT even when amounts are 0.
+
+## Categories A, C, D, E — zero VAT
 
 ```
-taxAmt  = 0
-taxblAmt = splyAmt − totDcAmt
-totAmt  = taxblAmt
+tax_amount      = 0
+taxable_amount  = supply_amount − total_discount_amount
+total_amount    = taxable_amount
 ```
 
-The line still needs `taxTyCd` set correctly (`"A"`, `"C"`, or `"D"`) and the matching header `taxRt*` set to `0`.
+Set `tax_type` correctly (`A`, `C`, `D`, or `E`).
 
 ## Multi-category invoice
 
-Selling one **exempt** item (A) for 5,000 RWF and one **VAT** item (B) for 2,000 RWF:
-
-**Line 1** (`taxTyCd: "A"`):
-
-| Field | Value |
-|-------|-------|
-| `taxblAmt` | 5,000.00 |
-| `taxAmt` | 0.00 |
-| `totAmt` | 5,000.00 |
-
-**Line 2** (`taxTyCd: "B"`):
-
-| Field | Value |
-|-------|-------|
-| `taxblAmt` | 2,000.00 |
-| `taxAmt` | 305.08 |
-| `totAmt` | 2,000.00 |
-
-**Header:**
+One **exempt** line (A) for 5,000 RWF and one **VAT** line (B) for 2,000 RWF:
 
 ```json
 {
-  "taxblAmtA": 5000,
-  "taxblAmtB": 2000,
-  "taxblAmtC": 0,
-  "taxblAmtD": 0,
-  "taxRtA": 0,
-  "taxRtB": 18,
-  "taxRtC": 0,
-  "taxRtD": 0,
-  "taxAmtA": 0,
-  "taxAmtB": 305.08,
-  "taxAmtC": 0,
-  "taxAmtD": 0,
-  "totTaxblAmt": 7000,
-  "totTaxAmt": 305.08,
-  "totAmt": 7000
+  "taxable_amount_a": 5000,
+  "taxable_amount_b": 2000,
+  "taxable_amount_c": 0,
+  "taxable_amount_d": 0,
+  "taxable_amount_e": 0,
+  "taxable_amount_f": 0,
+  "taxable_amount_tt": 0,
+  "tax_amount_a": 0,
+  "tax_amount_b": 305.08,
+  "tax_amount_c": 0,
+  "tax_amount_d": 0,
+  "tax_amount_e": 0,
+  "tax_amount_f": 0,
+  "tax_amount_tt": 0,
+  "total_taxable_amount": 7000,
+  "total_tax_amount": 305.08,
+  "total_amount": 7000
 }
 ```
 
@@ -139,28 +131,20 @@ Selling one **exempt** item (A) for 5,000 RWF and one **VAT** item (B) for 2,000
 
 ```javascript
 function extractVat(taxInclusiveAmount, rate = 18) {
-  return Math.round(taxInclusiveAmount * rate / (100 + rate) * 100) / 100;
+  return Math.round((taxInclusiveAmount * rate) / (100 + rate) * 100) / 100;
 }
 
 // extractVat(2000) → 305.08
-// extractVat(8000) → 1220.34
-```
-
-## PHP helper
-
-```php
-function extractVat(float $taxInclusiveAmount, float $rate = 18): float {
-    return round($taxInclusiveAmount * $rate / (100 + $rate), 2);
-}
-
-// extractVat(2000) → 305.08
+// extractVat(2000, 3) → 58.25  (tourism F / TT)
 ```
 
 ## Common mistakes
 
 | Mistake | Wrong result | Correct approach |
 |---------|--------------|------------------|
-| `taxAmt = taxblAmt × 0.18` | 360.00 on 2,000 | Use `× 18/118` → 305.08 |
+| `tax_amount = taxable_amount × 0.18` | 360.00 on 2,000 | Use `× 18/118` → 305.08 |
 | Rounding only at header | Header ≠ sum of lines | Round each line first, then sum |
-| `taxTyCd: "B"` but amounts in `taxblAmtA` | Validation error | B lines → `taxblAmtB` header |
+| Line `tax_type: "B"` but amounts in A | Validation error | B lines → `taxable_amount_b` |
 | Integer amounts (`305` not `305.08`) | Error 910 | Always 2 decimal places |
+| Missing `taxRtF` / sending `3` instead of `3.00` | Error 910 on live devices | Kayko emits 7,2 numbers; do not bypass the gateway |
+| Normal sale `original_invoice_no` = `invoice_no` | Error 910 | Leave it off; Kayko sends `orgInvcNo: 0` |

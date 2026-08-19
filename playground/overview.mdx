@@ -15,13 +15,13 @@ Switch to the **API Playground** tab and pick an endpoint from the sidebar. Each
   <Step title="Authenticate">
     | Routes | Header |
     |--------|--------|
-    | Customers, constants, branches, notices, … | `Authorization: Bearer sk_…` or `x-api-key: sk_…` |
+    | Business routes (items, sales, …) | `Authorization: Bearer sk_…` or `x-api-key: sk_…` |
     | Initialization (`/initialize/*`) | Prefer `X-API-Token`; a business API key also works |
 
     See [API Keys](/concepts/api-keys) for business key setup.
   </Step>
-  <Step title="Set tenant headers on proxied routes">
-    Send `x-tin` and `x-branch-id` on customer, branch, notice, and device-init calls. Branch select and notices also need `x-last-request-date` (`YYYYMMDDHHmmss`). You do not send `ebm_url` in the body.
+  <Step title="Set tenant headers">
+    Send `x-tin` and `x-branch-id` on proxied routes. List endpoints also need `x-last-request-date` (`YYYYMMDDHHmmss`). You do not send `ebm_url` in the body. Head-office writes (`POST /items`, `PUT /items/:item_code`, `POST /imports/confirm`, `POST /purchases/confirm`) require `x-branch-id: 00`.
   </Step>
   <Step title="Send">
     Edit the pre-filled body or query, click **Send**, and inspect the response panel.
@@ -33,19 +33,7 @@ Switch to the **API Playground** tab and pick an endpoint from the sidebar. Each
 | Kind | Shape |
 |------|-------|
 | Device init | `{ resultCd, resultMsg, resultDt, data }` |
-| Many proxied routes | Unwrapped `data` |
-| `/constants/*`, notices, save user | `{ message, data }` |
-| Auth failures | `{ status, message, error }` |
+| Mapped Kayko routes | `{ message, data }` |
+| Auth / gateway failures | `{ status, message, error }` |
 
-`resultCd: "000"` = success. Full code list: [Response Codes](/reference/response-codes).
-
-For field-level docs and workflow guides, see the matching page under **API** in the sidebar (for example [Sales](/api/sales)).
-
-<Note>
-  The Mintlify cloud preview may not reach `localhost`. If playground calls fail, test from your machine with cURL or Postman using the same URL and payload.
-</Note>
-
-## Related
-
-- [Integration Checklist](/workflows/getting-started)
-- [API Keys](/concepts/api-keys)
+Upstream `resultCd: "000"` = success. Full code list: [Response Codes](/reference/response-codes).

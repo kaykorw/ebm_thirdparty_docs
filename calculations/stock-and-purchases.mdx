@@ -1,149 +1,75 @@
 ---
 title: Stock & Purchase Calculations
-description: Amount formulas for stock movements, stock master, and purchase confirmations.
+description: Amount formulas for automatic stock, stock master, and purchase confirmations.
 icon: boxes-stacked
 ---
 
-Stock and purchase endpoints use the **same tax math** as sales. The difference is in **which fields** carry the amounts and **when** you submit them.
+Stock and purchase amounts use the **same tax math** as sales ([VAT Formulas](/calculations/vat-formulas)). The difference is **when** Kayko posts stock.
 
-## Stock movement (`saveStockItems`)
+## Automatic stock (do not nest in sale/purchase)
 
-Stock records inventory in/out after a sale or purchase. Amounts follow identical line-item and header rules.
+After VSDC `000` on a sale, purchase confirm, or approved import, Kayko posts stock as a **later** request. You do not calculate or send that movement on the original HTTP call.
 
-### Example- stock out after a sale
+| Trigger | Direction | Upstream `sarTyCd` |
+|---------|-----------|--------------------|
+| Sale | out | `11` |
+| Sale refund | in | `03` |
+| Purchase | in | `02` |
+| Purchase refund | out | `12` |
+| Import approved | in | `01` |
 
-From the stock example payload:
+Services (`item_type` `3`) are skipped. Import confirm has no qty; quantity comes from `GET /imports`.
 
-| Field | Value | Formula |
-|-------|-------|---------|
-| `sarTyCd` | `"11"` | Stock adjustment type (out) |
-| `qty` | 50 | Units moved |
-| `prc` | 10,000.00 | Unit valuation price |
-| `splyAmt` | 1,000.00 | Value of this movement |
-| `taxTyCd` | `"B"` | 18% VAT |
-| `taxblAmt` | 1,000.00 | Taxable base |
-| `taxAmt` | 152.54 | `1000 × 18/118` |
-| `totAmt` | 1,000.00 | Movement total |
+### Remaining quantity (`POST /stocks/master`)
 
-**Header:**
-
-| Field | Value |
-|-------|-------|
-| `totTaxblAmt` | 1,000.00 |
-| `totTaxAmt` | 152.54 |
-| `totAmt` | 1,000.00 |
-| `totItemCnt` | 1 |
-
-<Note>
-  Stock `prc` is a **valuation price** per unit, not necessarily the sale price. The `splyAmt` on stock lines is the total value of the stock movement, which may be computed differently from `prc × qty` depending on your inventory valuation method. The tax formulas still apply to whatever `taxblAmt` you report.
-</Note>
-
-### Stock type codes (`sarTyCd`)
-
-| Code | Direction | Typical trigger |
-|------|-----------|-----------------|
-| `"02"` | Stock in | Purchase confirmed |
-| `"11"` | Stock out | Sale completed |
-| `"03"` | Adjustment | Manual correction |
-
-## Stock master (`saveStockMaster`)
-
-Stock master tracks **current quantity** per item- not monetary amounts. The key calculation is quantity arithmetic:
+Stock master stores **absolute remaining quantity**, not a delta:
 
 ```
-newQty = previousQty + stockInQty − stockOutQty
+remaining_quantity = on-hand count after the physical count
 ```
 
-| Field | Description |
-|-------|-------------|
-| `itemCd` | Product code |
-| `rsdQty` | Residual (remaining) quantity |
-| `regrNm` / `modrNm` | Audit fields |
-
-Submit stock master **after** `saveStockItems` to keep EBM inventory in sync with your ERP.
+Seed master **before** you sell or confirm, so later automatic movements can update the ledger. Kayko updates remaining quantity only when a master row already exists. Negative remaining quantity is rejected.
 
 ```mermaid
 flowchart LR
-    Sale["saveSales"] --> StockOut["saveStockItems (out)"]
-    StockOut --> Master["saveStockMaster"]
-    Purchase["savePurchases"] --> StockIn["saveStockItems (in)"]
-    StockIn --> Master
+    Master["POST /stocks/master"] --> Sale["POST /sales"]
+    Master --> Purchase["POST /purchases/confirm"]
+    Sale --> Auto["Kayko posts stock later"]
+    Purchase --> Auto
 ```
 
-## Purchase confirmation (`savePurchases`)
+## Manual stock (`POST /stocks`)
 
-When you confirm a supplier invoice pulled via `selectTrnsPurchaseSales`, you recalculate or verify amounts before submitting.
+Use this for adjustments, processing, discarding, and transfers that are not produced by the automatic chain.
 
-### Purchase line amounts
-
-Purchase lines include supplier cross-reference fields:
-
-| Field | Description |
-|-------|-------------|
-| `spplrItemCd` | Supplier's item code |
-| `spplrItemClsCd` | Supplier's classification |
-| `spplrItemNm` | Supplier's item name |
-
-Tax math is identical to sales:
+Line math matches sales:
 
 ```
-taxblAmt = splyAmt − totDcAmt
-taxAmt   = ROUND(taxblAmt × 18 / 118, 2)   // if taxTyCd = "B"
-totAmt   = taxblAmt
+supply_amount   = price × quantity
+taxable_amount  = supply_amount − total_discount_amount
+tax_amount      = ROUND(taxable_amount × 18 / 118, 2)   // tax_type B
+total_amount    = taxable_amount
 ```
 
-### Purchase header example
+`price` on stock is a **valuation** price. Tax formulas still apply to the `taxable_amount` you report (or that Kayko computes).
 
-Confirming a supplier invoice for 8,000 RWF (all category B):
+## Purchase confirmation (`POST /purchases/confirm`)
 
-```json
-{
-  "taxblAmtB": 8000,
-  "taxRtB": 18,
-  "taxAmtB": 1220.34,
-  "totTaxblAmt": 8000,
-  "totTaxAmt": 1220.34,
-  "totAmt": 8000,
-  "totItemCnt": 2
-}
+Pull invoices with `GET /purchases`, map each line to **your** `item_code`, then confirm.
+
+```
+taxable_amount = supply_amount − discount
+tax_amount     = ROUND(taxable_amount × 18 / 118, 2)   // if tax_type = B
+total_amount   = taxable_amount
 ```
 
-Verification: `8000 × 18/118 = 1220.339…` → **1220.34** ✓
+Normal purchases send upstream `orgInvcNo: 0`. Refunds send `receipt_type: refund` and `original_invoice_no`.
 
-## Pull vs push amounts
-
-| Endpoint | Direction | Amounts |
-|----------|-----------|---------|
-| `selectTrnsPurchaseSales` | Pull from RRA | Pre-calculated by supplier's EBM system |
-| `savePurchases` | Push confirmation | You verify or recalculate before submit |
-| `selectStockItems` | Pull | Current stock movement history |
-| `saveStockItems` | Push | You calculate movement values |
-
-When pulling purchases, the supplier's `taxblAmt` and `taxAmt` are authoritative. When confirming, your submitted values must be internally consistent even if `prc × qty ≠ taxblAmt` (supplier may report lump-sum line totals).
-
-## End-to-end calculation flow
-
-<Steps>
-  <Step title="Sale">
-    Calculate line amounts → aggregate header → `saveSales`
-  </Step>
-  <Step title="Stock out">
-    Record movement with matching tax amounts → `saveStockItems`
-  </Step>
-  <Step title="Update master">
-    Reduce `rsdQty` → `saveStockMaster`
-  </Step>
-  <Step title="Purchase">
-    Pull supplier invoice → verify amounts → `savePurchases`
-  </Step>
-  <Step title="Stock in">
-    Record incoming stock → `saveStockItems` → update master
-  </Step>
-</Steps>
+When pulling, the supplier's amounts are authoritative. When confirming, your payload must be internally consistent even if `price × quantity ≠ taxable_amount`.
 
 ## Related pages
 
-- [VAT Formulas](/calculations/vat-formulas)- the 18/118 extraction
-- [Invoice Totals](/calculations/invoice-totals)- header aggregation
-- [Stock](/api/stock) — step-by-step guide
-- [Purchases](/api/purchases) — purchase confirmation flow
+- [VAT Formulas](/calculations/vat-formulas)
+- [Invoice Totals](/calculations/invoice-totals)
+- [Stock](/api/stock)
+- [Purchases](/api/purchases)

@@ -1,507 +1,253 @@
 ---
 title: Sales
-description: Submit sales invoices to RRA, receive receipt signatures, and handle refunds and resends.
+description: Submit sales, refunds, and resends. Kayko signs with VSDC and returns print fields.
 icon: receipt
 ---
 
-## Overview
+Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` from your business after Enable EBM, so you never put it in the JSON body.
+
+Requires a business API key with scope `sales`. Any allowed branch may sell.
 
 ```mermaid
 sequenceDiagram
     participant POS as Your POS/ERP
-    participant EBM as Kayko EBM
-    participant RRA as RRA EBM 2.1
+    participant Kayko as Kayko EBM
+    participant RRA as RRA VSDC
 
-    POS->>EBM: POST /trnsSales/saveSales
-    Note over POS,EBM: Invoice data + line items + receipt template
-    EBM->>RRA: Validate & sign
-    RRA-->>EBM: Signature + counters
-    EBM-->>POS: rcptSign, intrlData, curRcptNo
-    Note over POS: Print receipt with signature
+    POS->>Kayko: POST /sales
+    Kayko->>RRA: saveSales (orgInvcNo 0, taxRt A–D + E/F/TT)
+    RRA-->>Kayko: Signature + counters
+    Note over Kayko: Persist sale + enqueue stock-out in one TX
+    Kayko-->>POS: print.receipt_signature, print.internal_data
+    Note over POS: Print the signed receipt
 ```
 
-## Sale types
+Register items first. Unknown `item_code` returns `EBM_ITEM_NOT_REGISTERED`.
 
-All sale types use the same endpoint (`/trnsSales/saveSales`) with different field values:
-
-| Type | `salesTyCd` | `rcptTyCd` | `orgInvcNo` | Notes |
-|------|-------------|------------|-------------|-------|
-| **Normal sale** | `"N"` | `"S"` | Same as `invcNo` | Standard transaction |
-| **Refund** | `"R"` | `"R"` | Original invoice # | Must reference the original sale |
-| **Copy** | `"C"` | `"S"` | Original invoice # | Reprint of existing invoice |
-| **Training** | `"T"` | `"S"` |- | Practice mode, no legal effect |
-| **Proforma** | `"P"` | `"S"` |- | Quote, not a tax document |
+Kayko **does not** post stock in the same HTTP request as the sale. After VSDC `000`, stock-out is queued and sent later. Seed remaining quantity with `POST /stocks/master` so the ledger can update. Services (`item_type` `3`) skip stock.
 
 ---
 
-## Save sale
+## Submit sale
 
-Submit a sales transaction and receive receipt signature data.
+`POST /sales`
 
-`POST /trnsSales/saveSales`
+A normal sale is always transaction type `N` and receipt type `S`. Kayko sends upstream **`orgInvcNo: 0`**. Do not set `original_invoice_no` equal to `invoice_no` — that causes VSDC `910`.
 
-### Key request fields
+Refunds use `POST /sales/refund`, not this route.
 
-<ParamField body="invcNo" type="string" required>Your sequential invoice number</ParamField>
-<ParamField body="orgInvcNo" type="string" required>Original invoice number (same as invcNo for normal sales; original sale's number for refunds)</ParamField>
-<ParamField body="salesTyCd" type="string" required>`"N"` Normal, `"R"` Refund, `"C"` Copy, `"T"` Training, `"P"` Proforma</ParamField>
-<ParamField body="rcptTyCd" type="string" required>`"S"` Sale, `"R"` Refund</ParamField>
-<ParamField body="pmtTyCd" type="string" required>Payment method- see [Payment Methods](/reference/enumerations#payment-method)</ParamField>
-<ParamField body="salesSttsCd" type="string" required>`"02"` Approved (most common)</ParamField>
-<ParamField body="cfmDt" type="string" required>Confirmation datetime (`yyyyMMddHHmmss`)</ParamField>
-<ParamField body="salesDt" type="string" required>Sale date (`yyyyMMdd`)</ParamField>
-<ParamField body="custTin" type="string">Customer TIN (required for business customers)</ParamField>
-<ParamField body="custNm" type="string">Customer name</ParamField>
-<ParamField body="prcOrdCd" type="string">Purchase order code- **mandatory for business customers** (v1.0.5+)</ParamField>
-<ParamField body="prchrAcptcYn" type="string" required>`"Y"` or `"N"`- buyer accepted goods</ParamField>
-<ParamField body="receipt" type="object" required>Receipt template- see below</ParamField>
-<ParamField body="itemList" type="array" required>Line items</ParamField>
-<ParamField body="totItemCnt" type="number" required>Number of line items</ParamField>
-<ParamField body="taxblAmtB" type="number" required>Total taxable amount (category B)</ParamField>
-<ParamField body="taxRtB" type="number" required>Tax rate B (typically `18`)</ParamField>
-<ParamField body="taxAmtB" type="number" required>Total tax amount B</ParamField>
-<ParamField body="totTaxblAmt" type="number" required>Sum of all taxable amounts</ParamField>
-<ParamField body="totTaxAmt" type="number" required>Sum of all tax amounts</ParamField>
-<ParamField body="totAmt" type="number" required>Grand total</ParamField>
+<ParamField body="invoice_no" type="integer" required>Your sequential invoice number</ParamField>
+<ParamField body="payment_method" type="string" required>`cash`, `credit`, `cash_credit`, `bank_check`, `card`, `mobile_money`, or `other`</ParamField>
+<ParamField body="items" type="array" required>Line items</ParamField>
+<ParamField body="customer_tin" type="string">9-digit TIN (required for business customers)</ParamField>
+<ParamField body="customer_name" type="string">Customer name</ParamField>
+<ParamField body="customer_phone" type="string">Phone</ParamField>
+<ParamField body="purchase_order_code" type="string">Max 6. **Required for business customers** (v1.0.5)</ParamField>
+<ParamField body="status" type="string">Usually `approved`</ParamField>
+<ParamField body="sales_date" type="string">`YYYYMMDD`; defaults to today</ParamField>
+<ParamField body="confirmed_at" type="string">`YYYYMMDDHHmmss`</ParamField>
+<ParamField body="buyer_accepted" type="boolean">Defaults to accepted when omitted</ParamField>
+<ParamField body="notes" type="string">Optional notes</ParamField>
+<ParamField body="receipt" type="object">Optional print template (header/footer, trade name)</ParamField>
 
-### Receipt object
+Optional header buckets: `taxable_amount_a` … `taxable_amount_tt`, `tax_amount_*`, `total_taxable_amount`, `total_tax_amount`, `total_amount`. Omit them to let Kayko compute from lines. If you send them, they must match line math or VSDC returns `910`.
 
-<ParamField body="receipt.rptNo" type="string" required>Report/receipt number</ParamField>
-<ParamField body="receipt.custTin" type="string">Customer TIN on receipt</ParamField>
-<ParamField body="receipt.trdeNm" type="string">Customer trade name</ParamField>
-<ParamField body="receipt.topMsg" type="string">Header text printed on receipt</ParamField>
-<ParamField body="receipt.btmMsg" type="string">Footer text printed on receipt</ParamField>
-<ParamField body="receipt.prchrAcptcYn" type="string" required>Purchase acceptance flag</ParamField>
+Kayko always forwards live tax **rates** to VSDC as NUMBER 7,2 (for example `"taxRtB":18.00`, `"taxRtF":3.00`, `"taxRtTt":3.00`). Spec PDF v1.0.5 documents A–D only; current devices also require **E** (reserved, 0%), **F** (tourism tax, 3%), and **TT** (3%).
+
+### Line items
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `item_code` | Y | Must be registered |
+| `item_name` | Y | |
+| `packaging_unit` | Y | |
+| `packages` | Y | |
+| `quantity_unit` | Y | |
+| `quantity` | Y | Positive |
+| `price` | Y | Tax-inclusive unit price |
+| `tax_type` | Y | Usually `B` (18% VAT) |
+| `item_classification_code` | N | Filled from catalog when omitted |
+| `supply_amount`, `discount_rate`, `discount_amount`, `taxable_amount`, `tax_amount`, `total_amount` | N | Computed if omitted |
+
+Category B VAT is extracted as `taxable_amount × 18 / 118`, rounded to 2 decimals. See [VAT Formulas](/calculations/vat-formulas).
 
 <CodeGroup>
 
 ```bash cURL
-curl -X POST "{{baseUrl}}/trnsSales/saveSales" \
+curl -X POST "{{baseUrl}}/sales" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
   -d '{
-    "tin": "100027060",
-    "bhfId": "00",
-    "invcNo": "1799",
-    "orgInvcNo": "1799",
-    "cfmDt": "20260303145619",
-    "salesDt": "20260303",
-    "salesTyCd": "N",
-    "rcptTyCd": "S",
-    "pmtTyCd": "02",
-    "salesSttsCd": "02",
-    "prchrAcptcYn": "Y",
-    "custNm": "RULIBA CLAYS LTD",
-    "custTin": "100004527",
-    "totItemCnt": 1,
-    "taxRtA": 0, "taxRtB": 18, "taxRtC": 0, "taxRtD": 0,
-    "taxblAmtA": 0, "taxblAmtB": 2000, "taxblAmtC": 0, "taxblAmtD": 0,
-    "taxAmtA": 0, "taxAmtB": 305.08, "taxAmtC": 0, "taxAmtD": 0,
-    "totTaxblAmt": 2000, "totTaxAmt": 305.08, "totAmt": 2000,
-    "receipt": {
-      "rptNo": "1799",
-      "custTin": "100004527",
-      "trdeNm": "RULIBACLAYSLTD",
-      "topMsg": "SONATUBES Ltd\nADDRESS KIGALI\nTIN 100027060",
-      "btmMsg": "Kayko v.2.3.11",
-      "prchrAcptcYn": "Y"
-    },
-    "itemList": [{
-      "itemSeq": 1,
-      "itemCd": "RW2NTU0000642",
-      "itemClsCd": "8014160101",
-      "itemNm": "TOLE PL 2 44X1 22X10",
-      "taxTyCd": "B",
-      "qty": 2,
-      "prc": 1000,
-      "splyAmt": 2000,
-      "taxblAmt": 2000,
-      "taxAmt": 305.08,
-      "totAmt": 2000,
-      "pkg": 1,
-      "pkgUnitCd": "NT",
-      "qtyUnitCd": "U",
-      "dcRt": 0, "dcAmt": 0, "totDcAmt": 0
-    }],
-    "regrId": "1", "regrNm": "Kayko",
-    "modrId": "1", "modrNm": "Kayko"
+    "invoice_no": 1799,
+    "payment_method": "credit",
+    "customer_tin": "100004527",
+    "customer_name": "RULIBA CLAYS LTD",
+    "purchase_order_code": "PO0001",
+    "sales_date": "20260303",
+    "items": [{
+      "item_code": "RW2NTU0000642",
+      "item_name": "TOLE PL 2 44X1 22X10",
+      "packaging_unit": "NT",
+      "packages": 1,
+      "quantity_unit": "U",
+      "quantity": 2,
+      "price": 1000,
+      "tax_type": "B"
+    }]
   }'
 ```
 
 ```javascript JavaScript
-const sale = await fetch(`${BASE_URL}/trnsSales/saveSales`, {
+await fetch(`${BASE_URL}/sales`, {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+    'x-tin': '100027060',
+    'x-branch-id': '00',
+  },
   body: JSON.stringify({
-    tin: '100027060',
-    bhfId: '00',
-    invcNo: '1799',
-    orgInvcNo: '1799',
-    cfmDt: formatDateTime(new Date()),  // yyyyMMddHHmmss
-    salesDt: formatDate(new Date()),      // yyyyMMdd
-    salesTyCd: 'N',
-    rcptTyCd: 'S',
-    pmtTyCd: '02',
-    salesSttsCd: '02',
-    prchrAcptcYn: 'Y',
-    custNm: 'RULIBA CLAYS LTD',
-    custTin: '100004527',
-    totItemCnt: 1,
-    taxRtB: 18,
-    taxblAmtB: 2000,
-    taxAmtB: 305.08,
-    totTaxblAmt: 2000,
-    totTaxAmt: 305.08,
-    totAmt: 2000,
-    receipt: {
-      rptNo: '1799',
-      custTin: '100004527',
-      trdeNm: 'RULIBACLAYSLTD',
-      topMsg: 'SONATUBES Ltd\nADDRESS KIGALI\nTIN 100027060',
-      btmMsg: 'Kayko v.2.3.11',
-      prchrAcptcYn: 'Y',
-    },
-    itemList: [{
-      itemSeq: 1,
-      itemCd: 'RW2NTU0000642',
-      itemClsCd: '8014160101',
-      itemNm: 'TOLE PL 2 44X1 22X10',
-      taxTyCd: 'B',
-      qty: 2,
-      prc: 1000,
-      splyAmt: 2000,
-      taxblAmt: 2000,
-      taxAmt: 305.08,
-      totAmt: 2000,
-      pkg: 1,
-      pkgUnitCd: 'NT',
-      qtyUnitCd: 'U',
-      dcRt: 0, dcAmt: 0, totDcAmt: 0,
-    }],
-    regrId: '1', regrNm: 'Kayko',
-    modrId: '1', modrNm: 'Kayko',
-  }),
-}).then(r => r.json());
-
-// Use these on your printed receipt:
-const { rcptSign, intrlData, curRcptNo, totRcptNo } = sale.data;
-```
-
-```php PHP
-<?php
-$sale = [
-    'tin' => '100027060',
-    'bhfId' => '00',
-    'invcNo' => '1799',
-    'orgInvcNo' => '1799',
-    'cfmDt' => date('YmdHis'),
-    'salesDt' => date('Ymd'),
-    'salesTyCd' => 'N',
-    'rcptTyCd' => 'S',
-    'pmtTyCd' => '02',
-    'salesSttsCd' => '02',
-    'prchrAcptcYn' => 'Y',
-    'custNm' => 'RULIBA CLAYS LTD',
-    'custTin' => '100004527',
-    'totItemCnt' => 1,
-    'taxRtB' => 18,
-    'taxblAmtB' => 2000,
-    'taxAmtB' => 305.08,
-    'totTaxblAmt' => 2000,
-    'totTaxAmt' => 305.08,
-    'totAmt' => 2000,
-    'receipt' => [
-        'rptNo' => '1799',
-        'custTin' => '100004527',
-        'trdeNm' => 'RULIBACLAYSLTD',
-        'topMsg' => "SONATUBES Ltd\nADDRESS KIGALI\nTIN 100027060",
-        'btmMsg' => 'Kayko v.2.3.11',
-        'prchrAcptcYn' => 'Y',
+    invoice_no: 1799,
+    payment_method: 'credit',
+    customer_tin: '100004527',
+    customer_name: 'RULIBA CLAYS LTD',
+    purchase_order_code: 'PO0001',
+    sales_date: '20260303',
+    items: [
+      {
+        item_code: 'RW2NTU0000642',
+        item_name: 'TOLE PL 2 44X1 22X10',
+        packaging_unit: 'NT',
+        packages: 1,
+        quantity_unit: 'U',
+        quantity: 2,
+        price: 1000,
+        tax_type: 'B',
+      },
     ],
-    'itemList' => [[
-        'itemSeq' => 1,
-        'itemCd' => 'RW2NTU0000642',
-        'itemClsCd' => '8014160101',
-        'itemNm' => 'TOLE PL 2 44X1 22X10',
-        'taxTyCd' => 'B',
-        'qty' => 2,
-        'prc' => 1000,
-        'splyAmt' => 2000,
-        'taxblAmt' => 2000,
-        'taxAmt' => 305.08,
-        'totAmt' => 2000,
-        'pkg' => 1,
-        'pkgUnitCd' => 'NT',
-        'qtyUnitCd' => 'U',
-        'dcRt' => 0, 'dcAmt' => 0, 'totDcAmt' => 0,
-    ]],
-    'regrId' => '1', 'regrNm' => 'Kayko',
-    'modrId' => '1', 'modrNm' => 'Kayko',
-];
-
-$response = ebmPost('/trnsSales/saveSales', $sale);
+  }),
+});
 ```
 
 ```json Payload
 {
-  "tin": "100027060",
-  "bhfId": "00",
-  "invcNo": "1799",
-  "orgInvcNo": "1799",
-  "cfmDt": "20260303145619",
-  "salesDt": "20260303",
-  "salesTyCd": "N",
-  "rcptTyCd": "S",
-  "pmtTyCd": "02",
-  "salesSttsCd": "02",
-  "prchrAcptcYn": "Y",
-  "custNm": "RULIBA CLAYS LTD",
-  "custTin": "100004527",
-  "totItemCnt": 1,
-  "taxRtA": 0,
-  "taxRtB": 18,
-  "taxRtC": 0,
-  "taxRtD": 0,
-  "taxblAmtA": 0,
-  "taxblAmtB": 2000,
-  "taxblAmtC": 0,
-  "taxblAmtD": 0,
-  "taxAmtA": 0,
-  "taxAmtB": 305.08,
-  "taxAmtC": 0,
-  "taxAmtD": 0,
-  "totTaxblAmt": 2000,
-  "totTaxAmt": 305.08,
-  "totAmt": 2000,
-  "receipt": {
-    "rptNo": "1799",
-    "custTin": "100004527",
-    "trdeNm": "RULIBACLAYSLTD",
-    "topMsg": "SONATUBES Ltd
-ADDRESS KIGALI
-TIN 100027060",
-    "btmMsg": "Kayko v.2.3.11",
-    "prchrAcptcYn": "Y"
-  },
-  "itemList": [
+  "invoice_no": 1799,
+  "payment_method": "credit",
+  "customer_tin": "100004527",
+  "customer_name": "RULIBA CLAYS LTD",
+  "purchase_order_code": "PO0001",
+  "sales_date": "20260303",
+  "items": [
     {
-      "itemSeq": 1,
-      "itemCd": "RW2NTU0000642",
-      "itemClsCd": "8014160101",
-      "itemNm": "TOLE PL 2 44X1 22X10",
-      "taxTyCd": "B",
-      "qty": 2,
-      "prc": 1000,
-      "splyAmt": 2000,
-      "taxblAmt": 2000,
-      "taxAmt": 305.08,
-      "totAmt": 2000,
-      "pkg": 1,
-      "pkgUnitCd": "NT",
-      "qtyUnitCd": "U",
-      "dcRt": 0,
-      "dcAmt": 0,
-      "totDcAmt": 0
+      "item_code": "RW2NTU0000642",
+      "item_name": "TOLE PL 2 44X1 22X10",
+      "packaging_unit": "NT",
+      "packages": 1,
+      "quantity_unit": "U",
+      "quantity": 2,
+      "price": 1000,
+      "tax_type": "B"
     }
-  ],
-  "regrId": "1",
-  "regrNm": "Kayko",
-  "modrId": "1",
-  "modrNm": "Kayko"
+  ]
 }
 ```
 
 </CodeGroup>
 
-### Success response
+Success:
 
 ```json
 {
-  "resultCd": "000",
-  "resultMsg": "It is succeeded",
-  "resultDt": "20260303145619",
+  "message": "success",
   "data": {
-    "rcptNo": 1799,
-    "intrlData": "CUJHWLCUETLWZXS2YR4WKD7WEM",
-    "rcptSign": "KYSNC4HM6YROYNI2",
-    "totRcptNo": 1321,
-    "vsdcRcptPbctDate": "20260303145619",
-    "sdcId": "SDC010000005",
-    "mrcNo": "WIS01006230"
+    "invoice_no": 1799,
+    "original_invoice_no": 0,
+    "receipt_type": "sale",
+    "status": "approved",
+    "replayed": false,
+    "print": {
+      "receipt_no": 12,
+      "total_receipt_no": 12,
+      "internal_data": "…",
+      "receipt_signature": "…",
+      "receipt_published_at": "20260303145619",
+      "sdc_id": "SDC001",
+      "mrc_no": "MRC001"
+    }
   }
 }
 ```
 
-Print `rcptSign` and `intrlData` on the receipt — they're required for EBM compliance.
+Print `print.receipt_signature` and `print.internal_data` on the customer receipt.
 
-## Refunds
+### Persist failure (already signed)
 
-Refunds use the same endpoint with different codes:
+If VSDC returns `000` but Kayko cannot persist the sale locally, you get **HTTP 503** with `error: EBM_SALE_PERSIST_FAILED` plus the signature fields. The sale **is signed** — do not submit a new invoice number. Retry with `POST /sales/resend` using those fields.
 
-| Field | Normal Sale | Refund |
-|-------|-------------|--------|
-| `salesTyCd` | `"N"` | `"R"` |
-| `rcptTyCd` | `"S"` | `"R"` |
-| `orgInvcNo` | Same as `invcNo` | **Original sale's** `invcNo` |
-| `invcNo` | New sequential # | New sequential # |
-| `rfdRsnCd` | `null` | Required — see [Refund Reasons](/reference/enumerations#refund-reason-code) |
+Sales also require the local store (`DATABASE_URL`). If it is down, Kayko does not call VSDC and returns `EBM_SALES_STORE_UNAVAILABLE`.
+
+---
+
+## Refund sale
+
+`POST /sales/refund`
+
+Same line payload as a sale, plus:
+
+<ParamField body="invoice_no" type="integer" required>New refund invoice number (not the original)</ParamField>
+<ParamField body="original_invoice_no" type="integer" required>The original sale invoice number</ParamField>
+<ParamField body="refund_reason" type="string" required>Label from `GET /constants/refund-reasons`, e.g. `wrong_quantity`, `damaged`, `other`</ParamField>
+<ParamField body="refunded_at" type="string">`YYYYMMDDHHmmss`</ParamField>
+
+Kayko sends upstream receipt type `R` and `orgInvcNo` = original invoice. Stock-in for the refund is queued after `000` (`sarTyCd` `03`). If the original stock link is not ready yet, Kayko retries instead of posting `orgSarNo: 0`.
+
+```json
+{
+  "invoice_no": 1800,
+  "original_invoice_no": 1799,
+  "payment_method": "credit",
+  "refund_reason": "wrong_quantity",
+  "items": [
+    {
+      "item_code": "RW2NTU0000642",
+      "item_name": "TOLE PL 2 44X1 22X10",
+      "packaging_unit": "NT",
+      "packages": 1,
+      "quantity_unit": "U",
+      "quantity": 2,
+      "price": 1000,
+      "tax_type": "B"
+    }
+  ]
+}
+```
 
 ---
 
 ## Resend sale
 
-Re-submit a sale that was processed locally but failed to reach RRA. Include the **full original payload** with receipt signature data.
+`POST /sales/resend`
 
-`POST /trnsSales/resendSales`
+Use this when VSDC already signed the invoice (`EBM_SALE_PERSIST_FAILED`, or you need to replay a stored signature).
 
-The request body is identical to `saveSales`, but must include these additional receipt fields:
+<ParamField body="invoice_no" type="integer" required>The signed invoice number</ParamField>
+<ParamField body="receipt" type="object">Optional. Include `receipt_signature`, `internal_data`, `receipt_no`, `total_receipt_no`, `receipt_published_at` from the 503 body or from `GET /sales/:invoice_no`.</ParamField>
 
-<ParamField body="receipt.rcptSign" type="string" required>Original receipt signature</ParamField>
-<ParamField body="receipt.intrlData" type="string" required>Original internal data</ParamField>
-<ParamField body="receipt.curRcptNo" type="number" required>Original current receipt number</ParamField>
-<ParamField body="receipt.totRcptNo" type="number" required>Original total receipt number</ParamField>
-<ParamField body="receipt.rcptPbctDt" type="string" required>Original receipt published date</ParamField>
+Other sale fields are optional on resend; send the original lines if Kayko still needs them to rebuild the VSDC payload.
 
-<CodeGroup>
+---
 
-```bash cURL
-curl -X POST "{{baseUrl}}/trnsSales/resendSales" \
-  -H "Content-Type: application/json" \
-  -d @resend-payload.json
+## Get sale
+
+`GET /sales/:invoice_no`
+
+Returns the stored invoice and print fields.
+
+```bash
+curl -X GET "{{baseUrl}}/sales/1799" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00"
 ```
-
-```javascript JavaScript
-// Same payload as saveSales, plus receipt signature fields
-await ebmPost('/trnsSales/resendSales', {
-  ...originalSalePayload,
-  receipt: {
-    ...originalSalePayload.receipt,
-    rcptSign: 'P3SKYWLKGFJXFPXZ',
-    intrlData: '2BGSI4XVCRPNPO32PTAZOLND5M',
-    curRcptNo: 257,
-    totRcptNo: 257,
-    rcptPbctDt: '20260609101449',
-  },
-});
-```
-
-```php PHP
-<?php
-ebmPost('/trnsSales/resendSales', $resendPayload);
-```
-
-```json Payload
-{
-  "tin": "107993488",
-  "bhfId": "01",
-  "cfmDt": "20260609101449",
-  "rfdDt": null,
-  "cnclDt": null,
-  "custNm": "Customer",
-  "invcNo": "257",
-  "modrId": "1",
-  "modrNm": "Kayko",
-  "regrId": "1",
-  "regrNm": "Kayko",
-  "remark": null,
-  "taxRtA": 0,
-  "taxRtB": 18,
-  "taxRtC": 0,
-  "taxRtD": 0,
-  "totAmt": 1580000,
-  "custTin": "788312173",
-  "pmtTyCd": "06",
-  "receipt": {
-    "adrs": null,
-    "rptNo": "257",
-    "btmMsg": "Kayko v.2.3.11",
-    "topMsg": "SMATCONS Ltd
-ADDRESS Remera, Gasabo, Umujyi wa Kigali, RWANDA
-PHONE +250781620053
-
-TIN 107993488
-",
-    "trdeNm": "Customer",
-    "custTin": null,
-    "rcptSign": "P3SKYWLKGFJXFPXZ",
-    "curRcptNo": 257,
-    "custMblNo": "788312173",
-    "intrlData": "2BGSI4XVCRPNPO32PTAZOLND5M",
-    "totRcptNo": 257,
-    "rcptPbctDt": "20260609101449",
-    "prchrAcptcYn": "Y"
-  },
-  "salesDt": "20260609",
-  "taxAmtA": 0,
-  "taxAmtB": "241016.95",
-  "taxAmtC": 0,
-  "taxAmtD": 0,
-  "itemList": [
-    {
-      "bcd": null,
-      "pkg": 1,
-      "prc": "15800.00",
-      "qty": "100.00",
-      "dcRt": "0.00",
-      "dcAmt": "0.00",
-      "isrcRt": null,
-      "itemCd": "RW2NTU0000001",
-      "itemNm": "Cimerwa cement 32.5",
-      "taxAmt": "241016.95",
-      "totAmt": "1580000.00",
-      "isrcAmt": null,
-      "isrccCd": null,
-      "isrccNm": null,
-      "itemSeq": 1,
-      "splyAmt": "1580000.00",
-      "taxTyCd": "B",
-      "taxblAmt": "1580000.00",
-      "totDcAmt": "0.00",
-      "itemClsCd": "8014160101",
-      "pkgUnitCd": "NT",
-      "qtyUnitCd": "U"
-    }
-  ],
-  "prcOrdCd": null,
-  "rcptTyCd": "R",
-  "rfdRsnCd": "04",
-  "cnclReqDt": null,
-  "custPhone": "788312173",
-  "orgInvcNo": "67",
-  "salesTyCd": "N",
-  "taxblAmtA": 0,
-  "taxblAmtB": 1580000,
-  "taxblAmtC": 0,
-  "taxblAmtD": 0,
-  "totTaxAmt": "241016.95",
-  "stockRlsDt": null,
-  "totItemCnt": 1,
-  "salesSttsCd": "04",
-  "totTaxblAmt": 1580000,
-  "prchrAcptcYn": "Y"
-}
-```
-
-</CodeGroup>
-
-## Business rules
-
-<AccordionGroup>
-  <Accordion title="prcOrdCd — Purchase Order Code (v1.0.5+)">
-    Mandatory when the customer is a **registered business** (has a TIN). Optional for individual/walk-in customers. Missing this for business customers returns error `881`.
-  </Accordion>
-  <Accordion title="regrNm / modrNm — max 8 characters">
-    The registrant and modifier names must not exceed 8 characters on sales transactions.
-  </Accordion>
-  <Accordion title="Invoice numbers must be sequential">
-    `invcNo` must increment. Use the `lastSaleInvcNo` from initialization to know where to start.
-  </Accordion>
-  <Accordion title="Customer TIN validation">
-    Invalid customer TINs return error `884`. Use `/customers/selectCustomer` to verify before selling.
-  </Accordion>
-</AccordionGroup>
-
-## See also
-
-- [Calculations](/calculations/overview) — how to compute amounts
-- [Response Codes](/reference/response-codes) — error handling
-- [Stock](/api/stock) — record stock-out after a sale

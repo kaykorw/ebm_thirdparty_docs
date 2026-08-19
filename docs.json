@@ -170,42 +170,46 @@
                 "group": "Items",
                 "icon": "box",
                 "pages": [
-                  "POST /items/saveItems",
-                  "POST /items/selectItems",
-                  "POST /items/saveItemComposition"
+                  "POST /items",
+                  "GET /items",
+                  "GET /items/{item_code}",
+                  "PUT /items/{item_code}",
+                  "DELETE /items/{item_code}"
                 ]
               },
               {
                 "group": "Imports",
                 "icon": "ship",
                 "pages": [
-                  "POST /imports/selectImportItems",
-                  "POST /imports/updateImportItems"
+                  "GET /imports",
+                  "POST /imports/confirm"
                 ]
               },
               {
                 "group": "Sales",
                 "icon": "receipt",
                 "pages": [
-                  "POST /trnsSales/saveSales",
-                  "POST /trnsSales/resendSales"
+                  "POST /sales",
+                  "POST /sales/refund",
+                  "POST /sales/resend",
+                  "GET /sales/{invoice_no}"
                 ]
               },
               {
                 "group": "Purchases",
                 "icon": "cart-shopping",
                 "pages": [
-                  "POST /trnsPurchase/selectTrnsPurchaseSales",
-                  "POST /trnsPurchase/savePurchases"
+                  "GET /purchases",
+                  "POST /purchases/confirm"
                 ]
               },
               {
                 "group": "Stock",
                 "icon": "boxes-stacked",
                 "pages": [
-                  "POST /stock/saveStockItems",
-                  "POST /stock/selectStockItems",
-                  "POST /stockMaster/saveStockMaster"
+                  "GET /stocks",
+                  "POST /stocks",
+                  "POST /stocks/master"
                 ]
               }
             ]

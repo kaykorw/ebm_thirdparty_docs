@@ -104,12 +104,12 @@ When you create a key, select only the scopes your integration needs. Each scope
 |-------|--------|
 | `customers` | Customer lookup and branch customer save |
 | `branch` | Branch users, insurance, and related branch pushes |
-| `items` | Item registration, catalog pull, composition |
-| `stocks` | Stock in/out and stock master |
-| `sales` | Sales invoices and resend |
-| `purchase` | Purchase pull and confirmation |
+| `items` | Item registration, catalog list, get/update/deactivate |
+| `stocks` | Stock movements, stock master, automatic chain after sales/purchases/imports |
+| `sales` | Sales, refunds, resend, and invoice lookup |
+| `purchase` | Purchase list and confirmation |
 | `notices` | Notices and related reference pulls |
-| `import` | Customs import select/update |
+| `import` | Customs import list and confirm |
 
 A request fails with `API_KEY_SCOPE_DENIED` if the key is missing the scope required by that endpoint.
 

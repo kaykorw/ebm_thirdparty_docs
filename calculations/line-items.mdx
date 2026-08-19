@@ -1,10 +1,10 @@
 ---
 title: Line Item Calculations
-description: How prc, qty, splyAmt, and per-line totals are computed.
+description: How price, quantity, supply_amount, and per-line totals are computed.
 icon: list
 ---
 
-Every transaction with an `itemList` array- sales, purchases, and stock- computes amounts **per line** before rolling up to the invoice header.
+Every Kayko sale, purchase, and stock line computes amounts **per line** before rolling up to the header. Request fields are snake_case (`price`, `quantity`, `supply_amount`). VSDC names in this page (`prc`, `qty`, `splyAmt`) are what Kayko sends upstream.
 
 ## Field relationships
 
@@ -115,5 +115,5 @@ Before submitting any `itemList` entry, verify:
 - [ ] `taxblAmt = splyAmt − totDcAmt`
 - [ ] `taxAmt` matches the [VAT formula](/calculations/vat-formulas) for the line's `taxTyCd`
 - [ ] `totAmt = taxblAmt`
-- [ ] `taxTyCd` matches the item's registered tax type from `saveItems`
-- [ ] `itemCd`, `itemClsCd`, `pkgUnitCd`, `qtyUnitCd` are valid registered codes
+- [ ] `tax_type` matches the item's registered tax type from `POST /items`
+- [ ] `item_code`, `item_classification_code`, `packaging_unit`, `quantity_unit` are valid registered codes

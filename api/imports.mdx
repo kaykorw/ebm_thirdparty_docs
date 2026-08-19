@@ -1,136 +1,156 @@
 ---
 title: Imports
-description: Retrieve and confirm customs import declarations.
+description: Pull customs declarations and confirm them against your item catalog.
 icon: ship
 ---
 
-Import items come from RRA's customs system. You pull declarations, convert them to your item catalog, and confirm.
+Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` from your business after Enable EBM, so you never put it in the JSON body.
+
+Requires a business API key with scope `import`.
+
+Import lines come from RRA customs. You **list** them, map each declaration to a registered `item_code`, then **confirm** as approved or cancelled.
+
+<Warning>
+  Confirm must use head office `x-branch-id: 00`. Other branches receive `403` / `EBM_HEAD_OFFICE_REQUIRED`. List works for any allowed branch.
+</Warning>
+
+Confirm has **no quantity**. Quantity, weights, and currency amounts come from `GET /imports`. After an approved confirm, Kayko posts stock-in (`import`) asynchronously using that select quantity. Cancelled lines (`status: cancelled`) are skipped for stock.
 
 ---
 
-## Get imported items
+## List imports
 
-`POST /imports/selectImportItems`
+`GET /imports`
+
+Send `x-last-request-date` (`YYYYMMDDHHmmss`). First sync: `20000101000000`.
 
 <CodeGroup>
 
 ```bash cURL
-curl -X POST "{{baseUrl}}/imports/selectImportItems" \
-  -H "Content-Type: application/json" \
-  -d '{"tin":"999958074","bhfId":"00","lastReqDt":"20240706192223"}'
+curl -X GET "{{baseUrl}}/imports" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
+  -H "x-last-request-date: 20000101000000"
 ```
 
 ```javascript JavaScript
-const { data } = await ebmPost('/imports/selectImportItems', {
-  tin: '999958074', bhfId: '00', lastReqDt: '20240706192223',
-});
-// data.itemList → customs declarations
-```
-
-```php PHP
-<?php
-$result = ebmPost('/imports/selectImportItems', [
-    'tin' => '999958074', 'bhfId' => '00', 'lastReqDt' => '20240706192223',
-]);
-```
-
-```json Payload
-{
-  "tin": "999958074",
-  "bhfId": "00",
-  "lastReqDt": "20240706192223"
-}
+const data = await fetch(`${BASE_URL}/imports`, {
+  headers: {
+    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+    'x-tin': '100027060',
+    'x-branch-id': '00',
+    'x-last-request-date': '20000101000000',
+  },
+}).then((r) => r.json());
 ```
 
 </CodeGroup>
 
-### Response fields per import item
+Response: `{ message, data: ImportItem[] }`. Empty lists return `{ "message": "No import items found", "data": [] }`.
 
 | Field | Description |
 |-------|-------------|
-| `taskCd` | Customs task reference |
-| `dclDe` | Declaration date |
-| `dclNo` | Declaration number |
-| `hsCd` | HS tariff code |
-| `itemNm` | Declared item name |
-| `qty` / `qtyUnitCd` | Quantity and unit |
-| `invcFcurAmt` / `invcFcurCd` | Foreign currency amount |
+| `task_code` | Customs task reference |
+| `declaration_date` | Declaration date (`YYYYMMDD`) |
+| `item_sequence` | Line sequence in the declaration |
+| `declaration_number` | Declaration number |
+| `hs_code` | HS tariff code |
+| `item_name` | Declared name |
+| `status` | e.g. `unsent`, `waiting`, `approved`, `cancelled` |
+| `origin_country` / `export_country` | Country codes |
+| `quantity` / `quantity_unit` | Declared quantity (used later for stock) |
+| `package` / `packaging_unit` | Package count and unit |
+| `gross_weight` / `net_weight` | Weights |
+| `supplier` / `agent` | Names |
+| `invoice_amount` / `invoice_currency` / `invoice_currency_rate` | Foreign-currency invoice |
+
+Register the product with [Items](/api/items) **before** confirming, using the same `item_code` you will send on confirm.
 
 ---
 
-## Update imported item
+## Confirm import
 
-Convert a customs declaration into a registered EBM item.
+`POST /imports/confirm`
 
-`POST /imports/updateImportItems`
-
-<ParamField body="taskCd" type="string" required>Customs task code</ParamField>
-<ParamField body="dclDe" type="string" required>Declaration date (`yyyyMMdd`)</ParamField>
-<ParamField body="itemSeq" type="number" required>Item sequence in the declaration</ParamField>
-<ParamField body="hsCd" type="string" required>HS code</ParamField>
-<ParamField body="itemClsCd" type="string" required>Your item classification code</ParamField>
-<ParamField body="itemCd" type="string" required>Your item code to assign</ParamField>
-<ParamField body="imptItemSttsCd" type="string" required>Status: `"3"` = Approved, `"4"` = Cancelled</ParamField>
+<ParamField body="task_code" type="string" required>Customs task code from the list response</ParamField>
+<ParamField body="declaration_date" type="string" required>8 digits `YYYYMMDD`</ParamField>
+<ParamField body="item_sequence" type="integer" required>Line sequence from the list response</ParamField>
+<ParamField body="hs_code" type="string" required>HS code</ParamField>
+<ParamField body="item_classification_code" type="string" required>Your 10-digit classification</ParamField>
+<ParamField body="item_code" type="string" required>Your registered item code</ParamField>
+<ParamField body="status" type="string" required>`approved` or `cancelled` (`canceled` is accepted)</ParamField>
+<ParamField body="notes" type="string">Optional notes (max 400)</ParamField>
 
 <CodeGroup>
 
 ```bash cURL
-curl -X POST "{{baseUrl}}/imports/updateImportItems" \
+curl -X POST "{{baseUrl}}/imports/confirm" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
   -d '{
-    "tin": "999958074", "bhfId": "00",
-    "taskCd": "2287735", "dclDe": "20200220", "itemSeq": 1,
-    "hsCd": "25201000000",
-    "itemClsCd": "4229311900", "itemCd": "AD2AMU0000024",
-    "imptItemSttsCd": "4",
-    "modrId": "1", "modrNm": "Kayko",
-    "regrId": "1", "regrNm": "Kayko",
-    "remark": "remark"
+    "task_code": "TASK001",
+    "declaration_date": "20240706",
+    "item_sequence": 1,
+    "hs_code": "22021000",
+    "item_classification_code": "8014160101",
+    "item_code": "RW2NTU0000001",
+    "status": "approved"
   }'
 ```
 
 ```javascript JavaScript
-await ebmPost('/imports/updateImportItems', {
-  tin: '999958074', bhfId: '00',
-  taskCd: '2287735', dclDe: '20200220', itemSeq: 1,
-  hsCd: '25201000000',
-  itemClsCd: '4229311900', itemCd: 'AD2AMU0000024',
-  imptItemSttsCd: '4',
-  modrId: '1', modrNm: 'Kayko',
-  regrId: '1', regrNm: 'Kayko',
+await fetch(`${BASE_URL}/imports/confirm`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+    'x-tin': '100027060',
+    'x-branch-id': '00',
+  },
+  body: JSON.stringify({
+    task_code: 'TASK001',
+    declaration_date: '20240706',
+    item_sequence: 1,
+    hs_code: '22021000',
+    item_classification_code: '8014160101',
+    item_code: 'RW2NTU0000001',
+    status: 'approved',
+  }),
 });
-```
-
-```php PHP
-<?php
-ebmPost('/imports/updateImportItems', [
-    'tin' => '999958074', 'bhfId' => '00',
-    'taskCd' => '2287735', 'dclDe' => '20200220', 'itemSeq' => 1,
-    'hsCd' => '25201000000',
-    'itemClsCd' => '4229311900', 'itemCd' => 'AD2AMU0000024',
-    'imptItemSttsCd' => '4',
-    'modrId' => '1', 'modrNm' => 'Kayko',
-    'regrId' => '1', 'regrNm' => 'Kayko',
-]);
 ```
 
 ```json Payload
 {
-  "tin": "999958074",
-  "bhfId": "00",
-  "taskCd": "2287735",
-  "dclDe": "20200220",
-  "itemSeq": 1,
-  "hsCd": "25201000000",
-  "itemClsCd": "4229311900",
-  "itemCd": "AD2AMU0000024",
-  "imptItemSttsCd": "4",
-  "modrId": "1",
-  "modrNm": "Kayko",
-  "regrId": "1",
-  "regrNm": "Kayko",
-  "remark": "remark"
+  "task_code": "TASK001",
+  "declaration_date": "20240706",
+  "item_sequence": 1,
+  "hs_code": "22021000",
+  "item_classification_code": "8014160101",
+  "item_code": "RW2NTU0000001",
+  "status": "approved"
 }
 ```
 
 </CodeGroup>
+
+Response:
+
+```json
+{
+  "message": "success",
+  "data": {
+    "task_code": "TASK001",
+    "declaration_date": "20240706",
+    "item_sequence": 1,
+    "hs_code": "22021000",
+    "item_code": "RW2NTU0000001",
+    "item_classification_code": "8014160101",
+    "status": "approved"
+  }
+}
+```
+
+Do **not** POST a stock movement in the same request. Seed remaining quantity with `POST /stocks/master` so later import stock-in can update the ledger. See [Stock](/api/stock).

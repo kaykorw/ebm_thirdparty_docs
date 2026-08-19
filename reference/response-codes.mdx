@@ -5,6 +5,21 @@ icon: circle-exclamation
 ---
 
 
+## Gateway HTTP errors
+
+These are Kayko responses (`{ status, message, error }`), not VSDC `resultCd`.
+
+| HTTP | `error` | Meaning |
+|------|---------|---------|
+| 403 | `EBM_HEAD_OFFICE_REQUIRED` | Item write, import confirm, and purchase confirm must use `x-branch-id: 00` |
+| 400 | `EBM_ITEM_NOT_REGISTERED` | Sale/purchase line `item_code` is not in the catalog |
+| 404 | `EBM_ITEM_NOT_FOUND` | `GET/PUT/DELETE /items/:item_code` |
+| 503 | `EBM_SALE_PERSIST_FAILED` | VSDC signed the sale (`000`) but Kayko could not persist it. **Do not change `invoice_no`.** Retry `POST /sales/resend` with the signature fields in the body |
+| 503 | `EBM_SALES_STORE_UNAVAILABLE` | Local store is down; Kayko did not call VSDC |
+| 429 | `API_KEY_RATE_LIMITED` | Per-key hourly limit |
+
+Auth errors (`API_KEY_*`) are listed on [API Keys](/concepts/api-keys).
+
 ## Success codes
 
 | Code | Message | Action |
@@ -21,12 +36,12 @@ These indicate issues with your request data or client configuration.
 | `881` | Purchase is mandatory | Provide `prcOrdCd` for business customers |
 | `882` | Purchase code is invalid | Verify `prcOrdCd` with the supplier |
 | `883` | Purchase already used | This purchase was already confirmed- skip it |
-| `884` | Invalid customer TIN | Validate TIN via `/customers/selectCustomer` first |
+| `884` | Invalid customer TIN | Validate TIN via `GET /customers` first |
 | `891` | Error creating Request URL | Check your Kayko EBM base URL and path |
 | `892` | Error creating Request Header | Check Content-Type and headers |
 | `893` | Error creating Request Body | Validate JSON structure and required fields |
 | `894` | Server communication error | Check network connectivity to Kayko EBM / RRA |
-| `895` | Unallowed Request Method | Use `POST` for all endpoints |
+| `895` | Unallowed Request Method | Gateway uses `GET` or `POST` as documented; do not call raw VSDC paths |
 | `896` | Request Status error | Check HTTP status and retry |
 | `899` | Client error | General client-side failure- check logs |
 
@@ -40,16 +55,16 @@ These indicate issues on the Kayko EBM or RRA server side.
 | `901` | Not valid device | Re-initialize with correct `dvcSrlNo` |
 | `902` | Device already installed | Device was already initialized- skip re-init |
 | `903` | Only a registered EBM device can be verified | Use a registered EBM device |
-| `910` | Request parameter error | Check required fields, data types, and totals |
+| `910` | Request parameter error | Totals mismatch, wrong types, **normal sale `orgInvcNo` not `0`**, or missing/invalid `taxRtF` / `taxRtTt` (must be NUMBER 7,2, e.g. `3.00`). Kayko maps these for you — send snake_case and omit tax rates |
 | `911` | No request full text | Request body is empty |
-| `912` | Request Method error | Use `POST` |
+| `912` | Request Method error | Use the documented Kayko method (`GET` / `POST` / `PUT` / `DELETE`) |
 | `921` | Sales data cannot be received | Invoice data conflict- check invoice numbers |
 | `922` | Invoice before sales data | Submit sales transaction before invoice |
 | `990` | Max views exceeded | Reduce pagination range |
 | `991` | Registration error | Data validation failed on create |
 | `992` | Modification error | Data validation failed on update |
 | `993` | Deletion error | Data validation failed on delete |
-| `994` | Overlapped data | Duplicate record- check unique fields |
+| `994` | Overlapped data | Duplicate record — Kayko treats this as already accepted for some retries |
 | `995` | No downloaded file | File not found on server |
 | `999` | Unknown error | Contact RRA administrator |
 
@@ -86,6 +101,8 @@ function handleEbmResponse(array $response): array {
     throw new EbmException($code, $response['resultMsg'] ?? 'Unknown error');
 }
 ```
+
+The retryable VSDC codes are `894`, `896`, and `999`. Treat `994` as already accepted when retrying a signed request.
 
 ## Version history
 

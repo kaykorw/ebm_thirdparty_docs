@@ -1,336 +1,233 @@
 ---
 title: Items
-description: Register, update, and retrieve products. Includes itemCd structure, generation rules, and endpoint reference.
+description: Register, update, deactivate, and list products via Kayko EBM.
 icon: box
+---
+
+Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` from your business after Enable EBM, so you never put it in the JSON body.
+
+Requires a business API key with scope `items`.
+
+<Warning>
+  Create, update, and deactivate must use head office `x-branch-id: 00`. Other branches receive `403` / `EBM_HEAD_OFFICE_REQUIRED`. List and get-by-code work for any allowed branch.
+</Warning>
+
 ---
 
 ## Item code format {#item-code-format}
 
-Every product registered via `saveItems` requires a unique `itemCd` (max 20 characters). The code embeds the product's origin, type, and units so RRA can validate consistency across sales, purchases, and stock.
+Every registered product has a unique `item_code` (max 20 characters). The code embeds origin, product type, and units so RRA can validate sales, purchases, and stock.
 
 ### Structure
 
 ```
-itemCd = {orgnNatCd}{itemTyCd}{pkgUnitCd}{qtyUnitCd}{sequence}
-          └─ 2 ─┘ └──1──┘ └── 2 ──┘ └── 2 ──┘ └── 7 ──┘
+item_code = {origin_country}{item_type}{packaging_unit}{quantity_unit}{sequence}
+             └──── 2 ────┘ └─── 1 ───┘ └───── 2 ─────┘ └───── 2 ────┘ └── 7 ──┘
                          Total: 14 characters (standard)
 ```
 
 | Segment | Length | Request field | Example | Reference |
 |---------|--------|---------------|---------|-----------|
-| Country of origin | 2 | `orgnNatCd` | `RW` | [Country codes](/reference/country-codes) |
-| Product type | 1 | `itemTyCd` | `2` | [Product type](/reference/enumerations#product-type) |
-| Packaging unit | 2 | `pkgUnitCd` | `NT` | [Packaging units](/reference/enumerations#packaging-unit-full-list) |
-| Quantity unit | 2 | `qtyUnitCd` | `U` | [Quantity units](/reference/enumerations#unit-of-quantity-full-list) |
+| Country of origin | 2 | `origin_country` | `RW` | [Country codes](/reference/country-codes) |
+| Product type | 1 | `item_type` | `2` | [Product type](/reference/enumerations#product-type) |
+| Packaging unit | 2 | `packaging_unit` | `NT` | [Packaging units](/reference/enumerations#packaging-unit-full-list) |
+| Quantity unit | 2 | `quantity_unit` | `U` | [Quantity units](/reference/enumerations#unit-of-quantity-full-list) |
 | Sequence | 7 | Auto-increment | `0000001` | Unique per 7-character prefix |
 
 <Note>
-  `itemCd` and `itemClsCd` are different fields. `itemClsCd` is the 10-digit RRA item classification from `/itemClass/selectItemsClass`- it describes *what* the product is. `itemCd` is *your* unique product identifier built from origin, type, and units.
+  `item_code` and `item_classification_code` are different. `item_classification_code` is the 10-digit RRA classification (what the product is). `item_code` is *your* unique product identifier.
 </Note>
+
+If you omit `item_code` on create, Kayko allocates the next sequence for that prefix. If you send one, the first 7 characters must equal `origin_country + item_type + packaging_unit + quantity_unit`.
 
 ### Annotated example
 
 ```
 RW2NTU0000012
 │││││└────── sequence (0000001, 0000012, …)
-││││└─────── qtyUnitCd:  U  (Pieces)
-│││└──────── pkgUnitCd:  NT (Net)
-││└───────── itemTyCd:   2  (Finished Product)
-│└────────── orgnNatCd:  RW (Rwanda)
-```
-
-Built from this `saveItems` payload:
-
-```json
-{
-  "orgnNatCd": "RW",
-  "itemTyCd": "2",
-  "pkgUnitCd": "NT",
-  "qtyUnitCd": "U",
-  "itemCd": "RW2NTU0000012"
-}
+││││└─────── quantity_unit:  U  (Pieces)
+│││└──────── packaging_unit: NT (Net)
+││└───────── item_type:      2  (Finished Product)
+└─────────── origin_country: RW (Rwanda)
 ```
 
 ### Generation rules
 
-1. **Globally unique**- no two active items may share the same `itemCd`.
-2. **Prefix must match fields**- the first 7 characters must equal `orgnNatCd + itemTyCd + pkgUnitCd + qtyUnitCd` in the same request.
-3. **Sequence increments per prefix**- for prefix `RW2NTU`, use `0000001`, then `0000002`, and so on.
-4. **Never reuse**- retired or disabled items keep their codes; do not recycle sequences.
-5. **Immutable units**- changing `pkgUnitCd` or `qtyUnitCd` after registration requires a **new** `itemCd`, not an update to the existing one.
-
-### Recommended workflow
-
-<Steps>
-  <Step title="Resolve classification">
-    Call `/itemClass/selectItemsClass` and pick the correct `itemClsCd` for the product category.
-  </Step>
-  <Step title="Choose segment values">
-    Set `orgnNatCd`, `itemTyCd`, `pkgUnitCd`, and `qtyUnitCd` from the reference tables.
-  </Step>
-  <Step title="Allocate sequence">
-    Track the next sequence number for that 7-character prefix in your ERP or database.
-  </Step>
-  <Step title="Register">
-    Submit `POST /items/saveItems` with the generated `itemCd` and matching field values.
-  </Step>
-</Steps>
-
-### Code generators
-
-```javascript
-function generateItemCd(orgnNatCd, itemTyCd, pkgUnitCd, qtyUnitCd, sequence) {
-  const prefix = `${orgnNatCd}${itemTyCd}${pkgUnitCd}${qtyUnitCd}`;
-  if (prefix.length !== 7) {
-    throw new Error(`Prefix must be 7 characters, got ${prefix.length}: ${prefix}`);
-  }
-  return `${prefix}${String(sequence).padStart(7, '0')}`;
-}
-
-// generateItemCd('RW', '2', 'NT', 'U', 1)   → "RW2NTU0000001"
-// generateItemCd('RW', '2', 'NT', 'U', 42)  → "RW2NTU0000042"
-```
-
-```php
-<?php
-function generateItemCd(
-    string $orgnNatCd,
-    string $itemTyCd,
-    string $pkgUnitCd,
-    string $qtyUnitCd,
-    int $sequence
-): string {
-    $prefix = $orgnNatCd . $itemTyCd . $pkgUnitCd . $qtyUnitCd;
-    if (strlen($prefix) !== 7) {
-        throw new InvalidArgumentException("Prefix must be 7 characters, got: {$prefix}");
-    }
-    return $prefix . str_pad((string) $sequence, 7, '0', STR_PAD_LEFT);
-}
-```
-
-### Worked examples
-
-| itemCd | Product | orgnNatCd | itemTyCd | pkg / qty | Notes |
-|--------|---------|-----------|----------|-----------|-------|
-| `RW2NTU0000001` | Coca Cola | `RW` | `2` | `NT` / `U` | Standard finished product |
-| `RW2NTU0000642` | TOLE PL 2 44X1 22X10 | `RW` | `2` | `NT` / `U` | Same prefix, higher sequence |
-| `AD2AMU0000024` | Imported goods | `AD` | `2` | `AM` / `U` | Origin from [import conversion](/api/imports) |
+1. **Globally unique** — no two active items may share the same `item_code`.
+2. **Prefix must match fields** — the first 7 characters must equal origin + type + packaging + quantity in the same request.
+3. **Sequence increments per prefix** — for prefix `RW2NTU`, use `0000001`, then `0000002`, and so on.
+4. **Never reuse** — retired items keep their codes.
+5. **Immutable units** — changing `packaging_unit` or `quantity_unit` after registration requires a **new** `item_code`.
 
 <Warning>
-  A sale, purchase, or stock line that references an `itemCd` not registered via `saveItems` will fail validation. Register all products before using them in transactions.
+  A sale, purchase, or stock line that references an unregistered `item_code` fails. Register products first. Sales return `EBM_ITEM_NOT_REGISTERED` when the catalog is missing the code.
 </Warning>
 
+Product type `3` is a **service**. Kayko still registers it, but it does **not** post stock movements after sales or purchases.
+
 ---
 
-## Save item
+## Create item
 
-Register a new product or update an existing one.
+`POST /items`
 
-`POST /items/saveItems`
+<ParamField body="item_classification_code" type="string" required>10-digit RRA classification</ParamField>
+<ParamField body="item_type" type="string" required>`1` Raw Material, `2` Finished Product, `3` Service</ParamField>
+<ParamField body="item_name" type="string" required>Product name (max 200)</ParamField>
+<ParamField body="origin_country" type="string" required>ISO-style origin (e.g. `RW`)</ParamField>
+<ParamField body="packaging_unit" type="string" required>Packaging code (e.g. `NT`)</ParamField>
+<ParamField body="quantity_unit" type="string" required>Quantity code (e.g. `U`)</ParamField>
+<ParamField body="tax_type" type="string" required>Tax category (`A`, `B`, `C`, `D`, `E`, `F`, `TT`)</ParamField>
+<ParamField body="default_price" type="number" required>Default unit price (2 decimals)</ParamField>
+<ParamField body="item_code" type="string">Optional. Omit to let Kayko allocate the next code for this prefix.</ParamField>
+<ParamField body="standard_name" type="string">Standard / generic name</ParamField>
+<ParamField body="barcode" type="string">Barcode</ParamField>
+<ParamField body="batch_number" type="string">Batch number</ParamField>
+<ParamField body="insurance_applicable" type="boolean">Defaults to `false`</ParamField>
+<ParamField body="use" type="boolean">Active flag; defaults to `true`</ParamField>
+<ParamField body="safety_quantity" type="number">Safety stock quantity</ParamField>
+<ParamField body="additional_info" type="string">Extra info (max 7)</ParamField>
+<ParamField body="group_price_1" type="number">Optional group prices 1–5</ParamField>
 
-<ParamField body="itemCd" type="string" required>
-  Unique item code (14 characters standard). Must match [item code format](#item-code-format) and align with `orgnNatCd`, `itemTyCd`, `pkgUnitCd`, and `qtyUnitCd`.
-</ParamField>
-<ParamField body="itemClsCd" type="string" required>
-  Item classification code (10 digits from `/itemClass/selectItemsClass`).
-</ParamField>
-<ParamField body="itemTyCd" type="string" required>
-  Product type: `"1"` Raw Material, `"2"` Finished Product, `"3"` Service.
-</ParamField>
-<ParamField body="itemNm" type="string" required>Product name</ParamField>
-<ParamField body="orgnNatCd" type="string" required>Origin country code (e.g. `"RW"`)</ParamField>
-<ParamField body="pkgUnitCd" type="string" required>Packaging unit (e.g. `"NT"` = Net)</ParamField>
-<ParamField body="qtyUnitCd" type="string" required>Quantity unit (e.g. `"U"` = Pieces)</ParamField>
-<ParamField body="taxTyCd" type="string" required>Tax type (e.g. `"B"` = 18% VAT)</ParamField>
-<ParamField body="dftPrc" type="number" required>Default unit price</ParamField>
-<ParamField body="bcd" type="string">Barcode</ParamField>
-<ParamField body="isrcAplcbYn" type="string" required>Insurance applicable: `"Y"` / `"N"`</ParamField>
+Registrar and modifier fields are set by Kayko.
 
 <CodeGroup>
 
 ```bash cURL
-curl -X POST "{{baseUrl}}/items/saveItems" \
+curl -X POST "{{baseUrl}}/items" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
   -d '{
-    "tin": "999202800",
-    "bhfId": "00",
-    "itemCd": "RW2NTU0000001",
-    "itemClsCd": "8014160101",
-    "itemTyCd": "2",
-    "itemNm": "Coca Cola",
-    "orgnNatCd": "RW",
-    "pkgUnitCd": "NT",
-    "qtyUnitCd": "U",
-    "taxTyCd": "B",
-    "dftPrc": 118,
-    "isrcAplcbYn": "N",
-    "useYn": "Y",
-    "regrId": "1", "regrNm": "Kayko",
-    "modrId": "1", "modrNm": "Kayko"
+    "item_classification_code": "8014160101",
+    "item_type": "2",
+    "item_name": "Coca Cola",
+    "origin_country": "RW",
+    "packaging_unit": "NT",
+    "quantity_unit": "U",
+    "tax_type": "B",
+    "default_price": 118
   }'
 ```
 
 ```javascript JavaScript
-await ebmPost('/items/saveItems', {
-  tin: '999202800', bhfId: '00',
-  itemCd: 'RW2NTU0000001',
-  itemClsCd: '8014160101',
-  itemTyCd: '2',
-  itemNm: 'Coca Cola',
-  orgnNatCd: 'RW',
-  pkgUnitCd: 'NT',
-  qtyUnitCd: 'U',
-  taxTyCd: 'B',
-  dftPrc: 118,
-  isrcAplcbYn: 'N',
-  useYn: 'Y',
-  regrId: '1', regrNm: 'Kayko',
-  modrId: '1', modrNm: 'Kayko',
+await fetch(`${BASE_URL}/items`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+    'x-tin': '100027060',
+    'x-branch-id': '00',
+  },
+  body: JSON.stringify({
+    item_classification_code: '8014160101',
+    item_type: '2',
+    item_name: 'Coca Cola',
+    origin_country: 'RW',
+    packaging_unit: 'NT',
+    quantity_unit: 'U',
+    tax_type: 'B',
+    default_price: 118,
+  }),
 });
-```
-
-```php PHP
-<?php
-ebmPost('/items/saveItems', [
-    'tin' => '999202800', 'bhfId' => '00',
-    'itemCd' => 'RW2NTU0000001',
-    'itemClsCd' => '8014160101',
-    'itemTyCd' => '2',
-    'itemNm' => 'Coca Cola',
-    'orgnNatCd' => 'RW',
-    'pkgUnitCd' => 'NT', 'qtyUnitCd' => 'U',
-    'taxTyCd' => 'B', 'dftPrc' => 118,
-    'isrcAplcbYn' => 'N', 'useYn' => 'Y',
-    'regrId' => '1', 'regrNm' => 'Kayko',
-    'modrId' => '1', 'modrNm' => 'Kayko',
-]);
 ```
 
 ```json Payload
 {
-  "tin": "999202800",
-  "bhfId": "00",
-  "itemCd": "RW2NTU0000001",
-  "itemClsCd": "8014160101",
-  "itemTyCd": "2",
-  "itemNm": "Coca Cola",
-  "itemStdNm": null,
-  "orgnNatCd": "RW",
-  "pkgUnitCd": "NT",
-  "qtyUnitCd": "U",
-  "taxTyCd": "B",
-  "btchNo": null,
-  "bcd": null,
-  "dftPrc": 118,
-  "grpPrcL1": null,
-  "grpPrcL2": null,
-  "grpPrcL3": null,
-  "grpPrcL4": null,
-  "grpPrcL5": null,
-  "addInfo": null,
-  "sftyQty": null,
-  "isrcAplcbYn": "N",
-  "modrId": "1",
-  "modrNm": "Kayko",
-  "regrId": "1",
-  "regrNm": "Kayko",
-  "useYn": "Y"
+  "item_classification_code": "8014160101",
+  "item_type": "2",
+  "item_name": "Coca Cola",
+  "origin_country": "RW",
+  "packaging_unit": "NT",
+  "quantity_unit": "U",
+  "tax_type": "B",
+  "default_price": 118,
+  "insurance_applicable": false,
+  "use": true
 }
 ```
 
 </CodeGroup>
 
+Response:
+
+```json
+{
+  "message": "success",
+  "data": { "item_code": "RW2NTU0000001" }
+}
+```
+
 ---
 
-## Get items
+## List items
 
-Pull registered products (sync endpoint).
+`GET /items`
 
-`POST /items/selectItems`
+Send `x-last-request-date` (`YYYYMMDDHHmmss`). First sync: `20000101000000`.
 
 <CodeGroup>
 
 ```bash cURL
-curl -X POST "{{baseUrl}}/items/selectItems" \
-  -H "Content-Type: application/json" \
-  -d '{"tin":"123038911","bhfId":"00","lastReqDt":"20000101000000"}'
+curl -X GET "{{baseUrl}}/items" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
+  -H "x-last-request-date: 20000101000000"
 ```
 
 ```javascript JavaScript
-const { data } = await ebmPost('/items/selectItems', {
-  tin: '123038911', bhfId: '00', lastReqDt: '20000101000000',
-});
-// data.itemList → array of registered products
-```
-
-```php PHP
-<?php
-$result = ebmPost('/items/selectItems', [
-    'tin' => '123038911', 'bhfId' => '00', 'lastReqDt' => '20000101000000',
-]);
-```
-
-```json Payload
-{
-  "tin": "123038911",
-  "bhfId": "00",
-  "lastReqDt": "20000101000000"
-}
+const data = await fetch(`${BASE_URL}/items`, {
+  headers: {
+    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
+    'x-tin': '100027060',
+    'x-branch-id': '00',
+    'x-last-request-date': '20000101000000',
+  },
+}).then((r) => r.json());
 ```
 
 </CodeGroup>
+
+Response shape: `{ message, data: Item[] }`. Each item uses snake_case (`item_code`, `item_name`, `tax_type`, `use`, …). Empty catalogs return `{ "message": "No items found", "data": [] }`.
 
 ---
 
-## Save item composition
+## Get item
 
-Register bill-of-materials (BOM) for composite products. Used for backup only- not queryable from the server.
+`GET /items/:item_code`
 
-`POST /items/saveItemComposition`
-
-<ParamField body="itemCd" type="string" required>Parent item code</ParamField>
-<ParamField body="cpstItemCd" type="string" required>Component item code</ParamField>
-<ParamField body="cpstQty" type="number" required>Quantity of component needed</ParamField>
-
-<CodeGroup>
-
-```bash cURL
-curl -X POST "{{baseUrl}}/items/saveItemComposition" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "tin": "999958074", "bhfId": "00",
-    "itemCd": "1", "cpstItemCd": "1", "cpstQty": 1,
-    "regrId": "123", "regrNm": "Testing Name"
-  }'
+```bash
+curl -X GET "{{baseUrl}}/items/RW2NTU0000001" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00"
 ```
 
-```javascript JavaScript
-await ebmPost('/items/saveItemComposition', {
-  tin: '999958074', bhfId: '00',
-  itemCd: '1', cpstItemCd: '1', cpstQty: 1,
-  regrId: '123', regrNm: 'Testing Name',
-});
+Missing items return `404` / `EBM_ITEM_NOT_FOUND`.
+
+---
+
+## Update item
+
+`PUT /items/:item_code`
+
+Same body as create, without `item_code` (it comes from the path). Head office required.
+
+---
+
+## Deactivate item
+
+`DELETE /items/:item_code`
+
+Sets `use` to false on VSDC. Head office required. The code is never recycled.
+
+```bash
+curl -X DELETE "{{baseUrl}}/items/RW2NTU0000001" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00"
 ```
 
-```php PHP
-<?php
-ebmPost('/items/saveItemComposition', [
-    'tin' => '999958074', 'bhfId' => '00',
-    'itemCd' => '1', 'cpstItemCd' => '1', 'cpstQty' => 1,
-    'regrId' => '123', 'regrNm' => 'Testing Name',
-]);
-```
-
-```json Payload
-{
-  "tin": "999958074",
-  "bhfId": "00",
-  "itemCd": "1",
-  "cpstItemCd": "1",
-  "cpstQty": 1,
-  "regrId": "123",
-  "regrNm": "Testing Name"
-}
-```
-
-</CodeGroup>
+There is **no** item-composition endpoint on the Kayko gateway.

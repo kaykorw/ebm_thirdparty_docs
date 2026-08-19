@@ -11,15 +11,15 @@ icon: calculator
 
 ```mermaid
 flowchart TB
-    subgraph line ["Line item (itemList[])"]
-        PRC["prc × qty → splyAmt"]
-        DC["Apply discount → taxblAmt"]
-        TAX["Extract VAT → taxAmt"]
-        LINE["totAmt"]
+    subgraph line ["Line item"]
+        PRC["price × quantity → supply_amount"]
+        DC["Apply discount → taxable_amount"]
+        TAX["Extract VAT → tax_amount"]
+        LINE["total_amount"]
     end
     subgraph header ["Invoice header"]
-        CAT["Sum by tax category A–D"]
-        TOT["totTaxblAmt, totTaxAmt, totAmt"]
+        CAT["Sum by tax category A–D, E, F, TT"]
+        TOT["total_taxable_amount, total_tax_amount, total_amount"]
     end
     PRC --> DC --> TAX --> LINE
     LINE --> CAT --> TOT
@@ -29,19 +29,19 @@ flowchart TB
 
 <CardGroup cols={2}>
   <Card title="VAT Formulas" icon="percent" href="/calculations/vat-formulas">
-    Tax categories A–D, the 18/118 extraction formula, and multi-category invoices.
+    Tax categories A–D plus E/F/TT, the 18/118 extraction formula, and multi-category invoices.
   </Card>
   <Card title="Line Items" icon="list" href="/calculations/line-items">
-    `prc`, `qty`, `splyAmt`, packaging, and per-line totals.
+    `price`, `quantity`, `supply_amount`, packaging, and per-line totals.
   </Card>
   <Card title="Discounts" icon="tag" href="/calculations/discounts">
-    `dcRt`, `dcAmt`, `totDcAmt` and how discounts affect taxable amounts.
+    Discount rate/amount and how discounts affect taxable amounts.
   </Card>
   <Card title="Invoice Totals" icon="file-invoice" href="/calculations/invoice-totals">
-    Header aggregation: `taxblAmtB`, `totTaxAmt`, and consistency rules.
+    Header aggregation: `taxable_amount_b`, `total_tax_amount`, and consistency rules.
   </Card>
   <Card title="Stock & Purchases" icon="boxes-stacked" href="/calculations/stock-and-purchases">
-    Stock movement amounts and purchase confirmation math.
+    Automatic stock after VSDC 000, master remaining quantity, and purchase confirm math.
   </Card>
 </CardGroup>
 
@@ -54,20 +54,21 @@ flowchart TB
 | Rule | Detail |
 |------|--------|
 | Tax-inclusive pricing | Rwanda EBM uses **tax-inclusive** prices for category B. VAT is **extracted**, not added on top. |
-| Header = sum of lines | Every `taxblAmt*` and `taxAmt*` header field must equal the sum of matching line items. |
-| `taxTyCd` drives category | A line with `taxTyCd: "B"` contributes to `taxblAmtB` / `taxAmtB`, not A. |
-| `totAmt` consistency | Header `totAmt` must equal the sum of all line `totAmt` values. |
-| Round at each step | Round each line's `taxAmt` to 2 dp **before** summing into header totals. |
+| Header = sum of lines | Every `taxable_amount_*` and `tax_amount_*` header field must equal the sum of matching line items. |
+| `tax_type` drives category | A line with `tax_type: "B"` contributes to `taxable_amount_b` / `tax_amount_b`, not A. |
+| `total_amount` consistency | Header `total_amount` must equal the sum of all line `total_amount` values. |
+| Round at each step | Round each line's `tax_amount` to 2 dp **before** summing into header totals. |
+| Live rates E/F/TT | Kayko sends `taxRtF: 3.00` and `taxRtTt: 3.00` even when those buckets are 0. |
 
 ## Quick reference- category B (18% VAT)
 
-For the most common case (`taxTyCd: "B"`):
+For the most common case (`tax_type: "B"`):
 
 ```
-splyAmt     = prc × qty
-taxblAmt    = splyAmt − totDcAmt        (after discount)
-taxAmt      = ROUND(taxblAmt × 18 / 118, 2)
-totAmt      = taxblAmt                   (tax-inclusive- customer pays this)
+supply_amount     = price × quantity
+taxable_amount    = supply_amount − total_discount_amount
+tax_amount        = ROUND(taxable_amount × 18 / 118, 2)
+total_amount      = taxable_amount                   (tax-inclusive — customer pays this)
 ```
 
-See [VAT Formulas](/calculations/vat-formulas) for the full breakdown.
+Kayko computes these when you omit them on `POST /sales` / `POST /purchases/confirm`. See [VAT Formulas](/calculations/vat-formulas) for the full breakdown.

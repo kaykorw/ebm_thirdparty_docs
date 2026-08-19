@@ -1,83 +1,61 @@
 ---
 title: Data Synchronization
-description: How lastReqDt works and best practices for keeping data in sync.
+description: How x-last-request-date works and best practices for keeping data in sync.
 icon: arrows-rotate
 ---
 
-Many Kayko EBM endpoints are **incremental sync** APIs — they only return records that changed since your last request. Understanding this pattern is critical for a reliable integration.
+Many Kayko EBM **GET** routes are incremental — they only return records that changed since your last request.
 
-## The `lastReqDt` pattern
+## The `x-last-request-date` pattern
+
+Send the cursor as a header (14 digits `YYYYMMDDHHmmss`), not in the JSON body. Do not send `lastReqDt` or `ebm_url`.
 
 ```mermaid
 sequenceDiagram
     participant App
     participant EBM as Kayko EBM
 
-    App->>EBM: selectCodes (lastReqDt: "20000101000000")
-    EBM-->>App: All codes + resultDt: "20260303120000"
-    Note over App: Store "20260303120000"
+    App->>EBM: GET /items (x-last-request-date: 20000101000000)
+    EBM-->>App: All items
+    Note over App: Store the cursor you will send next
 
-    App->>EBM: selectCodes (lastReqDt: "20260303120000")
-    EBM-->>App: Only changed codes + resultDt: "20260304100000"
-    Note over App: Store "20260304100000"
+    App->>EBM: GET /items (x-last-request-date: last successful sync)
+    EBM-->>App: Only changed items
 ```
 
 ### Rules
 
-1. **First sync:** Use `"20000101000000"` or `"20210101010000"` to fetch everything.
-2. **Subsequent syncs:** Use the `resultDt` from the previous successful response.
-3. **Store per endpoint:** Each sync endpoint needs its own cursor. Don't share `lastReqDt` across different APIs.
-4. **Store per branch:** If you operate multiple branches, track `lastReqDt` per `tin` + `bhfId` combination.
+1. **First sync:** Use `20000101000000` to fetch everything.
+2. **Subsequent syncs:** Advance the cursor after a successful response.
+3. **Store per endpoint:** Do not share one cursor across items, imports, purchases, and stocks.
+4. **Store per branch:** Track the cursor per `x-tin` + `x-branch-id`.
 
-### Endpoints that use `lastReqDt`
+### Endpoints that use `x-last-request-date`
 
 | Endpoint | What it syncs |
 |----------|---------------|
-| `/code/selectCodes` | Tax types, payment methods, units, currencies |
-| `/itemClass/selectItemsClass` | Item classification codes |
-| `/branches/selectBranches` | Branch office list |
-| `/notices/selectNotices` | RRA announcements |
-| `/items/selectItems` | Registered products |
-| `/imports/selectImportItems` | Customs import declarations |
-| `/trnsPurchase/selectTrnsPurchaseSales` | Pending purchase invoices |
-| `/stock/selectStockItems` | Stock movement history |
+| `GET /branches` | Branch office list |
+| `GET /notices` | RRA announcements |
+| `GET /items` | Registered products |
+| `GET /imports` | Customs import declarations |
+| `GET /purchases` | Supplier invoices to confirm |
+| `GET /stocks` | Stock movement history |
+
+Constants (`GET /constants/*`) are static tables and do not use this header.
+
+Mapped list responses use `{ message, data }`. An empty pull is `{ "message": "No … found", "data": [] }` (not an error). Upstream VSDC `resultCd: "001"` also means nothing new.
 
 ## Recommended sync schedule
 
 | Data | Frequency | Priority |
 |------|-----------|----------|
-| Codes & classifications | Daily (or on app startup) | High- needed before transactions |
-| Notices | Daily | Medium- RRA announcements |
-| Branches | Weekly | Low- rarely changes |
+| Constants | Daily (or on app startup) | High — needed before transactions |
+| Notices | Daily | Medium |
+| Branches | Weekly | Low |
 | Items | After each save + daily pull | High |
-| Purchases | Every 15–30 minutes | High- for buyer confirmation |
+| Purchases | Every 15–30 minutes | High — for buyer confirmation |
+| Imports | Every 15–30 minutes | High when you import |
 | Stock movements | Daily | Medium |
-
-## Error handling during sync
-
-```javascript
-async function syncCodes(tin, bhfId, lastReqDt) {
-  const response = await ebmPost('/code/selectCodes', { tin, bhfId, lastReqDt });
-
-  if (response.resultCd === '000') {
-    await saveCodes(response.data.clsList);
-    await saveCursor('codes', response.resultDt); // only update on success
-    return response.data;
-  }
-
-  if (response.resultCd === '001') {
-    // No new data- this is fine, still update cursor
-    await saveCursor('codes', response.resultDt);
-    return [];
-  }
-
-  throw new EbmError(response.resultCd, response.resultMsg);
-}
-```
-
-<Note>
-  `resultCd: "001"` means "no search result"- it's not an error. It simply means nothing changed since your `lastReqDt`.
-</Note>
 
 ## Offline considerations
 
@@ -86,6 +64,7 @@ Kayko EBM can issue receipts offline, but with a hard limit:
 > If there is no internet connection for **24 hours** after a receipt signature is issued, the service **stops issuing receipt numbers**.
 
 Plan your architecture accordingly:
+
 - Queue sales locally when offline
 - Sync as soon as connectivity returns
-- Use `/trnsSales/resendSales` to re-submit failed transactions
+- Use `POST /sales/resend` if VSDC signed the sale but Kayko returned `EBM_SALE_PERSIST_FAILED`

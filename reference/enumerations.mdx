@@ -1,26 +1,32 @@
 ---
 title: Enumerations
-description: Code tables for tax types, payment methods, stock types, and more. Sync live via `/code/selectCodes` or use the tables below.
+description: Code tables for tax types, payment methods, stock types, and more. Prefer GET /constants/* and Kayko labels on write APIs.
 icon: table
 ---
 
+Kayko write APIs accept **snake_case labels** (`payment_method: credit`, `status: approved`, `stock_type: sale`). Kayko maps those to VSDC codes below. Live tables: `GET /constants/taxes`, `/payment-modes`, `/stock-types`, `/refund-reasons`, `/import-item-statuses`, and the other constant routes.
 
 ## Tax Type
 
-Used in `taxTyCd` on items and line items.
+Used as `tax_type` on items and line items (upstream `taxTyCd`).
 
-| Code | Name | Rate | `userDfnCd1` |
-|------|------|------|-------------|
+| Code | Name | Rate | `user_defined_code` |
+|------|------|------|---------------------|
 | `A` | A-EX (Exempt) | 0% | 0 |
 | `B` | B-18.00% | 18% | 18 |
-| `C` | C | 0% | 0 |
-| `D` | D | 0% | 0 |
+| `C` | C (Zero-rated) | 0% | 0 |
+| `D` | D (Non-VAT) | 0% | 0 |
+| `E` | E (reserved) | 0% | 0 |
+| `F` | F (Tourism tax) | 3% | 3 |
+| `TT` | TT | 3% | 3 |
+
+Live VSDC sale/purchase headers must include rates for **E, F, and TT** even when those buckets are 0. Kayko sends them as NUMBER 7,2 (`3.00`). Spec PDF v1.0.5 lists A–D only.
 
 ---
 
 ## Product Type
 
-Used in `itemTyCd` when registering items.
+Used as `item_type` when registering items (upstream `itemTyCd`).
 
 | Code | Name |
 |------|------|
@@ -32,7 +38,7 @@ Used in `itemTyCd` when registering items.
 
 ## Transaction Type
 
-Used in `salesTyCd` and `pchsTyCd`.
+Kayko sales always send live type `N`. Purchases accept `transaction_type` labels `normal`, `copy`, `proforma`, `training` (upstream `salesTyCd` / `pchsTyCd`).
 
 | Code | Name | Usage |
 |------|------|-------|
@@ -45,7 +51,7 @@ Used in `salesTyCd` and `pchsTyCd`.
 
 ## Sales Receipt Type
 
-Used in `rcptTyCd` on sales.
+`POST /sales` → `sale`. `POST /sales/refund` → `refund` (upstream `rcptTyCd`).
 
 | Code | Name |
 |------|------|
@@ -56,7 +62,7 @@ Used in `rcptTyCd` on sales.
 
 ## Purchase Receipt Type
 
-Used in `rcptTyCd` on purchases.
+Confirm with `receipt_type`: `purchase` or `refund` (upstream `rcptTyCd`).
 
 | Code | Name |
 |------|------|
@@ -67,49 +73,49 @@ Used in `rcptTyCd` on purchases.
 
 ## Payment Method
 
-Used in `pmtTyCd`.
+Send `payment_method` as a label. Aliases such as `cheque` and `mobile` are accepted.
 
-| Code | Name |
-|------|------|
-| `01` | CASH |
-| `02` | CREDIT |
-| `03` | CASH/CREDIT |
-| `04` | BANK CHECK |
-| `05` | DEBIT & CREDIT CARD |
-| `06` | MOBILE MONEY |
-| `07` | OTHER |
+| Code | Kayko label | Name |
+|------|-------------|------|
+| `01` | `cash` | CASH |
+| `02` | `credit` | CREDIT |
+| `03` | `cash_credit` | CASH/CREDIT |
+| `04` | `bank_check` | BANK CHECK |
+| `05` | `card` | DEBIT & CREDIT CARD |
+| `06` | `mobile_money` | MOBILE MONEY |
+| `07` | `other` | OTHER |
 
 ---
 
 ## Transaction Progress
 
-Used in `salesSttsCd` and `pchsSttsCd`.
+Send `status` as a label (`approved`, `refunded`, `cancelled`, …).
 
-| Code | Name |
-|------|------|
-| `01` | Wait for Approval |
-| `02` | Approved |
-| `03` | Cancel Requested |
-| `04` | Canceled |
-| `05` | Refunded |
-| `06` | Transferred |
+| Code | Kayko label | Name |
+|------|-------------|------|
+| `01` | `wait_for_approval` | Wait for Approval |
+| `02` | `approved` | Approved |
+| `03` | `cancel_requested` | Cancel Requested |
+| `04` | `canceled` | Canceled |
+| `05` | `refunded` | Refunded |
+| `06` | `transferred` | Transferred |
 
 ---
 
 ## Registration Type
 
-Used in `regTyCd` on purchases and stock.
+Send `registration_type`: `automatic` or `manual` (upstream `regTyCd`).
 
-| Code | Name |
-|------|------|
-| `A` | Automatic |
-| `M` | Manual |
+| Code | Kayko label | Name |
+|------|-------------|------|
+| `A` | `automatic` | Automatic |
+| `M` | `manual` | Manual |
 
 ---
 
 ## Stock In/Out Type
 
-Used in `sarTyCd` on stock movements.
+Send `stock_type` as a name (`sale`, `purchase`, `import`, `adjustment`, …). Auto chain after VSDC `000`: sale `11`, purchase `02`, import `01`, sale refund `03`, purchase refund `12`.
 
 ### Incoming (stock in)
 
@@ -137,7 +143,7 @@ Used in `sarTyCd` on stock movements.
 
 ## Refund Reason Code
 
-Used in `rfdRsnCd` on refunds.
+`POST /sales/refund` uses `refund_reason` labels (`missing_quantity`, `damaged`, `wrong_quantity`, `other`, …). Upstream `rfdRsnCd`.
 
 | Code | Name |
 |------|------|
@@ -159,7 +165,7 @@ Used in `rfdRsnCd` on refunds.
 
 ## Import Item Status
 
-Used in `imptItemSttsCd`.
+`POST /imports/confirm` accepts `approved` or `cancelled`. List responses use the names below (upstream `imptItemSttsCd`).
 
 | Code | Name |
 |------|------|
@@ -185,7 +191,7 @@ Returned in customer lookups as `taxprSttsCd`.
 
 ## Packaging Unit (full list) {#packaging-unit-full-list}
 
-Specification section 4.5- used in `pkgUnitCd`.
+Specification section 4.5 — used as `packaging_unit` (upstream `pkgUnitCd`).
 
 | Code | Sort | Name | Description |
 |------|------|------|-------------|
@@ -246,7 +252,7 @@ Specification section 4.5- used in `pkgUnitCd`.
 
 ## Unit of Quantity (full list) {#unit-of-quantity-full-list}
 
-Specification section 4.6- used in `qtyUnitCd`.
+Specification section 4.6 — used as `quantity_unit` (upstream `qtyUnitCd`).
 
 | Code | Sort | Name | Description |
 |------|------|------|-------------|

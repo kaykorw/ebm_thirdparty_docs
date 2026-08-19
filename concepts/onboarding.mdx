@@ -75,7 +75,7 @@ This means:
 - Plan for connectivity outages in your POS/ERP architecture
 - Queue transactions locally when offline
 - Reconnect and sync within 24 hours
-- Use `/trnsSales/resendSales` for failed submissions that were processed locally
+- Use `POST /sales/resend` if VSDC signed the sale but Kayko could not persist it (`EBM_SALE_PERSIST_FAILED`)
 
 ---
 

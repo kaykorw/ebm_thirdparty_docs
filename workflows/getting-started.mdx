@@ -18,14 +18,14 @@ For regulatory requirements, see [Onboarding & Policies](/concepts/onboarding).
 ```mermaid
 flowchart TD
     A["0. Enable EBM + API key"] --> B["1. Initialize Device"]
-    B --> C["2. Sync Codes"]
-    C --> D["3. Sync Item Classifications"]
-    D --> E["4. Register Items"]
+    B --> C["2. Sync Constants"]
+    C --> D["3. Register Items"]
+    D --> E["4. Seed Stock Master"]
     E --> F["5. Save Branch Customers"]
     F --> G{"What next?"}
-    G -->|Selling| H["6a. Submit Sale"]
-    G -->|Buying| I["6b. Pull Purchases"]
-    G -->|Inventory| J["6c. Stock Movement"]
+    G -->|Selling| H["6a. POST /sales"]
+    G -->|Buying| I["6b. GET /purchases then confirm"]
+    G -->|Imports| J["6c. GET /imports then confirm"]
     H --> K["7. Print Receipt"]
 ```
 
@@ -43,17 +43,15 @@ Send `x-tin`, `x-branch-id`, and a body with `device_serial_number` plus `busine
 
 ### 2. Sync reference codes
 
-Use `GET /constants/*` (for example taxes, payment modes, packaging, quantity) and cache the results locally. Your UI dropdowns depend on them. See [Constants](/api/constants).
+Use `GET /constants/*` (taxes, payment modes, packaging, quantity, stock types, refund reasons) and cache the results. See [Constants](/api/constants).
 
-### 3. Sync item classifications
+### 3. Register your products
 
-Pull product classifications before registering items. You need a valid `itemClsCd` on every product.
+`POST /items` with `x-branch-id: 00`. Omit `item_code` to let Kayko allocate it. See [Items](/api/items#item-code-format).
 
-### 4. Register your products
+### 4. Seed remaining quantity
 
-`POST /items/saveItems`
-
-Register each product with a unique `itemCd`. See [Items API - item code format](/api/items#item-code-format).
+`POST /stocks/master` for each stocked item (`remaining_quantity` is absolute on-hand). Automatic stock after sales/purchases/imports only updates the ledger when a master row exists. Skip services (`item_type` `3`).
 
 ### 5. Set up branch data (optional but recommended)
 
@@ -68,11 +66,14 @@ Register each product with a unique `itemCd`. See [Items API - item code format]
 
 ### 6. Start transacting
 
-Pick your workflow:
+| Workflow | Routes |
+|----------|--------|
+| Selling | `POST /sales` — then print `print.receipt_signature`. Refunds: `POST /sales/refund`. |
+| Buying | `GET /purchases` then `POST /purchases/confirm` (`x-branch-id: 00`) |
+| Imports | `GET /imports` then `POST /imports/confirm` (`x-branch-id: 00`) |
+| Manual stock | `POST /stocks` for adjustments only |
 
-- **Selling goods?** → [Sales](/api/sales)
-- **Confirming supplier invoices?** → [Purchases](/api/purchases)
-- **Managing inventory?** → [Stock](/api/stock)
+Do **not** POST stock in the same request as a sale or confirm. Kayko queues stock after VSDC `000`.
 
 ## Dependency rules
 
@@ -84,17 +85,18 @@ Pick your workflow:
 |------|-----|
 | Enable EBM and create an API key first | Kayko rejects unauthenticated requests |
 | Initialize before anything else | Device must be authenticated with RRA |
-| Register items before selling them | `itemCd` must exist on the server |
-| Submit sale before stock-out | Stock movements reference invoice data |
-| Stock in/out before stock master update | Master reflects movement results |
-| Pull purchases before confirming them | You can only confirm invoices that exist |
+| Register items before selling them | Unknown `item_code` → `EBM_ITEM_NOT_REGISTERED` |
+| Item writes, import confirm, purchase confirm at branch `00` | Other branches → `EBM_HEAD_OFFICE_REQUIRED` |
+| Seed stock master before selling stocked goods | Auto movements update remaining qty only if the ledger is seeded |
+| Pull purchases/imports before confirming | Confirm uses data from the list response |
+| Normal sale `orgInvcNo` is `0` | Kayko sets this; do not send `original_invoice_no` equal to `invoice_no` |
 
 ## Ongoing operations
 
 After initial setup, your daily loop looks like:
 
-1. **Sync codes** (if app was offline)
+1. **Sync constants** (if the app was offline)
 2. **Check notices** for RRA announcements
-3. **Process sales** as they happen
-4. **Pull & confirm purchases** periodically
-5. **Adjust stock** after sales/purchases
+3. **Process sales** as they happen (`POST /sales`)
+4. **Pull and confirm purchases/imports** periodically (head office)
+5. **Let Kayko post stock** after `000`; use `GET /stocks` to inspect movements
