@@ -103,15 +103,16 @@ When you create a key, select only the scopes your integration needs. Each scope
 | Scope | Covers |
 |-------|--------|
 | `customers` | Customer lookup and branch customer save |
-| `branch` | Branch users, insurance, and related branch pushes |
-| `items` | Item registration, catalog list, get/update/deactivate |
+| `branch` | Branch list, users, insurance, and related branch pushes |
+| `items` | Item registration, catalog list, get/update/deactivate, and item classes |
 | `stocks` | Stock movements, stock master, automatic chain after sales/purchases/imports |
 | `sales` | Sales, refunds, resend, and invoice lookup |
 | `purchase` | Purchase list and confirmation |
-| `notices` | Notices and related reference pulls |
+| `notices` | Notices pulls |
 | `import` | Customs import list and confirm |
+| `codes` | Standard code sync and tourism tax settings (`/codes`, `/codes/cached`, `/codes/tourism`) |
 
-A request fails with `API_KEY_SCOPE_DENIED` if the key is missing the scope required by that endpoint.
+A request fails with `API_KEY_SCOPE_DENIED` if the key is missing the scope required by that endpoint. Constants and live `/codes` routes currently accept any valid EBM API key (no scope check); other domains enforce the scopes above.
 
 ## IP allowlist (optional)
 

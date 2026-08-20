@@ -1,0 +1,92 @@
+---
+title: Glossary
+description: Plain-language definitions of RRA EBM and Kayko terms used across this documentation.
+icon: book
+---
+
+This glossary defines the jargon that appears in Kayko EBM requests, responses, and upstream RRA VSDC traffic. Terms are defined so you can integrate without having read the official VSDC Spec PDF.
+
+## Core systems
+
+| Term | Definition |
+|------|------------|
+| **RRA** | Rwanda Revenue Authority, the tax authority that operates EBM. |
+| **EBM** | Electronic Billing Machine (EBM 2.1), RRA’s electronic invoicing and fiscalization platform. |
+| **VSDC** | Virtual Sales Data Controller, the local (or managed) bridge that authenticates your device and relays JSON between your software and RRA. Your application must not call RRA’s public EBM API directly; Kayko talks to VSDC for you. |
+| **CIS** | Client Information System, RRA’s term for your ERP, POS, or other business software. |
+| **Kayko EBM** | Kayko’s HTTP gateway (`/ebm/...`). You authenticate with a Kayko API key; Kayko resolves your business VSDC URL and translates snake_case payloads into VSDC field names. |
+
+## Taxpayer and branch identity
+
+| Term | Definition |
+|------|------------|
+| **TIN** | Taxpayer Identification Number, nine characters identifying the business. Sent as header `x-tin` on Kayko routes (upstream field `tin`). |
+| **Branch ID (`bhfId`)** | Two-character office code within the TIN. Sent as header `x-branch-id`. Head office is always **`00`**. Item create/update/deactivate, import confirm, and purchase confirm must use head office. |
+| **Head office** | Branch `00`. RRA treats catalog and confirmation writes as a head-office responsibility. |
+| **Device serial number (`dvcSrlNo`)** | Hardware/software serial registered with RRA. Required once at `POST /initialize/init`. |
+
+## Fiscal device fields
+
+| Term | Definition |
+|------|------------|
+| **SDC** | Sales Data Controller identity returned after signing (`sdc_id` in Kayko print blocks). |
+| **MRC** | Manufacturer Registration Code printed on fiscal receipts (`mrc_no`). |
+| **Internal data (`internal_data`)** | Opaque fiscal payload from VSDC that must appear on the printed receipt. |
+| **Receipt signature (`receipt_signature`)** | Cryptographic signature from VSDC that proves the invoice was fiscalized. |
+
+## Catalog and stock identifiers
+
+| Term | Definition |
+|------|------------|
+| **Item code (`item_code` / `itemCd`)** | Your unique product identifier (max 20). Standard form embeds origin country, product type, packaging unit, quantity unit, and a seven-digit sequence. |
+| **Item classification code (`item_classification_code` / `itemClsCd`)** | Ten-digit RRA classification of *what* the product is. Different from `item_code`. |
+| **SAR number (`sar_no` / `sarNo`)** | Stock adjustment / movement reference number for `POST /stocks`. |
+| **Original invoice number (`original_invoice_no` / `orgInvcNo`)** | Links a refund or related document to a prior invoice. On **normal** sales Kayko sends upstream `orgInvcNo: 0`. Do not set `original_invoice_no` equal to `invoice_no` on a normal sale. |
+
+## Sync and flags
+
+| Term | Definition |
+|------|------------|
+| **Last request date (`x-last-request-date` / `lastReqDt`)** | Fourteen-digit cursor `YYYYMMDDHHmmss` telling VSDC “return records changed after this time.” Required on incremental GET routes such as items, imports, purchases, stocks, branches, notices, and codes. |
+| **`use` / `useYn`** | Active flag. Kayko accepts boolean `use`; VSDC stores `Y` or `N`. |
+
+## Tax types (A–F, TT)
+
+Used as `tax_type` on items and invoice lines (upstream `taxTyCd`). Rates on the sale/purchase **header** are separate fields (`taxRtA` … `taxRtTt`).
+
+| Code | Meaning (typical) |
+|------|-------------------|
+| **A** | Exempt (0%) |
+| **B** | Standard taxable VAT (18% in Rwanda for most goods) |
+| **C** | Zero-rated (0%) |
+| **D** | Non-VAT (0%) |
+| **E** | Reserved (0%), live headers often include this rate even though PDF v1.0.5 lists A–D only |
+| **F** | Tourism tax category in code tables, **do not send `tax_type: F` on sale lines**; live devices reject it |
+| **TT** | Tourism tax line type used with `tourism_tax: true` on sales |
+
+Configure tourism **header** rates with [`PUT /codes/tourism`](/api/codes).
+
+## Purchase and insurance
+
+| Term | Definition |
+|------|------------|
+| **Purchase code (`purchase_code` / `prcOrdCd`)** | Max six characters. Required when selling to a **business** customer (TIN present). Missing value → VSDC `881`. |
+| **Insurance code / name / rate** | Pharmacy-oriented fields (`isrccCd`, `isrccNm`, `isrcRt`) on branch insurance registration and optional sale lines. |
+
+## Result codes (selected)
+
+Full list: [Response Codes](/reference/response-codes) (spec §4.14).
+
+| Code | Meaning |
+|------|---------|
+| **`000`** | Success |
+| **`001`** | No search result (nothing new since your cursor, not a hard failure) |
+| **`881`** | Purchase code mandatory for business customers |
+| **`882`** | Purchase code invalid |
+| **`883`** | Purchase already used |
+| **`884`** | Invalid customer TIN |
+| **`894`** | Server / transport communication error (Kayko maps many Axios failures here) |
+| **`910`** | Request parameter validation error (totals, types, tourism rates, `orgInvcNo`, and similar) |
+| **`994`** | Overlapped / duplicate data |
+
+Kayko maps failed VSDC calls to HTTP errors shaped as `{ "status": "<resultCd>", "message": "…", "date": "…" }`.

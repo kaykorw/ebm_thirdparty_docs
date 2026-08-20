@@ -1,6 +1,6 @@
 # Kayko EBM Third-Party API Documentation
 
-Official Mintlify documentation for the **Kayko EBM API** — the gateway integrators use to connect ERP/POS systems to Rwanda Revenue Authority (RRA) EBM 2.1.
+Official Mintlify documentation for the **Kayko EBM API**, the gateway integrators use to connect ERP/POS systems to Rwanda Revenue Authority (RRA) EBM 2.1.
 
 ## Authentication
 

@@ -1,10 +1,12 @@
 ---
 title: Customers
-description: Look up and create branch customers via Kayko EBM.
+description: Look up RRA taxpayers by TIN and back up branch customer records via Kayko EBM.
 icon: users
 ---
 
-Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` from your business after Enable EBM, so you never put it in the JSON body.
+Customer APIs answer two different needs. **Lookup** asks RRA who a TIN belongs to (name, status, location) so you can validate a business buyer before a sale. **Create** stores a customer on the branch customer list in VSDC for backup and recovery (spec §3.3.3.1).
+
+Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` from your business after Enable EBM, so you never put it in the JSON body. On sales, pass the buyer under the nested `customer` object, see [Sales](/api/sales).
 
 ---
 
@@ -12,10 +14,10 @@ Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` fr
 
 `GET /customers`
 
-Requires a business API key with scope `customers`.
+Requires a business API key with scope `customers`. Use this before selling to a business TIN to avoid VSDC **`884`** (invalid customer TIN).
 
 <ParamField query="customer_tin" type="string" required>
-  Customer TIN to look up (exactly 9 characters).
+  Customer TIN to look up (exactly 9 characters). This is the *other* taxpayer’s TIN, not your `x-tin`.
 </ParamField>
 
 | Request | Upstream |
@@ -47,6 +49,25 @@ const data = await fetch(
 ```
 
 </CodeGroup>
+
+### Response
+
+```json
+{
+  "message": "success",
+  "data": [
+    {
+      "tin": "933000004",
+      "name": "COMPANY 04 LTD",
+      "status": "Active",
+      "province": "EAST",
+      "district": "NYAGATARE",
+      "sector": "NYAGATARE",
+      "location": "RRA"
+    }
+  ]
+}
+```
 
 ---
 
@@ -122,3 +143,13 @@ await fetch(`${BASE_URL}/customers/create`, {
 ```
 
 </CodeGroup>
+
+### Response
+
+```json
+{
+  "message": "success",
+  "data": null
+}
+```
+

@@ -7,7 +7,19 @@ icon: circle-exclamation
 
 ## Gateway HTTP errors
 
-These are Kayko responses (`{ status, message, error }`), not VSDC `resultCd`.
+These are Kayko responses (`{ status, message, error }`), not VSDC result codes.
+
+VSDC failures from `/ebm` routes are remapped to:
+
+```json
+{
+  "status": "910",
+  "message": "…",
+  "date": "20260820184713"
+}
+```
+
+`status` is the VSDC result code (`resultCd`). HTTP status follows the code family (4xx/5xx).
 
 | HTTP | `error` | Meaning |
 |------|---------|---------|
@@ -55,7 +67,7 @@ These indicate issues on the Kayko EBM or RRA server side.
 | `901` | Not valid device | Re-initialize with correct `dvcSrlNo` |
 | `902` | Device already installed | Device was already initialized- skip re-init |
 | `903` | Only a registered EBM device can be verified | Use a registered EBM device |
-| `910` | Request parameter error | Totals mismatch, wrong types, **normal sale `orgInvcNo` not `0`**, or missing/invalid `taxRtF` / `taxRtTt` (must be NUMBER 7,2, e.g. `3.00`). Kayko maps these for you — send snake_case and omit tax rates |
+| `910` | Request parameter error | Totals mismatch, wrong types, **normal sale `orgInvcNo` not `0`**, invalid tourism header rates (`taxRtF` / `taxRtTt`), or other field validation. Kayko maps snake_case for you, omit optional totals unless you can match line math. For tourism rate failures use [`PUT /codes/tourism`](/api/codes). |
 | `911` | No request full text | Request body is empty |
 | `912` | Request Method error | Use the documented Kayko method (`GET` / `POST` / `PUT` / `DELETE`) |
 | `921` | Sales data cannot be received | Invoice data conflict- check invoice numbers |
@@ -64,41 +76,39 @@ These indicate issues on the Kayko EBM or RRA server side.
 | `991` | Registration error | Data validation failed on create |
 | `992` | Modification error | Data validation failed on update |
 | `993` | Deletion error | Data validation failed on delete |
-| `994` | Overlapped data | Duplicate record — Kayko treats this as already accepted for some retries |
+| `994` | Overlapped data | Duplicate record, Kayko treats this as already accepted for some retries |
 | `995` | No downloaded file | File not found on server |
 | `999` | Unknown error | Contact RRA administrator |
 
 ## Error handling pattern
 
+Successful mapped routes return `{ message, data }`. VSDC failures throw HTTP errors with:
+
+```json
+{ "status": "910", "message": "…", "date": "20260820184713" }
+```
+
 ```javascript
-function handleEbmResponse(response) {
-  const { resultCd, resultMsg } = response;
-
-  if (resultCd === '000') return { success: true, data: response.data };
-  if (resultCd === '001') return { success: true, data: [], empty: true };
-
+function handleEbmError(body) {
+  const { status, message } = body;
   const retryable = ['894', '896', '999'];
   const userFixable = ['881', '882', '884', '910', '921', '922', '994'];
 
   return {
     success: false,
-    code: resultCd,
-    message: resultMsg,
-    retryable: retryable.includes(resultCd),
-    userFixable: userFixable.includes(resultCd),
+    code: status,
+    message,
+    retryable: retryable.includes(status),
+    userFixable: userFixable.includes(status),
   };
 }
 ```
 
 ```php
 <?php
-function handleEbmResponse(array $response): array {
-    $code = $response['resultCd'] ?? '999';
-
-    if ($code === '000') return ['success' => true, 'data' => $response['data']];
-    if ($code === '001') return ['success' => true, 'data' => [], 'empty' => true];
-
-    throw new EbmException($code, $response['resultMsg'] ?? 'Unknown error');
+function handleEbmError(array $body): never {
+    $code = $body['status'] ?? '999';
+    throw new EbmException($code, $body['message'] ?? 'Unknown error');
 }
 ```
 

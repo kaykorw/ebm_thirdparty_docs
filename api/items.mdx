@@ -1,15 +1,15 @@
 ---
 title: Items
-description: Register, update, deactivate, and list products via Kayko EBM.
+description: Register, update, deactivate, and list products; sync item classes; save bill-of-material compositions.
 icon: box
 ---
 
-Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` from your business after Enable EBM, so you never put it in the JSON body.
+An **item** is a product or service in your fiscal catalog. Every sale, purchase confirmation, import confirmation, and stock movement refers to an `item_code` that VSDC already knows. Register items at head office before you transact.
 
-Requires a business API key with scope `items`.
+Requires a business API key with scope `items`. Send `x-tin` and `x-branch-id` on every route below.
 
 <Warning>
-  Create, update, and deactivate must use head office `x-branch-id: 00`. Other branches receive `403` / `EBM_HEAD_OFFICE_REQUIRED`. List and get-by-code work for any allowed branch.
+  Create, update, deactivate, and composition writes must use head office `x-branch-id: 00`. Other branches receive `403` / `EBM_HEAD_OFFICE_REQUIRED`. List, get-by-code, and item-class sync work for any allowed branch.
 </Warning>
 
 ---
@@ -29,7 +29,7 @@ item_code = {origin_country}{item_type}{packaging_unit}{quantity_unit}{sequence}
 | Segment | Length | Request field | Example | Reference |
 |---------|--------|---------------|---------|-----------|
 | Country of origin | 2 | `origin_country` | `RW` | [Country codes](/reference/country-codes) |
-| Product type | 1 | `item_type` | `2` | [Product type](/reference/enumerations#product-type) |
+| Product type | 1 | `item_type` | `2` (from label `finished_product`) | [Product type](/reference/enumerations#product-type) |
 | Packaging unit | 2 | `packaging_unit` | `NT` | [Packaging units](/reference/enumerations#packaging-unit-full-list) |
 | Quantity unit | 2 | `quantity_unit` | `U` | [Quantity units](/reference/enumerations#unit-of-quantity-full-list) |
 | Sequence | 7 | Auto-increment | `0000001` | Unique per 7-character prefix |
@@ -53,17 +53,35 @@ RW2NTU0000012
 
 ### Generation rules
 
-1. **Globally unique** — no two active items may share the same `item_code`.
-2. **Prefix must match fields** — the first 7 characters must equal origin + type + packaging + quantity in the same request.
-3. **Sequence increments per prefix** — for prefix `RW2NTU`, use `0000001`, then `0000002`, and so on.
-4. **Never reuse** — retired items keep their codes.
-5. **Immutable units** — changing `packaging_unit` or `quantity_unit` after registration requires a **new** `item_code`.
+1. **Globally unique**, no two active items may share the same `item_code`.
+2. **Prefix must match fields**, the first 7 characters must equal origin + type + packaging + quantity in the same request.
+3. **Sequence increments per prefix**, for prefix `RW2NTU`, use `0000001`, then `0000002`, and so on.
+4. **Never reuse**, retired items keep their codes.
+5. **Immutable units**, changing `packaging_unit` or `quantity_unit` after registration requires a **new** `item_code`.
 
 <Warning>
   A sale, purchase, or stock line that references an unregistered `item_code` fails. Register products first. Sales return `EBM_ITEM_NOT_REGISTERED` when the catalog is missing the code.
 </Warning>
 
-Product type `3` is a **service**. Kayko still registers it, but it does **not** post stock movements after sales or purchases.
+Item type **`service`** (upstream code `3`) still registers, but Kayko **does not** post stock movements after sales or purchases for services.
+
+---
+
+## Item classes {#item-classes}
+
+`GET /item-classes`
+
+Pulls the RRA item classification tree. You need a ten-digit `item_classification_code` from this list (or an equivalent authoritative source) when creating items.
+
+**Required header:** `x-last-request-date` (`YYYYMMDDHHmmss`). First sync: `20000101000000`.
+
+```bash
+curl -X GET "{{baseUrl}}/item-classes" \
+  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
+  -H "x-tin: 100027060" \
+  -H "x-branch-id: 00" \
+  -H "x-last-request-date: 20000101000000"
+```
 
 ---
 
@@ -71,23 +89,25 @@ Product type `3` is a **service**. Kayko still registers it, but it does **not**
 
 `POST /items`
 
-<ParamField body="item_classification_code" type="string" required>10-digit RRA classification</ParamField>
-<ParamField body="item_type" type="string" required>`1` Raw Material, `2` Finished Product, `3` Service</ParamField>
-<ParamField body="item_name" type="string" required>Product name (max 200)</ParamField>
-<ParamField body="origin_country" type="string" required>ISO-style origin (e.g. `RW`)</ParamField>
-<ParamField body="packaging_unit" type="string" required>Packaging code (e.g. `NT`)</ParamField>
-<ParamField body="quantity_unit" type="string" required>Quantity code (e.g. `U`)</ParamField>
-<ParamField body="tax_type" type="string" required>Tax category (`A`, `B`, `C`, `D`, `E`, `F`, `TT`)</ParamField>
-<ParamField body="default_price" type="number" required>Default unit price (2 decimals)</ParamField>
-<ParamField body="item_code" type="string">Optional. Omit to let Kayko allocate the next code for this prefix.</ParamField>
-<ParamField body="standard_name" type="string">Standard / generic name</ParamField>
-<ParamField body="barcode" type="string">Barcode</ParamField>
-<ParamField body="batch_number" type="string">Batch number</ParamField>
-<ParamField body="insurance_applicable" type="boolean">Defaults to `false`</ParamField>
-<ParamField body="use" type="boolean">Active flag; defaults to `true`</ParamField>
-<ParamField body="safety_quantity" type="number">Safety stock quantity</ParamField>
-<ParamField body="additional_info" type="string">Extra info (max 7)</ParamField>
-<ParamField body="group_price_1" type="number">Optional group prices 1–5</ParamField>
+| Field | Required | Meaning |
+|-------|----------|---------|
+| `item_classification_code` | Yes | Ten-digit RRA classification from item classes. |
+| `item_type` | Yes | Label: `raw_material`, `finished_product`, or `service`. Legacy codes `1` / `2` / `3` are accepted. Responses return labels. |
+| `item_name` | Yes | Product name (max 200). |
+| `origin_country` | Yes | Two-character origin (for example `RW`). |
+| `packaging_unit` | Yes | Packaging code (for example `NT`). |
+| `quantity_unit` | Yes | Quantity code (for example `U`). |
+| `tax_type` | Yes | Tax category (`A`, `B`, `C`, `D`, `E`, `TT`, …). Prefer `B` for standard VAT goods. |
+| `default_price` | Yes | Default unit price (two decimals). |
+| `item_code` | No | Omit to let Kayko allocate the next code for this prefix. |
+| `standard_name` | No | Generic / standard name. |
+| `barcode` | No | Barcode. |
+| `batch_number` | No | Batch number. |
+| `insurance_applicable` | No | Defaults to `false`. |
+| `use` | No | Active flag; defaults to `true`. |
+| `safety_quantity` | No | Safety stock quantity. |
+| `additional_info` | No | Extra info (max 7). |
+| `group_price_1` … `group_price_5` | No | Optional group prices. |
 
 Registrar and modifier fields are set by Kayko.
 
@@ -101,7 +121,7 @@ curl -X POST "{{baseUrl}}/items" \
   -H "x-branch-id: 00" \
   -d '{
     "item_classification_code": "8014160101",
-    "item_type": "2",
+    "item_type": "finished_product",
     "item_name": "Coca Cola",
     "origin_country": "RW",
     "packaging_unit": "NT",
@@ -122,7 +142,7 @@ await fetch(`${BASE_URL}/items`, {
   },
   body: JSON.stringify({
     item_classification_code: '8014160101',
-    item_type: '2',
+    item_type: 'finished_product',
     item_name: 'Coca Cola',
     origin_country: 'RW',
     packaging_unit: 'NT',
@@ -136,7 +156,7 @@ await fetch(`${BASE_URL}/items`, {
 ```json Payload
 {
   "item_classification_code": "8014160101",
-  "item_type": "2",
+  "item_type": "finished_product",
   "item_name": "Coca Cola",
   "origin_country": "RW",
   "packaging_unit": "NT",
@@ -230,4 +250,26 @@ curl -X DELETE "{{baseUrl}}/items/RW2NTU0000001" \
   -H "x-branch-id: 00"
 ```
 
-There is **no** item-composition endpoint on the Kayko gateway.
+---
+
+## Save item composition {#compositions}
+
+`POST /items/compositions`
+
+Stores one bill-of-materials link (parent finished item → component) on VSDC. Spec §3.3.4.2 notes compositions are for client restoration / BOM; they are not listed back by a select API. Head office `x-branch-id: 00` required. Do not reference an item as its own component.
+
+| Field | Required | Meaning |
+|-------|----------|---------|
+| `item_code` | Yes | Parent item code (already registered). |
+| `component_item_code` | Yes | Component item code (already registered). |
+| `quantity` | Yes | Quantity of the component per parent (positive, two decimals). |
+
+```json
+{
+  "item_code": "RW2NTU0000001",
+  "component_item_code": "RW1NTU0000002",
+  "quantity": 2
+}
+```
+
+Call the endpoint once per parent/component pair.

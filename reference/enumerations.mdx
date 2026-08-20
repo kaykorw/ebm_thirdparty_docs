@@ -10,17 +10,17 @@ Kayko write APIs accept **snake_case labels** (`payment_method: credit`, `status
 
 Used as `tax_type` on items and line items (upstream `taxTyCd`).
 
-| Code | Name | Rate | `user_defined_code` |
-|------|------|------|---------------------|
-| `A` | A-EX (Exempt) | 0% | 0 |
-| `B` | B-18.00% | 18% | 18 |
-| `C` | C (Zero-rated) | 0% | 0 |
-| `D` | D (Non-VAT) | 0% | 0 |
-| `E` | E (reserved) | 0% | 0 |
-| `F` | F (Tourism tax) | 3% | 3 |
-| `TT` | TT | 3% | 3 |
+| Code | Name | Typical rate | Notes for integrators |
+|------|------|--------------|------------------------|
+| `A` | A-EX (Exempt) | 0% | Exempt supplies |
+| `B` | B-18.00% | 18% | Standard VAT goods, most common |
+| `C` | C (Zero-rated) | 0% | Zero-rated |
+| `D` | D (Non-VAT) | 0% | Non-VAT |
+| `E` | E (reserved) | 0% | Appears on live sale **headers** even though PDF v1.0.5 lists A–D only |
+| `F` | F (Tourism tax) | often 3% in tables | **Do not** send `tax_type: F` on sale lines, live devices reject it |
+| `TT` | TT (Tourism) | often 3% | Use on tourism sale lines with `tourism_tax: true` |
 
-Live VSDC sale/purchase headers must include rates for **E, F, and TT** even when those buckets are 0. Kayko sends them as NUMBER 7,2 (`3.00`). Spec PDF v1.0.5 lists A–D only.
+Live sale headers must include tourism rate keys `taxRtF` and `taxRtTt`. Kayko does **not** blindly send `3.00` for every TIN. Non-tourism businesses usually get JSON `null` rates; tourism businesses use catalog rates; overrides go through [`PUT /codes/tourism`](/api/codes) or sale-level `tax_rate_f` / `tax_rate_tt`.
 
 ---
 
@@ -28,11 +28,13 @@ Live VSDC sale/purchase headers must include rates for **E, F, and TT** even whe
 
 Used as `item_type` when registering items (upstream `itemTyCd`).
 
-| Code | Name |
-|------|------|
-| `1` | Raw Material |
-| `2` | Finished Product |
-| `3` | Service (no stock) |
+Kayko accepts **text labels** on write APIs and returns those labels on read APIs. Legacy numeric codes remain accepted on input for compatibility.
+
+| Upstream code | Kayko label | Name |
+|---------------|-------------|------|
+| `1` | `raw_material` | Raw Material |
+| `2` | `finished_product` | Finished Product |
+| `3` | `service` | Service (no automatic stock) |
 
 ---
 
@@ -191,7 +193,7 @@ Returned in customer lookups as `taxprSttsCd`.
 
 ## Packaging Unit (full list) {#packaging-unit-full-list}
 
-Specification section 4.5 — used as `packaging_unit` (upstream `pkgUnitCd`).
+Specification section 4.5, used as `packaging_unit` (upstream `pkgUnitCd`).
 
 | Code | Sort | Name | Description |
 |------|------|------|-------------|
@@ -252,7 +254,7 @@ Specification section 4.5 — used as `packaging_unit` (upstream `pkgUnitCd`).
 
 ## Unit of Quantity (full list) {#unit-of-quantity-full-list}
 
-Specification section 4.6 — used as `quantity_unit` (upstream `qtyUnitCd`).
+Specification section 4.6, used as `quantity_unit` (upstream `qtyUnitCd`).
 
 | Code | Sort | Name | Description |
 |------|------|------|-------------|

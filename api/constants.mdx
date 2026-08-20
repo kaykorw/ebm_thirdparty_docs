@@ -1,8 +1,12 @@
 ---
 title: Constants
-description: Kayko EBM reference tables via GET /constants/*, plus notices.
+description: Kayko EBM reference tables via GET /constants/*, plus notices for RRA announcements.
 icon: database
 ---
+
+Constants are **static, integrator-friendly code tables** served by Kayko. Use them to populate dropdowns for tax types, packaging units, payment methods, stock types, refund reasons, and related fields before you build sales or stock UIs.
+
+For the **live** device catalog from VSDC (and tourism settings), also use [`GET /codes`](/api/codes). Human-readable tax labels such as **B, 18% Taxable** come from these tables and from [Enumerations](/reference/enumerations).
 
 All constant endpoints are **`GET /constants/…`** on the Kayko EBM gateway. Authenticate with your business API key (any scope). Tenant headers are not required for constants.
 

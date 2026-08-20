@@ -1,75 +1,90 @@
 ---
 title: Sales
-description: Submit sales, refunds, and resends. Kayko signs with VSDC and returns print fields.
+description: Submit sales and refunds, resend signed invoices, and retrieve print fields after VSDC fiscalization.
 icon: receipt
 ---
 
-Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` from your business after Enable EBM, so you never put it in the JSON body.
+A **sale** in EBM is the fiscal record of goods or services you sold: customer identity (optional), payment method, line items with tax types, and dates. Kayko sends that record to your Virtual Sales Data Controller (VSDC), which signs it with RRA and returns the values you must print on the customer receipt.
 
-Requires a business API key with scope `sales`. Any allowed branch may sell.
+**Authentication:** business API key with scope `sales`.  
+**Headers on every route:** `x-tin` (nine-character TIN) and `x-branch-id` (two-character branch). Any allowed branch may sell; you do not put `ebm_url` in the body.
 
 ```mermaid
 sequenceDiagram
-    participant POS as Your POS/ERP
+    participant POS as Your POS or ERP
     participant Kayko as Kayko EBM
     participant RRA as RRA VSDC
 
     POS->>Kayko: POST /sales
-    Kayko->>RRA: saveSales (orgInvcNo 0, taxRt A–D + E/F/TT)
-    RRA-->>Kayko: Signature + counters
-    Note over Kayko: Persist sale + enqueue stock-out in one TX
-    Kayko-->>POS: print.receipt_signature, print.internal_data
+    Kayko->>RRA: saveSales
+    RRA-->>Kayko: Signature and receipt counters
+    Note over Kayko: Persist sale and enqueue stock-out
+    Kayko-->>POS: print.receipt_signature and related fields
     Note over POS: Print the signed receipt
 ```
 
-Register items first. Unknown `item_code` returns `EBM_ITEM_NOT_REGISTERED`.
+### Prerequisites
 
-Kayko **does not** post stock in the same HTTP request as the sale. After VSDC `000`, stock-out is queued and sent later. Seed remaining quantity with `POST /stocks/master` so the ledger can update. Services (`item_type` `3`) skip stock.
+Register every `item_code` with [`POST /items`](/api/items) before selling it. Unknown codes return `EBM_ITEM_NOT_REGISTERED`. For stocked goods, seed on-hand quantity with [`POST /stocks/master`](/api/stock) so the automatic stock-out after a successful sale can update the ledger. Services (`item_type` `service`) skip stock.
+
+Kayko does **not** post stock in the same HTTP response as the sale. After VSDC returns success (`000`), a stock-out job is queued asynchronously.
 
 ---
 
-## Submit sale
+## Create new sale
 
 `POST /sales`
 
-A normal sale is always transaction type `N` and receipt type `S`. Kayko sends upstream **`orgInvcNo: 0`**. Do not set `original_invoice_no` equal to `invoice_no` — that causes VSDC `910`.
+Use this for a **normal** fiscal sale. Kayko always sends upstream transaction type normal and receipt type sale, and sets **`orgInvcNo` to `0`**. Do **not** set `original_invoice_no` equal to `invoice_no` on this route, that produces VSDC `910`. Refunds belong on `POST /sales/refund`.
 
-Refunds use `POST /sales/refund`, not this route.
+### Request fields
 
-<ParamField body="invoice_no" type="integer" required>Your sequential invoice number</ParamField>
-<ParamField body="payment_method" type="string" required>`cash`, `credit`, `cash_credit`, `bank_check`, `card`, `mobile_money`, or `other`</ParamField>
-<ParamField body="items" type="array" required>Line items</ParamField>
-<ParamField body="customer_tin" type="string">9-digit TIN (required for business customers)</ParamField>
-<ParamField body="customer_name" type="string">Customer name</ParamField>
-<ParamField body="customer_phone" type="string">Phone</ParamField>
-<ParamField body="purchase_order_code" type="string">Max 6. **Required for business customers** (v1.0.5)</ParamField>
-<ParamField body="status" type="string">Usually `approved`</ParamField>
-<ParamField body="sales_date" type="string">`YYYYMMDD`; defaults to today</ParamField>
-<ParamField body="confirmed_at" type="string">`YYYYMMDDHHmmss`</ParamField>
-<ParamField body="buyer_accepted" type="boolean">Defaults to accepted when omitted</ParamField>
-<ParamField body="notes" type="string">Optional notes</ParamField>
-<ParamField body="receipt" type="object">Optional print template (header/footer, trade name)</ParamField>
+| Field | Required | Format and meaning |
+|-------|----------|--------------------|
+| `invoice_no` | Yes | Positive integer. Your sequential CIS invoice number. Must be unique for new sales. |
+| `payment_method` | Yes | Label: `cash`, `credit`, `cash_credit`, `bank_check`, `card`, `mobile_money`, or `other`. See [Enumerations](/reference/enumerations#payment-method). |
+| `items` | Yes | Array of one or more lines (see below). |
+| `customer` | No | Nested object. Prefer this over any legacy flat examples. |
+| `customer.tin_no` | No | Nine-character customer TIN. Required for business buyers; validate with [`GET /customers`](/api/customers) when unsure. |
+| `customer.full_name` | No | Customer display name (max 60 upstream). |
+| `customer.telephone` | No | Phone; Kayko normalizes digits for VSDC. |
+| `purchase_code` | Conditional | Max **6** characters. **Required when the customer is a business (TIN present).** Missing → VSDC **`881`**. |
+| `status` | No | Label such as `approved`, `canceled`, `refunded`, `transferred`. Defaults appropriately when omitted. |
+| `dates` | No | Nested dates object. |
+| `dates.origin_date` | No | Sale date `YYYYMMDD`. Defaults to today when omitted. |
+| `dates.confirmed_at` | No | Confirmation timestamp `YYYYMMDDHHmmss`. |
+| `dates.stock_released_at` | No | Optional stock-release timestamp, or null. |
+| `buyer_accepted` | No | Boolean; treated as accepted when omitted. |
+| `tourism_tax` | No | When `true`, Kayko uses catalog tourism header rates. When false/omitted, non-tourism null strategy applies unless overrides exist. Configure defaults via [`PUT /codes/tourism`](/api/codes). |
+| `tax_rate_f` / `tax_rate_tt` | No | Optional numeric overrides (0–100) for this sale only. Prefer configuring defaults via [`PUT /codes/tourism`](/api/codes). |
+| `notes` | No | Free text (max 400). |
+| `receipt` | No | Optional print template fields (`report_number`, `customer_tin`, `customer_mobile`, `trade_name`, `address`, `header`, `footer`). |
 
-Optional header buckets: `taxable_amount_a` … `taxable_amount_tt`, `tax_amount_*`, `total_taxable_amount`, `total_tax_amount`, `total_amount`. Omit them to let Kayko compute from lines. If you send them, they must match line math or VSDC returns `910`.
+Optional header amount buckets (`taxable_amount_a` … `tt`, `tax_amount_*`, `total_*`) may be omitted so Kayko computes them from lines. If you send them, they must match line math or VSDC returns **`910`**.
 
-Kayko always forwards live tax **rates** to VSDC as NUMBER 7,2 (for example `"taxRtB":18.00`, `"taxRtF":3.00`, `"taxRtTt":3.00`). Spec PDF v1.0.5 documents A–D only; current devices also require **E** (reserved, 0%), **F** (tourism tax, 3%), and **TT** (3%).
+Do **not** send sale line `tax_type: "F"`. Use **`TT`** with `tourism_tax: true` when fiscalizing tourism tax lines.
 
 ### Line items
 
 | Field | Required | Notes |
 |-------|----------|-------|
-| `item_code` | Y | Must be registered |
-| `item_name` | Y | |
-| `packaging_unit` | Y | |
-| `packages` | Y | |
-| `quantity_unit` | Y | |
-| `quantity` | Y | Positive |
-| `price` | Y | Tax-inclusive unit price |
-| `tax_type` | Y | Usually `B` (18% VAT) |
-| `item_classification_code` | N | Filled from catalog when omitted |
-| `supply_amount`, `discount_rate`, `discount_amount`, `taxable_amount`, `tax_amount`, `total_amount` | N | Computed if omitted |
+| `sequence` | Yes | Integer 1–999; unique per invoice, typically consecutive. |
+| `item_code` | Yes | Must already be registered. |
+| `item_name` | Yes | Max 200. |
+| `packaging_unit` | Yes | Code from packaging constants (for example `NT`). |
+| `packages` | Yes | Number ≥ 0, max two decimals. |
+| `quantity_unit` | Yes | Code from quantity constants (for example `U`). |
+| `quantity` | Yes | Positive quantity. |
+| `price` | Yes | Tax-inclusive unit price. |
+| `tax_type` | Yes | Usually `B` (18% VAT). See [Glossary](/reference/glossary) and [VAT Formulas](/calculations/vat-formulas). |
+| `item_classification_code` | No | Ten digits; filled from catalog when omitted. |
+| `barcode` | No | Optional. |
+| `supply_amount`, `discount_rate`, `discount_amount`, `total_discount_amount`, `taxable_amount`, `tax_amount`, `total_amount` | No | Computed when omitted. |
+| `insurance_code`, `insurance_name`, `insurance_rate`, `insurance_amount` | No | Pharmacy / insured sales lines. |
 
-Category B VAT is extracted as `taxable_amount × 18 / 118`, rounded to 2 decimals. See [VAT Formulas](/calculations/vat-formulas).
+Category B VAT extraction uses taxable amount × 18 / 118, rounded to two decimals.
+
+### Example
 
 <CodeGroup>
 
@@ -82,11 +97,15 @@ curl -X POST "{{baseUrl}}/sales" \
   -d '{
     "invoice_no": 1799,
     "payment_method": "credit",
-    "customer_tin": "100004527",
-    "customer_name": "RULIBA CLAYS LTD",
-    "purchase_order_code": "PO0001",
-    "sales_date": "20260303",
+    "purchase_code": "PO0001",
+    "customer": {
+      "tin_no": "100004527",
+      "full_name": "RULIBA CLAYS LTD",
+      "telephone": "788312173"
+    },
+    "dates": { "origin_date": "20260303", "confirmed_at": "20260303145619" },
     "items": [{
+      "sequence": 1,
       "item_code": "RW2NTU0000642",
       "item_name": "TOLE PL 2 44X1 22X10",
       "packaging_unit": "NT",
@@ -111,12 +130,16 @@ await fetch(`${BASE_URL}/sales`, {
   body: JSON.stringify({
     invoice_no: 1799,
     payment_method: 'credit',
-    customer_tin: '100004527',
-    customer_name: 'RULIBA CLAYS LTD',
-    purchase_order_code: 'PO0001',
-    sales_date: '20260303',
+    purchase_code: 'PO0001',
+    customer: {
+      tin_no: '100004527',
+      full_name: 'RULIBA CLAYS LTD',
+      telephone: '788312173',
+    },
+    dates: { origin_date: '20260303', confirmed_at: '20260303145619' },
     items: [
       {
+        sequence: 1,
         item_code: 'RW2NTU0000642',
         item_name: 'TOLE PL 2 44X1 22X10',
         packaging_unit: 'NT',
@@ -135,12 +158,19 @@ await fetch(`${BASE_URL}/sales`, {
 {
   "invoice_no": 1799,
   "payment_method": "credit",
-  "customer_tin": "100004527",
-  "customer_name": "RULIBA CLAYS LTD",
-  "purchase_order_code": "PO0001",
-  "sales_date": "20260303",
+  "purchase_code": "PO0001",
+  "customer": {
+    "tin_no": "100004527",
+    "full_name": "RULIBA CLAYS LTD",
+    "telephone": "788312173"
+  },
+  "dates": {
+    "origin_date": "20260303",
+    "confirmed_at": "20260303145619"
+  },
   "items": [
     {
+      "sequence": 1,
       "item_code": "RW2NTU0000642",
       "item_name": "TOLE PL 2 44X1 22X10",
       "packaging_unit": "NT",
@@ -156,7 +186,7 @@ await fetch(`${BASE_URL}/sales`, {
 
 </CodeGroup>
 
-Success:
+### Success response
 
 ```json
 {
@@ -180,13 +210,24 @@ Success:
 }
 ```
 
-Print `print.receipt_signature` and `print.internal_data` on the customer receipt.
+Print **`print.receipt_signature`** and **`print.internal_data`** (and the counters / SDC / MRC as required by your receipt layout). Definitions: [Glossary](/reference/glossary).
 
-### Persist failure (already signed)
+### Persist failure after signing
 
-If VSDC returns `000` but Kayko cannot persist the sale locally, you get **HTTP 503** with `error: EBM_SALE_PERSIST_FAILED` plus the signature fields. The sale **is signed** — do not submit a new invoice number. Retry with `POST /sales/resend` using those fields.
+If VSDC returns success but Kayko cannot store the sale locally, you receive **HTTP 503** with `error: EBM_SALE_PERSIST_FAILED` and the signature fields in the body. The invoice **is already signed**. Do not allocate a new `invoice_no`. Retry with [`POST /sales/resend`](#resend-sale).
 
-Sales also require the local store (`DATABASE_URL`). If it is down, Kayko does not call VSDC and returns `EBM_SALES_STORE_UNAVAILABLE`.
+If the local sales store is unavailable before the VSDC call, Kayko returns `EBM_SALES_STORE_UNAVAILABLE` and does not fiscalize.
+
+### Common VSDC-mapped errors
+
+| `status` | Meaning | What to do |
+|----------|---------|------------|
+| `881` | Purchase code mandatory | Send `purchase_code` for business customers |
+| `884` | Invalid customer TIN | Look up TIN with `GET /customers` |
+| `910` | Parameter validation (totals, `orgInvcNo`, tourism rates, types) | Fix payload; for tourism rates use [`PUT /codes/tourism`](/api/codes) or sale-level `tax_rate_f` / `tax_rate_tt` |
+| `994` | Duplicate / overlapped | Treat carefully; Kayko may treat some duplicates as already accepted on retry paths |
+
+Full table: [Response Codes](/reference/response-codes).
 
 ---
 
@@ -194,14 +235,15 @@ Sales also require the local store (`DATABASE_URL`). If it is down, Kayko does n
 
 `POST /sales/refund`
 
-Same line payload as a sale, plus:
+Issues a fiscal **refund** receipt linked to a prior sale. Kayko sends receipt type refund and sets `orgInvcNo` to the original invoice. Stock-in for the refund is queued after success.
 
-<ParamField body="invoice_no" type="integer" required>New refund invoice number (not the original)</ParamField>
-<ParamField body="original_invoice_no" type="integer" required>The original sale invoice number</ParamField>
-<ParamField body="refund_reason" type="string" required>Label from `GET /constants/refund-reasons`, e.g. `wrong_quantity`, `damaged`, `other`</ParamField>
-<ParamField body="refunded_at" type="string">`YYYYMMDDHHmmss`</ParamField>
-
-Kayko sends upstream receipt type `R` and `orgInvcNo` = original invoice. Stock-in for the refund is queued after `000` (`sarTyCd` `03`). If the original stock link is not ready yet, Kayko retries instead of posting `orgSarNo: 0`.
+| Field | Required | Notes |
+|-------|----------|-------|
+| `invoice_no` | Yes | **New** refund invoice number (not the original). |
+| `original_invoice_no` | Yes | The sale being refunded. |
+| `refund_reason` | Yes | Label from `GET /constants/refund-reasons` (for example `wrong_quantity`, `damaged`, `other`). |
+| `refunded_at` | No | `YYYYMMDDHHmmss`. |
+| Other sale fields | As needed | Same nested `customer`, `items`, `payment_method`, and so on. |
 
 ```json
 {
@@ -211,6 +253,7 @@ Kayko sends upstream receipt type `R` and `orgInvcNo` = original invoice. Stock-
   "refund_reason": "wrong_quantity",
   "items": [
     {
+      "sequence": 1,
       "item_code": "RW2NTU0000642",
       "item_name": "TOLE PL 2 44X1 22X10",
       "packaging_unit": "NT",
@@ -226,24 +269,25 @@ Kayko sends upstream receipt type `R` and `orgInvcNo` = original invoice. Stock-
 
 ---
 
-## Resend sale
+## Resend sale {#resend-sale}
 
 `POST /sales/resend`
 
-Use this when VSDC already signed the invoice (`EBM_SALE_PERSIST_FAILED`, or you need to replay a stored signature).
+Use when VSDC already signed the invoice (`EBM_SALE_PERSIST_FAILED`) or you must replay a stored signature via `trnsSales/resendSales`.
 
-<ParamField body="invoice_no" type="integer" required>The signed invoice number</ParamField>
-<ParamField body="receipt" type="object">Optional. Include `receipt_signature`, `internal_data`, `receipt_no`, `total_receipt_no`, `receipt_published_at` from the 503 body or from `GET /sales/:invoice_no`.</ParamField>
-
-Other sale fields are optional on resend; send the original lines if Kayko still needs them to rebuild the VSDC payload.
+| Field | Required | Notes |
+|-------|----------|-------|
+| `invoice_no` | Yes | The signed invoice number. |
+| `receipt` | Recommended | Include `receipt_signature`, `internal_data`, counters, and `receipt_published_at` from the 503 body or from `GET /sales/:invoice_no`. |
+| Other sale fields | Situational | Send original lines if Kayko must rebuild the upstream body. |
 
 ---
 
-## Get sale
+## Get sale details
 
 `GET /sales/:invoice_no`
 
-Returns the stored invoice and print fields.
+Returns the locally stored invoice and print block for reprinting or support diagnostics. Requires the same tenant headers and `sales` scope.
 
 ```bash
 curl -X GET "{{baseUrl}}/sales/1799" \

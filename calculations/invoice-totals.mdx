@@ -4,9 +4,9 @@ description: How header taxable_amount_*, tax_amount_*, and total_amount are sum
 icon: file-invoice
 ---
 
-Kayko requires **duplicate accounting** — every amount appears on the line and again on the header. Header values must be the **exact sum** of their line counterparts. You may omit header fields on `POST /sales` and `POST /purchases/confirm`; Kayko computes them. If you send them, they must match or VSDC returns `910`.
+Kayko requires **duplicate accounting**, every amount appears on the line and again on the header. Header values must be the **exact sum** of their line counterparts. You may omit header fields on `POST /sales` and `POST /purchases/confirm`; Kayko computes them. If you send them, they must match or VSDC returns `910`.
 
-On the wire to VSDC, Kayko also sends rates A–D plus **E**, **F** (tourism 3%), and **TT** (3%) as NUMBER 7,2.
+On the wire to VSDC, Kayko sends rates A–D plus live extensions **E**, **F**, and **TT**. Tourism rates **F/TT** follow the per-TIN strategy (null, catalog, or override), not a fixed `3.00` for every business. Configure via [`PUT /codes/tourism`](/api/codes).
 
 ## Header tax fields
 
@@ -35,7 +35,7 @@ total_amount         = Σ line.total_amount
   Round each line's `tax_amount` to 2 decimal places **before** summing. Do not sum unrounded values and round only the header.
 </Note>
 
-## Worked example — two-line purchase
+## Worked example, two-line purchase
 
 **Line 1** (`tax_type: "B"`): taxable 7,000.00, tax 1,067.80, total 7,000.00
 
@@ -69,4 +69,4 @@ assert item_count       === items.length
 | VSDC `910` | `total_amount` ≠ sum of line totals |
 | VSDC `910` | `item_count` ≠ `items.length` |
 | VSDC `910` | Line `tax_type: "B"` but amounts in the wrong header bucket |
-| VSDC `910` | Missing or non-7,2 `taxRtF` / `taxRtTt` (Kayko sends these for you) |
+| VSDC `910` | Missing/invalid tourism header rates or totals mismatch (Kayko applies tourism strategy; configure `/codes/tourism` if needed) |

@@ -1,18 +1,20 @@
 ---
 title: Initialization
-description: Enable EBM and initialize the device through Kayko /initialize. Do not call RRA init paths directly.
+description: Enable EBM and initialize the fiscal device through Kayko, the one-time bridge to RRA VSDC.
 icon: key
 ---
 
-All initialization goes through **Kayko EBM** under `/initialize`. After Enable EBM, Kayko stores the business `ebm_url` for you.
+Initialization is the first fiscal step after RRA approves your equipment. Kayko’s `/initialize` routes provision the managed VSDC URL for your business.
 
-These routes accept the **internal** token (`X-API-Token`) or a business API key. Dashboard Enable EBM typically uses the internal token from Core360.
+After Enable EBM succeeds, Kayko stores `ebm_url` on the business record. Later transactional APIs never accept `ebm_url` in the JSON body, only tenant headers and your API key.
+
+These routes accept the **internal** token (`X-API-Token`) or a business API key. Dashboard Enable EBM typically uses the internal token from Kayko dashboard. Definitions: [Glossary](/reference/glossary). Checklist: [Integration Checklist](/workflows/getting-started).
 
 ## Enable EBM
 
 `POST /initialize/enable`
 
-Provisions EBM for a business and returns `ebm_url`.
+Provisions EBM for a business and returns `ebm_url` plus deployment tracking fields so you can poll status.
 
 <ParamField body="business_code" type="string" required>
   Business code (`A–Z`, `0–9`, `_`, `-`), max 100.

@@ -5,7 +5,7 @@ icon: table-columns
 ---
 
 <Note>
-  **Kayko requests use snake_case** (`item_code`, `invoice_no`, `payment_method`). Tables below are the **upstream VSDC** names Kayko sends after mapping. You do not send `tin` / `bhfId` in JSON — use headers `x-tin` and `x-branch-id`.
+  **Kayko requests use snake_case** (`item_code`, `invoice_no`, `payment_method`). Tables below are the **upstream VSDC** names Kayko sends after mapping. You do not send `tin` / `bhfId` in JSON, use headers `x-tin` and `x-branch-id`.
 </Note>
 
 ### Kayko → VSDC (common)
@@ -26,7 +26,7 @@ icon: table-columns
 | `payment_method` | `pmtTyCd` |
 | `remaining_quantity` | `rsdQty` (absolute remaining qty) |
 
-Live VSDC also expects header rates **E, F, TT** (not in PDF v1.0.5). Kayko always sends `taxRtE: 0.00`, `taxRtF: 3.00`, `taxRtTt: 3.00` as JSON numbers.
+Live VSDC also expects header rate keys **E, F, TT**. Kayko always includes them on sales; tourism **F/TT** values follow the per-TIN strategy (JSON `null`, catalog rate, or override), not a fixed `3.00` for every business. Configure defaults via [`PUT /codes/tourism`](/api/codes).
 
 ---
 
@@ -231,7 +231,7 @@ Kayko serves reference tables as `GET /constants/taxes`, `/payment-modes`, `/pac
 
 ## Items {#items}
 
-### `POST /items` (upstream `items/saveItems`) — Request (`ItemSaveReq`)
+### `POST /items` (upstream `items/saveItems`), Request (`ItemSaveReq`)
 
 | Field | Type | Required | Max Len | Format |
 |-------|------|----------|---------|--------|
@@ -257,7 +257,7 @@ Kayko serves reference tables as `GET /constants/taxes`, `/payment-modes`, `/pac
 | `regrNm/Id` | CHAR | Y | 60/20 | |
 | `modrNm/Id` | CHAR | Y | 60/20 | |
 
-### `GET /items` (upstream `items/selectItems`) — Response `data.itemList[]`
+### `GET /items` (upstream `items/selectItems`), Response `data.itemList[]`
 
 All save fields plus:
 
@@ -274,7 +274,7 @@ There is no composition route on the gateway. Upstream VSDC stored composition f
 
 ## Imports {#imports}
 
-### `GET /imports` (upstream `imports/selectImportItems`) — Response `data.itemList[]`
+### `GET /imports` (upstream `imports/selectImportItems`), Response `data.itemList[]`
 
 | Field | Type | Max Len | Notes |
 |-------|------|---------|-------|
@@ -299,7 +299,7 @@ There is no composition route on the gateway. Upstream VSDC stored composition f
 | `invcFcurCd` | CHAR | 5 | [Currency](/reference/currency-codes) |
 | `invcFcurExcrt` | NUMBER | 18,2 | Exchange rate |
 
-### `POST /imports/confirm` (upstream `imports/updateImportItems`) — Request (`ImptItemSaveReq`)
+### `POST /imports/confirm` (upstream `imports/updateImportItems`), Request (`ImptItemSaveReq`)
 
 | Field | Type | Required | Max Len |
 |-------|------|----------|---------|
@@ -320,7 +320,7 @@ There is no composition route on the gateway. Upstream VSDC stored composition f
 
 ## Sales {#sales}
 
-### `POST /sales` (upstream `trnsSales/saveSales`) — Request (`TrnsSalesSaveReq`)
+### `POST /sales` (upstream `trnsSales/saveSales`), Request (`TrnsSalesSaveReq`)
 
 | Field | Type | Required | Max Len | Format |
 |-------|------|----------|---------|--------|
@@ -348,8 +348,8 @@ There is no composition route on the gateway. Upstream VSDC stored composition f
 | `taxblAmtE`, `F`, `Tt` | NUMBER | Y | 18,2 | Live VSDC (not in PDF v1.0.5). Usually `0` |
 | `taxRtA`–`D` | NUMBER | Y | 7,2 | Per tax category (`18.00` for B) |
 | `taxRtE` | NUMBER | Y | 7,2 | Reserved; Kayko sends `0.00` |
-| `taxRtF` | NUMBER | Y | 7,2 | Tourism tax; Kayko sends `3.00` |
-| `taxRtTt` | NUMBER | Y | 7,2 | Kayko sends `3.00` |
+| `taxRtF` | NUMBER | Y* | 7,2 | Tourism header rate, JSON `null`, catalog, or override (not always `3.00`). See [`PUT /codes/tourism`](/api/codes). |
+| `taxRtTt` | NUMBER | Y* | 7,2 | Same strategy as `taxRtF`. Device-specific accepted values are **unconfirmed, pending RRA clarification**. |
 | `taxAmtA`–`D` | NUMBER | Y | 18,2 | Per tax category |
 | `taxAmtE`, `F`, `Tt` | NUMBER | Y | 18,2 | Usually `0` |
 | `totTaxblAmt` | NUMBER | Y | 18,2 | |
@@ -416,7 +416,7 @@ There is no composition route on the gateway. Upstream VSDC stored composition f
 
 ## Purchases {#purchases}
 
-### `GET /purchases` (upstream `trnsPurchase/selectTrnsPurchaseSales`) — Response `data.saleList[]`
+### `GET /purchases` (upstream `trnsPurchase/selectTrnsPurchaseSales`), Response `data.saleList[]`
 
 | Field | Type | Max Len | Notes |
 |-------|------|---------|-------|
@@ -442,7 +442,7 @@ There is no composition route on the gateway. Upstream VSDC stored composition f
 | `remark` | CHAR | 400 | |
 | `itemList[]` |- |- | Same line-item fields as sales |
 
-### `POST /purchases/confirm` (upstream `trnsPurchase/savePurchases`) — Request (`TrnsPurchaseSaveReq`)
+### `POST /purchases/confirm` (upstream `trnsPurchase/savePurchases`), Request (`TrnsPurchaseSaveReq`)
 
 | Field | Type | Required | Max Len |
 |-------|------|----------|---------|
@@ -499,7 +499,7 @@ There is no composition route on the gateway. Upstream VSDC stored composition f
 
 ## Stock {#stock}
 
-### `POST /stocks` (upstream `stock/saveStockItems`) — Request (`StockIOSaveReq`)
+### `POST /stocks` (upstream `stock/saveStockItems`), Request (`StockIOSaveReq`)
 
 | Field | Type | Required | Max Len | Format |
 |-------|------|----------|---------|--------|
@@ -542,7 +542,7 @@ There is no composition route on the gateway. Upstream VSDC stored composition f
 | `taxAmt` | NUMBER | Y | 18,2 |
 | `totAmt` | NUMBER | Y | 18,2 |
 
-### `POST /stocks/master` (upstream `stockMaster/saveStockMaster`) — Request (`StockMstSaveReq`)
+### `POST /stocks/master` (upstream `stockMaster/saveStockMaster`), Request (`StockMstSaveReq`)
 
 | Field | Type | Required | Max Len |
 |-------|------|----------|---------|
@@ -552,6 +552,6 @@ There is no composition route on the gateway. Upstream VSDC stored composition f
 | `rsdQty` | NUMBER | Y | 13,2 |
 | `regrNm/Id, modrNm/Id` | CHAR | Y | 60/20 |
 
-### `GET /stocks` (upstream `stock/selectStockItems`) — Response `data.stockList[]`
+### `GET /stocks` (upstream `stock/selectStockItems`), Response `data.stockList[]`
 
 Same header fields as save (`custTin`, `custBhfId`, `sarNo`, `ocrnDt`, totals, `remark`) plus nested `itemList[]` matching stock line items above.

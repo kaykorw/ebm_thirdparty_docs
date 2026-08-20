@@ -9,6 +9,10 @@
     {
       "url": "http://localhost:3000/ebm",
       "description": "Local EBM"
+    },
+    {
+      "url": "https://api.kayko.rw/ebm",
+      "description": "Production EBM"
     }
   ],
   "security": [
@@ -59,6 +63,14 @@
       "description": "Product registration and catalog sync"
     },
     {
+      "name": "Classes",
+      "description": "RRA item classification code tree"
+    },
+    {
+      "name": "Composition",
+      "description": "Bill-of-materials parent→component links for items"
+    },
+    {
       "name": "Imports",
       "description": "Customs import declarations"
     },
@@ -79,6 +91,10 @@
     },
     {
       "name": "Branches"
+    },
+    {
+      "name": "Codes",
+      "description": "Live VSDC code sync and per-TIN tourism tax header settings."
     }
   ],
   "paths": {
@@ -456,7 +472,15 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC data (unwrapped)"
+            "description": "Mapped success",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "success",
+                  "data": null
+                }
+              }
+            }
           }
         }
       }
@@ -860,7 +884,7 @@
         ],
         "operationId": "select_taxes",
         "summary": "Get Taxes",
-        "description": "Return tax type codes (`taxTyCd`) with rates. Category B is standard 18% VAT. Requires a business API key.",
+        "description": "Return tax type codes used as `tax_type` on items and invoice lines.\n\nLabels are human-readable (for example B, 18% Taxable). Sale line type F is rejected on live devices; use TT with tourism_tax for tourism lines. Header tourism rates are separate, see GET/PUT /codes/tourism.",
         "security": [
           {
             "ApiKeyBearer": []
@@ -2626,7 +2650,7 @@
         ],
         "summary": "Save Item Composition",
         "operationId": "save_item_composition",
-        "description": "Save a bill-of-materials (BOM) linking a parent item to component items and quantities. Stored for backup only- cannot be queried back from RRA.",
+        "description": "Save a bill-of-materials linking a parent item to component items and quantities. Stored for backup only- cannot be queried back from RRA.",
         "requestBody": {
           "required": true,
           "content": {
@@ -2678,7 +2702,7 @@
         },
         "x-mint": {
           "metadata": {
-            "description": "Save a bill-of-materials (BOM) linking a parent item to component items and quantities. Stored for backup only- cannot be queried back from RRA."
+            "description": "Save a bill-of-materials linking a parent item to component items and quantities. Stored for backup only- cannot be queried back from RRA."
           },
           "content": "For composite products (e.g. a meal kit made from multiple ingredients)."
         },
@@ -3188,7 +3212,7 @@
         "tags": [
           "Stock"
         ],
-        "summary": "Save Stock Master",
+        "summary": "Save Stock Count",
         "operationId": "save_stock_master",
         "description": "Update the current remaining quantity (`rsdQty`) for a registered item. Keeps EBM inventory in sync with your physical stock count.",
         "requestBody": {
@@ -3876,7 +3900,25 @@
         ],
         "responses": {
           "200": {
-            "description": "VSDC data (unwrapped)"
+            "description": "Mapped customer list",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "success",
+                  "data": [
+                    {
+                      "tin": "933000004",
+                      "name": "COMPANY 04 LTD",
+                      "status": "Active",
+                      "province": "EAST",
+                      "district": "NYAGATARE",
+                      "sector": "NYAGATARE",
+                      "location": "RRA"
+                    }
+                  ]
+                }
+              }
+            }
           }
         }
       }
@@ -3947,7 +3989,30 @@
         ],
         "responses": {
           "200": {
-            "description": "VSDC data (unwrapped)"
+            "description": "Mapped branch list",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "success",
+                  "data": [
+                    {
+                      "tin": "933000004",
+                      "branch_id": "00",
+                      "name": "Headquarter",
+                      "status": "Active",
+                      "province": "KIGALI CITY",
+                      "district": "NYARUGENGE",
+                      "sector": "MUHIMA",
+                      "location": "KIGALI-RWANDA",
+                      "manager_name": "JJ",
+                      "manager_phone": "0781547202",
+                      "manager_email": "ebm@ebm.rw",
+                      "is_headquarters": true
+                    }
+                  ]
+                }
+              }
+            }
           }
         }
       }
@@ -4138,9 +4203,18 @@
         },
         "responses": {
           "200": {
-            "description": "VSDC data (unwrapped)"
+            "description": "Mapped success",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "success",
+                  "data": null
+                }
+              }
+            }
           }
-        }
+        },
+        "description": "Register a pharmacy insurance company for the branch (VSDC `saveBrancheInsurances`).\n\nRRA documents this as pharmacy-only. Send insurance_code, insurance_name, and insurance_rate (0–100). Some live devices return 910 claiming isrcRt is null even when present."
       }
     },
     "/notices": {
@@ -4584,7 +4658,7 @@
         ],
         "operationId": "confirm_import",
         "summary": "Confirm import",
-        "description": "Head office only. No quantity — qty comes from GET /imports. Cancelled lines skip stock.",
+        "description": "Head office only. No quantity, qty comes from GET /imports. Cancelled lines skip stock.",
         "security": [
           {
             "ApiKeyBearer": []
@@ -4645,8 +4719,8 @@
           "Sales"
         ],
         "operationId": "submit_sale",
-        "summary": "Submit sale",
-        "description": "Kayko sends orgInvcNo 0 and tax rates A–D plus E/F/TT. Stock-out is queued after VSDC 000.",
+        "summary": "Create new sale",
+        "description": "Submit a normal fiscal sale for signing.\n\nUse this when a customer pays for goods or services and you need a legally signed EBM receipt. and returns print fields (`receipt_signature`, `internal_data`, counters, SDC, MRC). Stock-out is queued after VSDC `000`, not in this HTTP response.\n\n**Prerequisites:** register each `item_code` first; seed `POST /stocks/master` for stocked goods; send `purchase_code` when `customer.tin_no` is present (business buyer).\n\n**Gotchas:** do not set `original_invoice_no` equal to `invoice_no` on normal sales; do not send line `tax_type` `F` (use `TT` with `tourism_tax: true`); tourism rates are TIN-specific (configure via PUT /codes/tourism).\n\nResponse codes: `000` success; `881` missing purchase code; `910` parameter/tourism/totals; `994` duplicate. Kayko errors use `{ status, message, date }`.",
         "security": [
           {
             "ApiKeyBearer": []
@@ -4660,20 +4734,24 @@
             "name": "x-tin",
             "in": "header",
             "required": true,
+            "description": "Taxpayer Identification Number, exactly 9 characters for this business.",
             "schema": {
               "type": "string",
               "minLength": 9,
-              "maxLength": 9
+              "maxLength": 9,
+              "example": "100027060"
             }
           },
           {
             "name": "x-branch-id",
             "in": "header",
             "required": true,
+            "description": "Two-character branch office ID. Any allowed branch may sell; head office is `00`.",
             "schema": {
               "type": "string",
               "minLength": 2,
-              "maxLength": 2
+              "maxLength": 2,
+              "example": "00"
             }
           }
         ],
@@ -4684,12 +4762,19 @@
               "example": {
                 "invoice_no": 1799,
                 "payment_method": "credit",
-                "customer_tin": "100004527",
-                "customer_name": "RULIBA CLAYS LTD",
-                "purchase_order_code": "PO0001",
-                "sales_date": "20260303",
+                "purchase_code": "PO0001",
+                "customer": {
+                  "tin_no": "100004527",
+                  "full_name": "RULIBA CLAYS LTD",
+                  "telephone": "788312173"
+                },
+                "dates": {
+                  "origin_date": "20260303",
+                  "confirmed_at": "20260303145619"
+                },
                 "items": [
                   {
+                    "sequence": 1,
                     "item_code": "RW2NTU0000642",
                     "item_name": "TOLE PL 2 44X1 22X10",
                     "packaging_unit": "NT",
@@ -4700,6 +4785,180 @@
                     "tax_type": "B"
                   }
                 ]
+              },
+              "schema": {
+                "type": "object",
+                "required": [
+                  "invoice_no",
+                  "payment_method",
+                  "items"
+                ],
+                "properties": {
+                  "invoice_no": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Your sequential CIS invoice number. Must be unique for new sales.",
+                    "example": 1799
+                  },
+                  "payment_method": {
+                    "type": "string",
+                    "enum": [
+                      "cash",
+                      "credit",
+                      "cash_credit",
+                      "bank_check",
+                      "card",
+                      "mobile_money",
+                      "other"
+                    ],
+                    "description": "How the customer paid. Labels map to VSDC payment codes (see GET /constants/payment-modes)."
+                  },
+                  "purchase_code": {
+                    "type": "string",
+                    "maxLength": 6,
+                    "description": "Required for business customers (when customer.tin_no is set). Max 6 characters. Missing → VSDC 881."
+                  },
+                  "customer": {
+                    "type": "object",
+                    "description": "Nested buyer identity. Prefer this object; do not send flat customer_tin at the root.",
+                    "properties": {
+                      "tin_no": {
+                        "type": "string",
+                        "minLength": 9,
+                        "maxLength": 9,
+                        "description": "Buyer TIN (9 characters). Validate with GET /customers when unsure."
+                      },
+                      "full_name": {
+                        "type": "string",
+                        "maxLength": 60,
+                        "description": "Buyer display name."
+                      },
+                      "telephone": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "description": "Buyer phone. Kayko normalizes digits for VSDC."
+                      }
+                    }
+                  },
+                  "dates": {
+                    "type": "object",
+                    "properties": {
+                      "origin_date": {
+                        "type": "string",
+                        "description": "Sale date YYYYMMDD. Defaults to today when omitted.",
+                        "example": "20260303"
+                      },
+                      "confirmed_at": {
+                        "type": "string",
+                        "description": "Confirmation timestamp YYYYMMDDHHmmss.",
+                        "example": "20260303145619"
+                      },
+                      "stock_released_at": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Optional stock-release timestamp YYYYMMDDHHmmss."
+                      }
+                    }
+                  },
+                  "tourism_tax": {
+                    "type": "boolean",
+                    "description": "When true, use catalog tourism header rates. When false/omitted, non-tourism null strategy unless overrides exist."
+                  },
+                  "tax_rate_f": {
+                    "type": "number",
+                    "description": "Optional override for upstream taxRtF (0–100). Prefer PUT /codes/tourism for TIN defaults."
+                  },
+                  "tax_rate_tt": {
+                    "type": "number",
+                    "description": "Optional override for upstream taxRtTt (0–100)."
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "Sale status label (for example approved)."
+                  },
+                  "buyer_accepted": {
+                    "type": "boolean",
+                    "description": "Whether the buyer accepted the invoice. Defaults to accepted when omitted."
+                  },
+                  "notes": {
+                    "type": "string",
+                    "description": "Free-text notes (max 400)."
+                  },
+                  "receipt": {
+                    "type": "object",
+                    "description": "Optional receipt print template fields (header/footer, trade name, etc.)."
+                  },
+                  "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "description": "Invoice lines. Each item_code must already be registered.",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "sequence",
+                        "item_code",
+                        "item_name",
+                        "packaging_unit",
+                        "packages",
+                        "quantity_unit",
+                        "quantity",
+                        "price",
+                        "tax_type"
+                      ],
+                      "properties": {
+                        "sequence": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "description": "Line number 1–999; typically consecutive."
+                        },
+                        "item_code": {
+                          "type": "string",
+                          "description": "Registered fiscal item code."
+                        },
+                        "item_name": {
+                          "type": "string",
+                          "description": "Line description (max 200)."
+                        },
+                        "packaging_unit": {
+                          "type": "string",
+                          "description": "Packaging unit code (for example NT). See GET /constants/packaging."
+                        },
+                        "packages": {
+                          "type": "number",
+                          "description": "Package count (≥ 0)."
+                        },
+                        "quantity_unit": {
+                          "type": "string",
+                          "description": "Quantity unit code (for example U). See GET /constants/quantity."
+                        },
+                        "quantity": {
+                          "type": "number",
+                          "description": "Positive quantity."
+                        },
+                        "price": {
+                          "type": "number",
+                          "description": "Tax-inclusive unit price."
+                        },
+                        "tax_type": {
+                          "type": "string",
+                          "enum": [
+                            "A",
+                            "B",
+                            "C",
+                            "D",
+                            "E",
+                            "TT"
+                          ],
+                          "description": "Tax category. B, 18% Taxable is most common. Do not send F on sale lines; use TT with tourism_tax."
+                        },
+                        "item_classification_code": {
+                          "type": "string",
+                          "description": "Optional 10-digit classification; filled from catalog when omitted."
+                        }
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -4799,7 +5058,8 @@
           "200": {
             "description": "Signed refund"
           }
-        }
+        },
+        "description": "Issue a fiscal refund linked to an original sale invoice. Requires original_invoice_no and refund_reason. Stock-in is queued after VSDC 000."
       }
     },
     "/sales/resend": {
@@ -4809,7 +5069,7 @@
         ],
         "operationId": "resend_sale",
         "summary": "Resend sale",
-        "description": "Use after EBM_SALE_PERSIST_FAILED. Keep the same invoice_no.",
+        "description": "Replay a previously signed sale (persist failure or resendSales). Do not allocate a new invoice_no. Include signature fields when available.",
         "security": [
           {
             "ApiKeyBearer": []
@@ -4869,7 +5129,7 @@
           "Sales"
         ],
         "operationId": "get_sale",
-        "summary": "Get sale",
+        "summary": "Get sale details",
         "security": [
           {
             "ApiKeyBearer": []
@@ -5170,7 +5430,7 @@
           "Stock"
         ],
         "operationId": "save_stock_master",
-        "summary": "Save stock master",
+        "summary": "Save stock count",
         "description": "Absolute remaining_quantity. Seed before selling so auto movements can update the ledger.",
         "security": [
           {
@@ -5216,6 +5476,397 @@
         "responses": {
           "200": {
             "description": "Mapped remaining quantity"
+          }
+        }
+      }
+    },
+    "/codes": {
+      "get": {
+        "tags": [
+          "Codes"
+        ],
+        "operationId": "sync_codes",
+        "summary": "Sync standard codes",
+        "description": "Pull RRA standard code classes from VSDC (`code/selectCodes`) that changed after your cursor.\n\nCall this during onboarding and on a schedule so dropdowns match the device catalog. Requires `x-last-request-date`. For offline reads after a successful sync, use GET /codes/cached.\n\nResponse codes: mapped `{ message, data }`; empty delta means nothing new (similar to upstream 001).",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "description": "Taxpayer Identification Number, exactly 9 characters.",
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "description": "Two-character branch ID (`00` = head office).",
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          },
+          {
+            "name": "x-last-request-date",
+            "in": "header",
+            "required": true,
+            "description": "Sync cursor YYYYMMDDHHmmss. First full pull: 20000101000000.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{14}$",
+              "example": "20000101000000"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mapped code classes (`000` / success path).",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "success",
+                  "data": [],
+                  "meta": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/codes/cached": {
+      "get": {
+        "tags": [
+          "Codes"
+        ],
+        "operationId": "get_cached_codes",
+        "summary": "Get cached codes",
+        "description": "Return the last cached code set for this TIN without calling VSDC.\n\nUse for UI dropdowns after GET /codes has populated the cache. If the cache is empty, you receive EBM_CODES_CACHE_MISS, sync first.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "description": "Taxpayer Identification Number, exactly 9 characters.",
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "description": "Two-character branch ID (`00` = head office).",
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cached code classes"
+          },
+          "404": {
+            "description": "Cache miss (EBM_CODES_CACHE_MISS)"
+          }
+        }
+      }
+    },
+    "/codes/tourism": {
+      "get": {
+        "tags": [
+          "Codes"
+        ],
+        "operationId": "get_tourism_tax",
+        "summary": "Get tourism tax settings",
+        "description": "Return per-TIN tourism header strategy (`non_tourism_null`, `tourism_catalog`, or `override`) and any stored rate overrides.\n\nLive devices validate taxRtF/taxRtTt; configure defaults via PUT /codes/tourism.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "description": "Taxpayer Identification Number, exactly 9 characters.",
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "description": "Two-character branch ID (`00` = head office).",
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tourism settings and hint"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Codes"
+        ],
+        "operationId": "put_tourism_tax",
+        "summary": "Update tourism tax settings",
+        "description": "Store whether this TIN is tourism-oriented and optional tax_rate_f / tax_rate_tt overrides used on every subsequent sale unless overridden per request.\n\nDo not guess rates. If VSDC returns 910 Wrong Tourism Tax rate, confirm the programmed values with your VSDC operator.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "description": "Taxpayer Identification Number, exactly 9 characters.",
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "description": "Two-character branch ID (`00` = head office).",
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "tourism_tax": false,
+                "tax_rate_f": null,
+                "tax_rate_tt": null
+              },
+              "schema": {
+                "type": "object",
+                "required": [
+                  "tourism_tax"
+                ],
+                "properties": {
+                  "tourism_tax": {
+                    "type": "boolean",
+                    "description": "When true, sales use catalog tourism rates unless overrides exist."
+                  },
+                  "tax_rate_f": {
+                    "type": "number",
+                    "nullable": true,
+                    "description": "Optional override for upstream taxRtF (0–100)."
+                  },
+                  "tax_rate_tt": {
+                    "type": "number",
+                    "nullable": true,
+                    "description": "Optional override for upstream taxRtTt (0–100)."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated tourism settings"
+          }
+        }
+      }
+    },
+    "/item-classes": {
+      "get": {
+        "tags": [
+          "Classes"
+        ],
+        "operationId": "list_item_classes",
+        "summary": "List classification codes",
+        "description": "Sync the RRA item classification tree (VSDC `itemClass/selectItemsClass`).\n\nYou need a 10-digit `item_classification_code` from this list when registering products with POST /items. Requires `x-last-request-date`.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "description": "Taxpayer Identification Number, exactly 9 characters.",
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "description": "Two-character branch ID (`00` = head office).",
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          },
+          {
+            "name": "x-last-request-date",
+            "in": "header",
+            "required": true,
+            "description": "Sync cursor YYYYMMDDHHmmss. First full pull: 20000101000000.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{14}$",
+              "example": "20000101000000"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mapped item classes",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "success",
+                  "data": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/compositions": {
+      "post": {
+        "tags": [
+          "Composition"
+        ],
+        "operationId": "save_item_composition",
+        "summary": "Save item composition",
+        "description": "Store one parent→component bill-of-materials link.\n\nHead office `x-branch-id: 00` required. Both item codes must already exist. One pair per request; compositions are not listed back by a select API.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "description": "Taxpayer Identification Number, exactly 9 characters.",
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "description": "Must be head office `00` for composition writes.",
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2,
+              "example": "00"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "item_code": "RW2NTU0000001",
+                "component_item_code": "RW1NTU0000002",
+                "quantity": 2
+              },
+              "schema": {
+                "type": "object",
+                "required": [
+                  "item_code",
+                  "component_item_code",
+                  "quantity"
+                ],
+                "properties": {
+                  "item_code": {
+                    "type": "string",
+                    "description": "Parent finished item code."
+                  },
+                  "component_item_code": {
+                    "type": "string",
+                    "description": "Component item code (not the same as parent)."
+                  },
+                  "quantity": {
+                    "type": "number",
+                    "description": "Component quantity per parent."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Composition saved"
           }
         }
       }

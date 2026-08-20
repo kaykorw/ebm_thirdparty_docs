@@ -18,7 +18,7 @@ After VSDC `000` on a sale, purchase confirm, or approved import, Kayko posts st
 | Purchase refund | out | `12` |
 | Import approved | in | `01` |
 
-Services (`item_type` `3`) are skipped. Import confirm has no qty; quantity comes from `GET /imports`.
+Services (`item_type` `service`) are skipped. Import confirm has no qty; quantity comes from `GET /imports`.
 
 ### Remaining quantity (`POST /stocks/master`)
 

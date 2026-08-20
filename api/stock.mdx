@@ -8,7 +8,7 @@ Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` fr
 
 Requires a business API key with scope `stocks`. Any allowed branch may call these routes.
 
-Kayko posts stock **after** a signed sale, confirmed purchase, or approved import — as a **later independent VSDC call**. A failed stock post does not roll back a sale that already returned `000`. Do not nest a stock save in the same HTTP request as sale / purchase / import confirm.
+Kayko posts stock **after** a signed sale, confirmed purchase, or approved import, as a **later independent VSDC call**. A failed stock post does not roll back a sale that already returned `000`. Do not nest a stock save in the same HTTP request as sale / purchase / import confirm.
 
 ```mermaid
 flowchart LR
@@ -22,7 +22,7 @@ flowchart LR
 
 Seed **remaining quantity** with `POST /stocks/master` first. Auto movements update the ledger **only if** a master row already exists. `remaining_quantity` is the **absolute** on-hand quantity, not a delta. Negative values are rejected.
 
-Services (`item_type` `3`) never generate stock movements.
+Services (`item_type` `service`, upstream `3`) never generate stock movements.
 
 ---
 
@@ -35,7 +35,7 @@ Services (`item_type` `3`) never generate stock movements.
 | Purchase confirm | Stock-in | `02` Purchase |
 | Purchase refund | Stock-out | `12` Return |
 | Import confirm (`approved`) | Stock-in | `01` Import |
-| Import confirm (`cancelled`) | Skipped | — |
+| Import confirm (`cancelled`) | Skipped |, |
 
 Import confirm has no quantity; Kayko uses quantity from `GET /imports`. Refunds wait for the original movement number (`orgSarNo`) instead of sending `0`.
 
@@ -78,7 +78,7 @@ Each movement includes `sar_no`, `original_sar_no`, `stock_type` (label), `direc
 
 ---
 
-## Save stock master
+## Save stock count
 
 `POST /stocks/master`
 
@@ -156,6 +156,10 @@ Response:
 <ParamField body="notes" type="string">Optional notes</ParamField>
 
 Line fields: `item_code`, `item_classification_code`, `item_name`, `packaging_unit`, `packages`, `quantity_unit`, `quantity`, `price`, `tax_type`. Amounts (`supply_amount`, `taxable_amount`, `tax_amount`, `total_amount`) are optional and computed when omitted.
+
+Header `item_count`, `total_taxable_amount`, `total_tax_amount`, and `total_amount` are calculated from `items`, do not send them.
+
+`sequence` is optional. Omit it to auto-number lines `1…n` in array order. If you send it, values must be consecutive starting at `1` matching that order.
 
 <CodeGroup>
 

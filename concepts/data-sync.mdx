@@ -4,7 +4,7 @@ description: How x-last-request-date works and best practices for keeping data i
 icon: arrows-rotate
 ---
 
-Many Kayko EBM **GET** routes are incremental — they only return records that changed since your last request.
+Many Kayko EBM **GET** routes are incremental, they only return records that changed since your last request.
 
 ## The `x-last-request-date` pattern
 
@@ -34,6 +34,8 @@ sequenceDiagram
 
 | Endpoint | What it syncs |
 |----------|---------------|
+| `GET /codes` | Live RRA standard code classes from VSDC |
+| `GET /item-classes` | Item classification tree |
 | `GET /branches` | Branch office list |
 | `GET /notices` | RRA announcements |
 | `GET /items` | Registered products |
@@ -41,7 +43,7 @@ sequenceDiagram
 | `GET /purchases` | Supplier invoices to confirm |
 | `GET /stocks` | Stock movement history |
 
-Constants (`GET /constants/*`) are static tables and do not use this header.
+Constants (`GET /constants/*`) are static tables and do not use this header. Tourism settings (`GET/PUT /codes/tourism`) are per-TIN Kayko configuration, not a VSDC delta cursor.
 
 Mapped list responses use `{ message, data }`. An empty pull is `{ "message": "No … found", "data": [] }` (not an error). Upstream VSDC `resultCd: "001"` also means nothing new.
 
@@ -49,11 +51,11 @@ Mapped list responses use `{ message, data }`. An empty pull is `{ "message": "N
 
 | Data | Frequency | Priority |
 |------|-----------|----------|
-| Constants | Daily (or on app startup) | High — needed before transactions |
+| Constants | Daily (or on app startup) | High, needed before transactions |
 | Notices | Daily | Medium |
 | Branches | Weekly | Low |
 | Items | After each save + daily pull | High |
-| Purchases | Every 15–30 minutes | High — for buyer confirmation |
+| Purchases | Every 15–30 minutes | High, for buyer confirmation |
 | Imports | Every 15–30 minutes | High when you import |
 | Stock movements | Daily | Medium |
 

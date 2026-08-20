@@ -1,12 +1,12 @@
 ---
 title: Branches
-description: List branches, save branch users, and register insurance providers via Kayko EBM.
+description: List branch offices, register branch users, and register pharmacy insurance providers via Kayko EBM.
 icon: building
 ---
 
-Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` from your business after Enable EBM, so you never put it in the JSON body.
+Branch APIs keep your multi-office structure, store user accounts, and (for pharmacies) register insurance companies used at the counter.
 
-All routes require a business API key with scope `branch`.
+Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` from your business after Enable EBM, so you never put it in the JSON body. All routes require a business API key with scope `branch`. Terminology: [Glossary](/reference/glossary).
 
 ---
 
@@ -14,7 +14,7 @@ All routes require a business API key with scope `branch`.
 
 `GET /branches`
 
-Also requires `x-last-request-date` (`YYYYMMDDHHmmss`).
+Returns the taxpayer’s branch offices so your CIS can stay aligned with RRA’s branch list (spec §3.3.3 branch information sequence). Also requires `x-last-request-date` (`YYYYMMDDHHmmss`).
 
 <ParamField query="start_page" type="string">Optional page start (digits only)</ParamField>
 <ParamField query="end_page" type="string">Optional page end (digits only)</ParamField>
@@ -25,6 +25,30 @@ curl -X GET "{{baseUrl}}/branches?start_page=1&end_page=10" \
   -H "x-tin: 100027060" \
   -H "x-branch-id: 00" \
   -H "x-last-request-date: 20250101000000"
+```
+
+### Response
+
+```json
+{
+  "message": "success",
+  "data": [
+    {
+      "tin": "933000004",
+      "branch_id": "00",
+      "name": "Headquarter",
+      "status": "Active",
+      "province": "KIGALI CITY",
+      "district": "NYARUGENGE",
+      "sector": "MUHIMA",
+      "location": "KIGALI-RWANDA",
+      "manager_name": "JJ",
+      "manager_phone": "0781547202",
+      "manager_email": "ebm@ebm.rw",
+      "is_headquarters": true
+    }
+  ]
+}
 ```
 
 ---
@@ -103,14 +127,16 @@ await fetch(`${BASE_URL}/branches/users`, {
 
 ## Save branch insurance
 
-Pharmacy-only. Register insurance providers used by the branch.
-
 `POST /branches/insurances`
 
-<ParamField body="insurance_code" type="string" required>Insurance company code</ParamField>
-<ParamField body="insurance_name" type="string" required>Insurance company name</ParamField>
-<ParamField body="insurance_rate" type="number" required>Premium rate from 0 to 100 (for example `20` for 20%)</ParamField>
-<ParamField body="use" type="boolean">Defaults to `true`</ParamField>
+In Kayko - RRA documents this endpoint as **pharmacy-only**. It registers an insurance company code, name, and premium rate percent that the branch uses when selling insured goods.
+
+| Field | Required | Meaning |
+|-------|----------|---------|
+| `insurance_code` | Yes | Insurance company code (max 10). Upstream `isrccCd`. |
+| `insurance_name` | Yes | Insurance company name (max 100). Upstream `isrccNm`. |
+| `insurance_rate` | Yes | Premium rate from 0 to 100 (for example `20` for 20%). Sent upstream as numeric `isrcRt`. |
+| `use` | No | Defaults to `true`. |
 
 ```bash
 curl -X POST "{{baseUrl}}/branches/insurances" \
@@ -124,4 +150,13 @@ curl -X POST "{{baseUrl}}/branches/insurances" \
     "insurance_rate": 20,
     "use": true
   }'
+```
+
+### Response
+
+```json
+{
+  "message": "success",
+  "data": null
+}
 ```

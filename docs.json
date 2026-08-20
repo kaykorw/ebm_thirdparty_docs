@@ -24,7 +24,8 @@
     "url": "full",
     "mdx": {
       "server": [
-        "http://localhost:3000/ebm"
+        "http://localhost:3000/ebm",
+        "https://vsdc.kayko.rw"
       ]
     },
     "playground": {
@@ -64,6 +65,7 @@
             "pages": [
               "api/initialization",
               "api/constants",
+              "api/codes",
               "api/customers",
               "api/branches",
               "api/items",
@@ -89,6 +91,7 @@
             "group": "Lookup",
             "icon": "table",
             "pages": [
+              "reference/glossary",
               "reference/response-codes",
               "reference/enumerations",
               "reference/field-reference",
@@ -146,7 +149,11 @@
                   "GET /constants/refund-reasons",
                   "GET /constants/import-item-statuses",
                   "GET /constants/taxpayer-statuses",
-                  "GET /notices"
+                  "GET /notices",
+                  "GET /codes",
+                  "GET /codes/cached",
+                  "GET /codes/tourism",
+                  "PUT /codes/tourism"
                 ]
               },
               {
@@ -170,6 +177,20 @@
                 "group": "Items",
                 "icon": "box",
                 "pages": [
+                  {
+                    "group": "Classes",
+                    "icon": "layer-group",
+                    "pages": [
+                      "GET /item-classes"
+                    ]
+                  },
+                  {
+                    "group": "Composition",
+                    "icon": "diagram-project",
+                    "pages": [
+                      "POST /items/compositions"
+                    ]
+                  },
                   "POST /items",
                   "GET /items",
                   "GET /items/{item_code}",

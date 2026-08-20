@@ -58,7 +58,7 @@ flowchart TB
 | `tax_type` drives category | A line with `tax_type: "B"` contributes to `taxable_amount_b` / `tax_amount_b`, not A. |
 | `total_amount` consistency | Header `total_amount` must equal the sum of all line `total_amount` values. |
 | Round at each step | Round each line's `tax_amount` to 2 dp **before** summing into header totals. |
-| Live rates E/F/TT | Kayko sends `taxRtF: 3.00` and `taxRtTt: 3.00` even when those buckets are 0. |
+| Live rates E/F/TT | Header keys are present on sales. Tourism F/TT use null, catalog, or override via [`PUT /codes/tourism`](/api/codes). |
 
 ## Quick reference- category B (18% VAT)
 
@@ -68,7 +68,7 @@ For the most common case (`tax_type: "B"`):
 supply_amount     = price × quantity
 taxable_amount    = supply_amount − total_discount_amount
 tax_amount        = ROUND(taxable_amount × 18 / 118, 2)
-total_amount      = taxable_amount                   (tax-inclusive — customer pays this)
+total_amount      = taxable_amount                   (tax-inclusive, customer pays this)
 ```
 
 Kayko computes these when you omit them on `POST /sales` / `POST /purchases/confirm`. See [VAT Formulas](/calculations/vat-formulas) for the full breakdown.

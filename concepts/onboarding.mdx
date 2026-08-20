@@ -6,7 +6,7 @@ icon: clipboard-check
 
 ## 1.1 What Kayko EBM is
 
-**Kayko EBM** is the API gateway that lets private CIS/ERP applications send and receive data (sales, purchases, receipts, stock, and more) with the **RRA EBM 2.1** tax infrastructure. Your software calls Kayko EBM only — Kayko handles the connection to RRA.
+**Kayko EBM** is the API gateway that lets private CIS/ERP applications send and receive data (sales, purchases, receipts, stock, and more) with the **RRA EBM 2.1** tax infrastructure. Your software calls Kayko EBM only, Kayko handles the connection to RRA.
 
 ## 1.2 Environments
 
@@ -26,7 +26,7 @@ icon: clipboard-check
 | Supported languages | All (via HTTPS) |
 
 <Note>
-  EBM 2.1 server addresses (production and test) are assigned by RRA upon approval. Integrators always call the **Kayko EBM** base URL for their environment — see [Introduction](/introduction#base-url).
+  EBM 2.1 server addresses (production and test) are assigned by RRA upon approval. Integrators always call the **Kayko EBM** base URL for their environment, see [Introduction](/introduction#base-url).
 </Note>
 
 ---
@@ -35,13 +35,13 @@ icon: clipboard-check
 
 To use Kayko EBM, a taxpayer must complete the following:
 
-1. **Register on MyRRA** — join as a site member at RRA's taxpayer portal
-2. **Apply for EBM 2.1 service** — submit a service request after MyRRA membership
-3. **Register equipment** — submit equipment use application; RRA assigns a device serial number (`dvcSrlNo` / `device_serial_number`)
-4. **Receive RRA approval** — RRA approves the EBM service request
-5. **Enable EBM in Kayko** — Business dashboard → **Settings → Enable EBM**, then **generate an API key**. See [API Keys & Authentication](/concepts/api-keys)
-6. **Initialize the device** — call `POST /initialize/init` with TIN, branch ID, device serial number, and `ebm_url`
-7. **Receive keys** — Kayko EBM verifies the device with RRA and returns `intrlKey`, `signKey`, `cmcKey`
+1. **Register on MyRRA**, join as a site member at RRA's taxpayer portal
+2. **Apply for EBM 2.1 service**, submit a service request after MyRRA membership
+3. **Register equipment**, submit equipment use application; RRA assigns a device serial number (`dvcSrlNo` / `device_serial_number`)
+4. **Receive RRA approval**, RRA approves the EBM service request
+5. **Enable EBM in Kayko**, Business dashboard → **Settings → Enable EBM**, then **generate an API key**. See [API Keys & Authentication](/concepts/api-keys)
+6. **Initialize the device**, call `POST /initialize/init` with TIN, branch ID, device serial number, and `ebm_url`
+7. **Receive keys**, Kayko EBM verifies the device with RRA and returns `intrlKey`, `signKey`, `cmcKey`
 
 <Warning>
   Initialization is a **one-time** operation per device. Do not re-initialize unless RRA instructs you to. Your Kayko API key is separate from these device signing keys and must be sent on every HTTP request (except internal `/initialize/*` routes).
@@ -53,21 +53,21 @@ To use Kayko EBM, a taxpayer must complete the following:
 
 These four policies are **enforced** and must be followed by every integration:
 
-### Policy 1 — Call Kayko EBM only
+### Policy 1, Call Kayko EBM only
 
 Your CIS/ERP must call the **Kayko EBM gateway**. Do not call RRA EBM servers directly.
 
-### Policy 2 — Authenticate every request
+### Policy 2, Authenticate every request
 
 Send a valid business API key (`Authorization: Bearer sk_…` or `x-api-key`) on customer, constants, sales, and other scoped routes. Initialization uses the internal token when Core360 enables EBM.
 
-### Policy 3 — Manage `lastReqDt` cursors
+### Policy 3, Manage `lastReqDt` cursors
 
 When pulling data, send the **date/time of your last successful sync** (`lastReqDt`). After each successful pull, update the cursor to the `resultDt` from the response. Your CIS is responsible for storing and managing these timestamps per endpoint and per branch.
 
 See [Data Synchronization](/concepts/data-sync) for implementation details.
 
-### Policy 4 — 24-hour offline receipt limit
+### Policy 4, 24-hour offline receipt limit
 
 > If there is no internet connection for **24 hours** after a receipt signature and internal data are issued, the service **stops issuing receipt numbers**.
 
@@ -111,7 +111,7 @@ Several operations are restricted to the **head office** (`bhfId: "00"`):
 | Get purchase transactions | Yes |
 | Save purchase confirmations | Yes |
 | Save stock in/out | No (any branch) |
-| Save stock master | No (any branch) |
+| Save stock count | No (any branch) |
 | Save branch customers/users | No |
 | Save sales | No |
 

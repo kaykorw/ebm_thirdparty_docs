@@ -19,23 +19,26 @@ flowchart LR
 ## Where to start
 
 <Steps>
+  <Step title="Learn the vocabulary">
+    Read the [Glossary](/reference/glossary) for TIN, branch ID, item codes, tax types, and result codes.
+  </Step>
   <Step title="Authenticate">
     [API Keys](/concepts/api-keys): enable EBM in the dashboard, generate a key, and send it on every request.
   </Step>
   <Step title="Follow the checklist">
-    [Integration Checklist](/workflows/getting-started): recommended order of API calls from device init through sales, purchases, and stock.
+    [Integration Checklist](/workflows/getting-started): recommended order from device init through codes, items, stock, sales, purchases, and imports, including how those modules connect in prose.
   </Step>
   <Step title="Build your first flow">
-    Pick the API page that matches what you're building: [Sales](/api/sales), [Purchases](/api/purchases), or [Stock](/api/stock). Each page includes the workflow, field reference, and code examples.
+    Pick the API page that matches what you are building: [Sales](/api/sales), [Purchases](/api/purchases), or [Stock](/api/stock). Sales use a nested `customer` object (`tin_no`, `full_name`, `telephone`), not flat `customer_tin` fields.
   </Step>
   <Step title="Try it live">
-    Switch to the **API Playground** tab to send test requests against any endpoint.
+    Switch to the **API Playground** tab to send test requests against any endpoint. Response codes are explained in [Response Codes](/reference/response-codes) (spec §4.14).
   </Step>
 </Steps>
 
 ## Base URL
 
-Code samples use `{{baseUrl}}`. On playground pages, pick the server from the **environment dropdown** (default: `http://localhost:3000/ebm`).
+Code samples use `{{baseUrl}}`. On playground pages, pick the server from the **environment dropdown** (default: `{{localURL}}/ebm`).
 
 Proxied business routes need tenant headers (not `ebm_url` in the body):
 
@@ -43,7 +46,7 @@ Proxied business routes need tenant headers (not `ebm_url` in the body):
 |--------|------|
 | `x-tin` | Your 9-digit TIN |
 | `x-branch-id` | 2-character branch ID (`00` = head office) |
-| `x-last-request-date` | 14 digits `YYYYMMDDHHmmss` on `GET /branches`, `GET /notices`, `GET /items`, `GET /imports`, `GET /purchases`, and `GET /stocks` |
+| `x-last-request-date` | 14 digits `YYYYMMDDHHmmss` on `GET /branches`, `GET /notices`, `GET /items`, `GET /item-classes`, `GET /codes`, `GET /imports`, `GET /purchases`, and `GET /stocks` |
 
 Kayko resolves your business `ebm_url` from Core360 after you Enable EBM. You do not send it on later calls.
 
@@ -59,21 +62,21 @@ Many transactional upstream calls use this envelope:
 
 ```json
 {
-  "resultCd": "000",
-  "resultMsg": "It is succeeded",
-  "resultDt": "20260303145619",
+  "status": "000",
+  "message": "It is succeeded",
+  "date": "20260303145619",
   "data": { }
 }
 ```
 
 | Field | Meaning |
 |-------|---------|
-| `resultCd` | `"000"` = success. Anything else → [Response Codes](/reference/response-codes). |
-| `resultMsg` | Human-readable message |
-| `resultDt` | Server timestamp (`yyyyMMddHHmmss`) |
+| `status` | `"000"` = success. Anything else → [Response Codes](/reference/response-codes). |
+| `message` | Human-readable message |
+| `date` | Server timestamp (`yyyyMMddHHmmss`) |
 | `data` | Payload; shape varies per endpoint |
 
-Some Kayko routes return unwrapped `data`, or a mapped `{ message, data }` list (for example constants and notices). Auth failures use `{ status, message, error }`.
+Most Kayko business routes return a mapped `{ message, data }` envelope (for example customers, branches, constants, and notices). When VSDC rejects a proxied call, Kayko remaps the failure to `{ status, message, date }` where `status` is the VSDC result code. Auth failures use `{ status, message, error }`.
 
 ## Conventions
 

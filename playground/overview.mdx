@@ -1,39 +1,49 @@
 ---
 title: API Playground
-description: Send live test requests against Kayko EBM endpoints.
+description: Send live test requests against Kayko EBM endpoints with pre-filled examples and documented fields.
 icon: play
 ---
 
-Switch to the **API Playground** tab and pick an endpoint from the sidebar. Each page has a pre-filled request body, auth headers, and a **Send** button.
+The **API Playground** tab is the interactive companion to the reference docs. Each endpoint page opens with a short description of what the call does, a request form backed by the OpenAPI contract, and a response panel.
+
+Use the reference pages for deep field narrative ([Sales](/api/sales), [Codes](/api/codes), [Glossary](/reference/glossary)). Use the Playground when you want to authenticate, edit a realistic payload, and inspect a live response.
 
 ## Before you start
 
 <Steps>
   <Step title="Pick an environment">
-    Use the **environment dropdown** on any playground page. Default: `http://localhost:3000/ebm`. Code samples use `{{baseUrl}}` and update when you switch.
+    Use the **environment dropdown** on any playground page. Default: `{{baseUrl}}/ebm`. Code samples use `{{baseUrl}}` and update when you switch.
   </Step>
   <Step title="Authenticate">
     | Routes | Header |
     |--------|--------|
-    | Business routes (items, sales, …) | `Authorization: Bearer sk_…` or `x-api-key: sk_…` |
+    | Business routes (items, sales, codes, …) | `Authorization: Bearer sk_…` or `x-api-key: sk_…` |
     | Initialization (`/initialize/*`) | Prefer `X-API-Token`; a business API key also works |
 
     See [API Keys](/concepts/api-keys) for business key setup.
   </Step>
   <Step title="Set tenant headers">
-    Send `x-tin` and `x-branch-id` on proxied routes. List endpoints also need `x-last-request-date` (`YYYYMMDDHHmmss`). You do not send `ebm_url` in the body. Head-office writes (`POST /items`, `PUT /items/:item_code`, `POST /imports/confirm`, `POST /purchases/confirm`) require `x-branch-id: 00`.
+    Send `x-tin` (nine characters) and `x-branch-id` (two characters) on proxied routes. Incremental list endpoints also need `x-last-request-date` (`YYYYMMDDHHmmss`). You do not send `ebm_url` in the body. Head-office writes (`POST /items`, `PUT /items/:item_code`, `DELETE /items/:item_code`, `POST /items/compositions`, `POST /imports/confirm`, `POST /purchases/confirm`) require `x-branch-id: 00`.
   </Step>
-  <Step title="Send">
-    Edit the pre-filled body or query, click **Send**, and inspect the response panel.
+  <Step title="Read field helpers">
+    Every form field includes a label and helper text from the OpenAPI schema. Tax types should be read as human labels (for example **B, 18% Taxable**), not only raw letters. Cross-check enums in [Enumerations](/reference/enumerations) and live tables under [Constants](/api/constants).
+  </Step>
+  <Step title="Send and interpret the response">
+    Edit the pre-filled body or query, click **Send**, and inspect the response panel. Success on mapped routes is usually `{ message, data }`. VSDC failures appear as `{ status, message, date }` where `status` is the result code from [Response Codes](/reference/response-codes) (spec §4.14), for example `000` success, `910` parameter error, `881` missing purchase code, `894` communication error.
   </Step>
 </Steps>
 
 ## Response shapes
 
-| Kind | Shape |
-|------|-------|
-| Device init | `{ resultCd, resultMsg, resultDt, data }` |
-| Mapped Kayko routes | `{ message, data }` |
-| Auth / gateway failures | `{ status, message, error }` |
+| Kind | Shape | How to read it |
+|------|-------|----------------|
+| Device init | `{ resultCd, resultMsg, resultDt, data }` | Raw VSDC envelope; `resultCd` meanings in §4.14 / [Response Codes](/reference/response-codes) |
+| Mapped Kayko routes | `{ message, data }` | Business payload under `data` |
+| VSDC failure via Kayko | `{ status, message, date }` | `status` is `resultCd` with human `message` |
+| Auth / gateway failures | `{ status, message, error }` | Kayko guard errors such as missing scopes |
 
-Upstream `resultCd: "000"` = success. Full code list: [Response Codes](/reference/response-codes).
+## Consistency with reference docs
+
+Playground examples for sales use the nested `customer` object (`tin_no`, `full_name`, `telephone`) and `purchase_code`, matching [Sales](/api/sales). Tourism rate behavior follows [`PUT /codes/tourism`](/api/codes); do not assume every TIN accepts `taxRtF: 3.00`.
+
+If a Playground helper and a reference page ever disagree, treat the reference MDX page as the narrative source of truth and open an issue so the OpenAPI description can be aligned.

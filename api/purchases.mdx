@@ -1,14 +1,14 @@
 ---
 title: Purchases
-description: Pull supplier invoices registered to your TIN and confirm them as purchases.
+description: Pull supplier invoices registered to your TIN and confirm them as purchases for VAT and stock.
 icon: cart-shopping
 ---
 
-Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` from your business after Enable EBM, so you never put it in the JSON body.
+When another EBM taxpayer sells to your TIN, RRA already holds that sale. Your CIS must **discover** those invoices and **confirm** them as purchases. Confirmation is how you claim input-side processing and how Kayko knows to enqueue stock-in.
 
-Requires a business API key with scope `purchase`.
+Send `x-tin` and `x-branch-id` on every route below. Requires API key scope `purchase`. You never put `ebm_url` in the body.
 
-When another business sells to you on EBM, you **list** those invoices and **confirm** them. Confirmation is required for input VAT and for automatic stock-in.
+Cross-flow in words: poll purchases → ensure each line’s `item_code` is registered via [`POST /items`](/api/items) → confirm at head office → wait for asynchronous stock-in (seed [`POST /stocks/master`](/api/stock) first). Full checklist: [Integration Checklist](/workflows/getting-started).
 
 ```mermaid
 sequenceDiagram
@@ -82,16 +82,21 @@ Kayko maps snake_case labels to VSDC codes. For a normal purchase, Kayko sends u
 <ParamField body="transaction_type" type="string">`normal` (default), `copy`, `proforma`, `training`</ParamField>
 <ParamField body="receipt_type" type="string">`purchase` (default) or `refund`</ParamField>
 <ParamField body="status" type="string">Usually `approved`</ParamField>
-<ParamField body="supplier_tin" type="string">Required for automatic registration (9 digits)</ParamField>
-<ParamField body="supplier_branch_id" type="string">Supplier branch (2 chars)</ParamField>
-<ParamField body="supplier_name" type="string">Supplier name</ParamField>
-<ParamField body="supplier_invoice_no" type="integer">Supplier invoice number (required for automatic)</ParamField>
-<ParamField body="supplier_sdc_id" type="string">Supplier SDC ID</ParamField>
-<ParamField body="purchase_date" type="string">`YYYYMMDD`; defaults to today</ParamField>
-<ParamField body="confirmed_at" type="string">`YYYYMMDDHHmmss`</ParamField>
+<ParamField body="supplier" type="object">Supplier identity. For `automatic`, `tin_no` and `invoice_no` are required.</ParamField>
+<ParamField body="supplier.tin_no" type="string">9-digit supplier TIN</ParamField>
+<ParamField body="supplier.branch_id" type="string">Supplier branch (2 chars)</ParamField>
+<ParamField body="supplier.full_name" type="string">Supplier name</ParamField>
+<ParamField body="supplier.invoice_no" type="integer">Supplier invoice number</ParamField>
+<ParamField body="supplier.sdc_id" type="string">Supplier SDC ID</ParamField>
+<ParamField body="dates" type="object">Optional purchase timestamps</ParamField>
+<ParamField body="dates.purchase_date" type="string">`YYYYMMDD`; defaults to today</ParamField>
+<ParamField body="dates.confirmed_at" type="string">`YYYYMMDDHHmmss`</ParamField>
+<ParamField body="dates.warehoused_at" type="string">`YYYYMMDDHHmmss`</ParamField>
 <ParamField body="items" type="array" required>Line items (see below)</ParamField>
 
-Optional header totals (`taxable_amount_a`–`tt`, `tax_amount_*`, `total_*`) — omit them to let Kayko compute from lines. If you send them, they must match. Kayko always forwards live VSDC tax rates including **E** (0), **F** (tourism 3%), and **TT** (3%).
+Optional header totals (`taxable_amount_a`–`tt`, `tax_amount_*`, `total_*`), omit them to let Kayko compute from lines. If you send them, they must match. Kayko always forwards live VSDC tax rates including **E** (0), **F** (tourism 3%), and **TT** (3%).
+
+`sequence` is optional. Omit it to auto-number lines `1…n` in array order. If you send it, values must be consecutive starting at `1` matching that order.
 
 ### Line items
 
@@ -122,10 +127,14 @@ curl -X POST "{{baseUrl}}/purchases/confirm" \
     "invoice_no": 501,
     "registration_type": "automatic",
     "payment_method": "credit",
-    "supplier_tin": "100004527",
-    "supplier_name": "RULIBA CLAYS LTD",
-    "supplier_invoice_no": 1799,
-    "purchase_date": "20260303",
+    "supplier": {
+      "tin_no": "100004527",
+      "full_name": "RULIBA CLAYS LTD",
+      "invoice_no": 1799
+    },
+    "dates": {
+      "purchase_date": "20260303"
+    },
     "items": [{
       "item_code": "RW2NTU0000001",
       "item_classification_code": "8014160101",
@@ -153,10 +162,14 @@ await fetch(`${BASE_URL}/purchases/confirm`, {
     invoice_no: 501,
     registration_type: 'automatic',
     payment_method: 'credit',
-    supplier_tin: '100004527',
-    supplier_name: 'RULIBA CLAYS LTD',
-    supplier_invoice_no: 1799,
-    purchase_date: '20260303',
+    supplier: {
+      tin_no: '100004527',
+      full_name: 'RULIBA CLAYS LTD',
+      invoice_no: 1799,
+    },
+    dates: {
+      purchase_date: '20260303',
+    },
     items: [
       {
         item_code: 'RW2NTU0000001',
@@ -179,10 +192,14 @@ await fetch(`${BASE_URL}/purchases/confirm`, {
   "invoice_no": 501,
   "registration_type": "automatic",
   "payment_method": "credit",
-  "supplier_tin": "100004527",
-  "supplier_name": "RULIBA CLAYS LTD",
-  "supplier_invoice_no": 1799,
-  "purchase_date": "20260303",
+  "supplier": {
+    "tin_no": "100004527",
+    "full_name": "RULIBA CLAYS LTD",
+    "invoice_no": 1799
+  },
+  "dates": {
+    "purchase_date": "20260303"
+  },
   "items": [
     {
       "item_code": "RW2NTU0000001",
@@ -203,4 +220,4 @@ await fetch(`${BASE_URL}/purchases/confirm`, {
 
 Response `{ message, data }` includes `invoice_no`, `original_invoice_no` (`0` for a normal purchase), supplier fields, and mapped labels (`registration_type`, `receipt_type`, `payment_method`, `status`).
 
-After VSDC `000`, Kayko enqueues stock-in (`purchase`). Purchase refunds enqueue stock-out (`return` / type `12`). Services (`item_type` `3`) are skipped. Seed `POST /stocks/master` first so remaining quantity can update. Do not nest stock in this HTTP request.
+After VSDC `000`, Kayko enqueues stock-in (`purchase`). Purchase refunds enqueue stock-out (`return` / type `12`). Services (`item_type` `service`) are skipped. Seed `POST /stocks/master` first so remaining quantity can update. Do not nest stock in this HTTP request.

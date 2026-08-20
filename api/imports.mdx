@@ -1,14 +1,14 @@
 ---
 title: Imports
-description: Pull customs declarations and confirm them against your item catalog.
+description: Pull customs declarations and confirm them against your item catalog so stock can be adjusted.
 icon: ship
 ---
 
-Send `x-tin` and `x-branch-id` on every route below. Kayko resolves `ebm_url` from your business after Enable EBM, so you never put it in the JSON body.
+Import lines originate in RRA customs for your TIN. Your job is to **list** them, map each declaration to a registered fiscal `item_code`, then **confirm** the line as approved or cancelled.
 
-Requires a business API key with scope `import`.
+Send `x-tin` and `x-branch-id` on every route. Requires API key scope `import`. Confirm has **no quantity** in the body, quantities and weights come from the list response. After an approved confirm, Kayko posts stock-in asynchronously using that listed quantity.
 
-Import lines come from RRA customs. You **list** them, map each declaration to a registered `item_code`, then **confirm** as approved or cancelled.
+Cross-flow: `GET /imports` → [`POST /items`](/api/items) if the product is new → `POST /imports/confirm` at branch `00` → automatic stock-in. See [Integration Checklist](/workflows/getting-started).
 
 <Warning>
   Confirm must use head office `x-branch-id: 00`. Other branches receive `403` / `EBM_HEAD_OFFICE_REQUIRED`. List works for any allowed branch.

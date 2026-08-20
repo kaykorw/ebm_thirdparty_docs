@@ -20,7 +20,7 @@ You can omit line and header tax amounts on Kayko requests. Kayko computes them 
 | `F` | F (Tourism tax) | 3% | `taxable_amount × 3 / 103` when the line uses `F` |
 | `TT` | TT | 3% | Same extraction when the line uses `TT` |
 
-Most goods use **`B`**. Kayko still sends `taxRtE: 0.00`, `taxRtF: 3.00`, and `taxRtTt: 3.00` on every sale/purchase even when those buckets are empty. Spec PDF v1.0.5 documents A–D only; current VSDC firmware expects F/TT or it returns `910`.
+Most goods use **`B`**. Spec PDF v1.0.5 documents header tax types A–D; current VSDC firmware also expects tourism header keys **`taxRtF`** and **`taxRtTt`** on every sale. Kayko’s default for non-tourism TINs is to send those keys as JSON **`null`**. Tourism sales (`tourism_tax: true`) use catalog rates (usually 3). Overrides are configured per TIN via [`PUT /codes/tourism`](/api/codes). Forcing `3.00` on a non-tourism device commonly returns `910` (“Wrong Tourism Tax rate”).
 
 Live rates: `GET /constants/taxes` (`code`, `name`, `rate`).
 
@@ -60,7 +60,7 @@ VAT = T − netPrice
   Do **not** calculate `tax_amount = taxable_amount × 0.18`. That treats the amount as tax-exclusive and VSDC rejects the invoice (`910`).
 </Note>
 
-## Worked example — single line, category B
+## Worked example, single line, category B
 
 Selling **2 units** at **1,000 RWF** each (tax-inclusive):
 
@@ -91,7 +91,7 @@ Kayko field → VSDC field:
 
 Always include rates E/F/TT even when amounts are 0.
 
-## Categories A, C, D, E — zero VAT
+## Categories A, C, D, E, zero VAT
 
 ```
 tax_amount      = 0
@@ -146,5 +146,5 @@ function extractVat(taxInclusiveAmount, rate = 18) {
 | Rounding only at header | Header ≠ sum of lines | Round each line first, then sum |
 | Line `tax_type: "B"` but amounts in A | Validation error | B lines → `taxable_amount_b` |
 | Integer amounts (`305` not `305.08`) | Error 910 | Always 2 decimal places |
-| Missing `taxRtF` / sending `3` instead of `3.00` | Error 910 on live devices | Kayko emits 7,2 numbers; do not bypass the gateway |
+| Missing tourism header keys or wrong programmed rate | Error 910 on live devices | Use Kayko’s tourism strategy / `PUT /codes/tourism`; do not hard-code `3.00` for every TIN |
 | Normal sale `original_invoice_no` = `invoice_no` | Error 910 | Leave it off; Kayko sends `orgInvcNo: 0` |
