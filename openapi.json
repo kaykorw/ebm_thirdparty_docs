@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Kayko EBM API",
-    "description": "Kayko EBM third-party API gateway for RRA EBM 2.1. Authenticate with a business API key. Routes cover initialize, customers, constants, sales, purchases, stock, and more.",
+    "description": "Official Kayko EBM third-party API gateway for Rwanda Revenue Authority (RRA) EBM 2.1. Authenticate with a business API key. Routes cover initialize, customers, constants, codes, items, sales, purchases, stock, and imports.",
     "version": "1.0.5"
   },
   "servers": [

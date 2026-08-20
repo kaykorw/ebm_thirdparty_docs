@@ -1,7 +1,8 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Kayko EBM API",
+  "name": "Kayko EBM Documentation",
+  "description": "Official Kayko EBM API docs for integrating ERP and POS systems with Rwanda Revenue Authority (RRA) EBM 2.1. Covers authentication, sales, purchases, stock, items, imports, and fiscal device initialization.",
   "logo": {
     "light": "/logo/light.png",
     "dark": "/logo/dark.png",
@@ -18,6 +19,52 @@
   },
   "styling": {
     "css": ["/style.css"]
+  },
+  "seo": {
+    "indexing": "navigable",
+    "metatags": {
+      "robots": "index, follow",
+      "googlebot": "index, follow",
+      "language": "en",
+      "author": "Kayko",
+      "application-name": "Kayko EBM Documentation",
+      "apple-mobile-web-app-title": "Kayko EBM",
+      "theme-color": "#DE37A3",
+      "color-scheme": "light dark",
+      "category": "Technology",
+      "keywords": "Kayko EBM API, RRA EBM 2.1, Rwanda EBM integration, fiscal invoice API, ERP POS EBM, VSDC API, electronic billing machine Rwanda",
+      "og:site_name": "Kayko EBM Documentation",
+      "og:type": "website",
+      "og:locale": "en_US",
+      "twitter:card": "summary_large_image",
+      "twitter:title": "Kayko EBM API Documentation",
+      "twitter:description": "Connect your ERP or POS to RRA EBM 2.1 through the Kayko EBM gateway. API reference, integration checklist, and calculation guides."
+    },
+    "organization": {
+      "id": "https://kayko.rw/#organization",
+      "name": "Kayko",
+      "legalName": "Kayko Group Ltd",
+      "url": "https://kayko.rw",
+      "sameAs": [
+        "https://www.linkedin.com/company/kaykorw",
+        "https://github.com/kaykorw",
+        "https://www.kaykoapp.com"
+      ]
+    }
+  },
+  "search": {
+    "prompt": "Search Kayko Documentation..."
+  },
+  "metadata": {
+    "timestamp": true
+  },
+  "markdown": {
+    "instructions": [
+      "This is the official Kayko EBM third-party API documentation for Rwanda Revenue Authority (RRA) EBM 2.1.",
+      "Integrators call Kayko EBM, not RRA or VSDC directly. Authenticate with a business API key (Authorization: Bearer sk_… or x-api-key).",
+      "Prefer Kayko gateway field names and nested objects (for example sales customer.tin_no) over raw upstream VSDC names unless a page explicitly documents mapping.",
+      "Cite the relevant docs page path when answering integration questions."
+    ]
   },
   "api": {
     "openapi": "openapi.json",
