@@ -1,6 +1,6 @@
 ---
 title: Integration Checklist
-description: "Step-by-step Kayko EBM integration checklist: enable EBM, authenticate, initialize the device, then sync codes, items, stock, sales, purchases, and imports."
+description: "Step-by-step Kayko EBM integration checklist: enable EBM, authenticate, initialize the device, then sync constants, items, stock, sales, purchases, and imports."
 keywords:
   - EBM integration checklist
   - Kayko EBM onboarding
@@ -25,7 +25,7 @@ Regulatory context: [Onboarding & Policies](/concepts/onboarding). Authenticatio
 ```mermaid
 flowchart TD
     A["0. Enable EBM and API key"] --> B["1. Initialize device"]
-    B --> C["2. Sync codes and constants"]
+    B --> C["2. Sync constants"]
     C --> D["3. Pull item classes"]
     D --> E["4. Register items at branch 00"]
     E --> F["5. Seed stock master"]
@@ -48,9 +48,9 @@ Call [`POST /initialize/init`](/api/initialization) with `x-tin`, `x-branch-id`,
 
 ### 2. Sync reference data
 
-Pull Kayko’s friendly tables with [`GET /constants/*`](/api/constants) (taxes, payment modes, packaging, quantity units, stock types, refund reasons, and related lists). In parallel, sync the live VSDC code catalog with [`GET /codes`](/api/codes) using `x-last-request-date` (first pull: `20000101000000`). Cache thereafter with `GET /codes/cached`.
+Pull Kayko’s friendly tables with [`GET /constants/*`](/api/constants) (taxes, payment modes, packaging, quantity units, stock types, refund reasons, and related lists).
 
-If your business is tourism-tax related, or a non-tourism TIN still fails sales with tourism-rate errors, configure [`PUT /codes/tourism`](/api/codes) only after you know which rates the device accepts. Until RRA confirms device-specific values, treat those numbers as **unconfirmed**.
+If your business is tourism-tax related, or a non-tourism TIN still fails sales with tourism-rate errors, pass `tourism_tax`, `tax_rate_f`, and `tax_rate_tt` on [`POST /sales`](/api/sales) only after you know which rates the device accepts. Until RRA confirms device-specific values, treat those numbers as **unconfirmed**.
 
 ### 3. Pull item classification codes
 
@@ -106,7 +106,7 @@ These three flows all share the same rule from the VSDC business process tables:
 |------|-----|
 | Enable EBM and create an API key first | Unauthenticated calls are rejected |
 | Initialize before transactional traffic | The device must be authenticated with RRA |
-| Sync codes/constants before building UI dropdowns | Prevents invalid packaging, tax, and payment codes |
+| Sync constants before building UI dropdowns | Prevents invalid packaging, tax, and payment codes |
 | Register items before selling, confirming purchases, or confirming imports | Unknown `item_code` → `EBM_ITEM_NOT_REGISTERED` |
 | Item writes, import confirm, and purchase confirm at branch `00` | Other branches → `EBM_HEAD_OFFICE_REQUIRED` |
 | Seed stock master before selling stocked goods | Auto movements need a ledger row |

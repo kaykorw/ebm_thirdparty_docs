@@ -112,7 +112,6 @@
             "pages": [
               "api/initialization",
               "api/constants",
-              "api/codes",
               "api/customers",
               "api/branches",
               "api/items",
@@ -195,12 +194,14 @@
                   "GET /constants/stock-types",
                   "GET /constants/refund-reasons",
                   "GET /constants/import-item-statuses",
-                  "GET /constants/taxpayer-statuses",
-                  "GET /notices",
-                  "GET /codes",
-                  "GET /codes/cached",
-                  "GET /codes/tourism",
-                  "PUT /codes/tourism"
+                  "GET /constants/taxpayer-statuses"
+                ]
+              },
+              {
+                "group": "Notices",
+                "icon": "bullhorn",
+                "pages": [
+                  "GET /notices"
                 ]
               },
               {

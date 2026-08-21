@@ -116,9 +116,8 @@ When you create a key, select only the scopes your integration needs. Each scope
 | `purchase` | Purchase list and confirmation |
 | `notices` | Notices pulls |
 | `import` | Customs import list and confirm |
-| `codes` | Standard code sync and tourism tax settings (`/codes`, `/codes/cached`, `/codes/tourism`) |
 
-A request fails with `API_KEY_SCOPE_DENIED` if the key is missing the scope required by that endpoint. Constants and live `/codes` routes currently accept any valid EBM API key (no scope check); other domains enforce the scopes above.
+A request fails with `API_KEY_SCOPE_DENIED` if the key is missing the scope required by that endpoint. Constants currently accept any valid EBM API key (no scope check); other domains enforce the scopes above.
 
 ## IP allowlist (optional)
 

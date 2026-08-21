@@ -63,7 +63,7 @@ flowchart TB
 | `tax_type` drives category | A line with `tax_type: "B"` contributes to `taxable_amount_b` / `tax_amount_b`, not A. |
 | `total_amount` consistency | Header `total_amount` must equal the sum of all line `total_amount` values. |
 | Round at each step | Round each line's `tax_amount` to 2 dp **before** summing into header totals. |
-| Live rates E/F/TT | Header keys are present on sales. Tourism F/TT use null, catalog, or override via [`PUT /codes/tourism`](/api/codes). |
+| Live rates E/F/TT | Header keys are present on sales. Tourism F/TT use null, catalog, or override via sale-level `tax_rate_f` / `tax_rate_tt`. |
 
 ## Quick reference- category B (18% VAT)
 

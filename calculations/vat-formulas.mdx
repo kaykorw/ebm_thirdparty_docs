@@ -26,7 +26,7 @@ You can omit line and header tax amounts on Kayko requests. Kayko computes them 
 | `F` | F (Tourism tax) | 3% | `taxable_amount × 3 / 103` when the line uses `F` |
 | `TT` | TT | 3% | Same extraction when the line uses `TT` |
 
-Most goods use **`B`**. Spec PDF v1.0.5 documents header tax types A–D; current VSDC firmware also expects tourism header keys **`taxRtF`** and **`taxRtTt`** on every sale. Kayko’s default for non-tourism TINs is to send those keys as JSON **`null`**. Tourism sales (`tourism_tax: true`) use catalog rates (usually 3). Overrides are configured per TIN via [`PUT /codes/tourism`](/api/codes). Forcing `3.00` on a non-tourism device commonly returns `910` (“Wrong Tourism Tax rate”).
+Most goods use **`B`**. Spec PDF v1.0.5 documents header tax types A–D; current VSDC firmware also expects tourism header keys **`taxRtF`** and **`taxRtTt`** on every sale. Kayko’s default for non-tourism TINs is to send those keys as JSON **`null`**. Tourism sales (`tourism_tax: true`) use catalog rates (usually 3). Overrides use sale-level `tax_rate_f` / `tax_rate_tt`. Forcing `3.00` on a non-tourism device commonly returns `910` (“Wrong Tourism Tax rate”).
 
 Live rates: `GET /constants/taxes` (`code`, `name`, `rate`).
 
@@ -152,5 +152,5 @@ function extractVat(taxInclusiveAmount, rate = 18) {
 | Rounding only at header | Header ≠ sum of lines | Round each line first, then sum |
 | Line `tax_type: "B"` but amounts in A | Validation error | B lines → `taxable_amount_b` |
 | Integer amounts (`305` not `305.08`) | Error 910 | Always 2 decimal places |
-| Missing tourism header keys or wrong programmed rate | Error 910 on live devices | Use Kayko’s tourism strategy / `PUT /codes/tourism`; do not hard-code `3.00` for every TIN |
+| Missing tourism header keys or wrong programmed rate | Error 910 on live devices | Use Kayko’s tourism strategy / sale-level `tax_rate_f` / `tax_rate_tt`; do not hard-code `3.00` for every TIN |
 | Normal sale `original_invoice_no` = `invoice_no` | Error 910 | Leave it off; Kayko sends `orgInvcNo: 0` |

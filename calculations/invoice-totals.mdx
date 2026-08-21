@@ -11,7 +11,7 @@ icon: file-invoice
 
 Kayko requires **duplicate accounting**, every amount appears on the line and again on the header. Header values must be the **exact sum** of their line counterparts. You may omit header fields on `POST /sales` and `POST /purchases/confirm`; Kayko computes them. If you send them, they must match or VSDC returns `910`.
 
-On the wire to VSDC, Kayko sends rates A–D plus live extensions **E**, **F**, and **TT**. Tourism rates **F/TT** follow the per-TIN strategy (null, catalog, or override), not a fixed `3.00` for every business. Configure via [`PUT /codes/tourism`](/api/codes).
+On the wire to VSDC, Kayko sends rates A–D plus live extensions **E**, **F**, and **TT**. Tourism rates **F/TT** follow the per-TIN strategy (null, catalog, or override), not a fixed `3.00` for every business. Configure via sale-level `tax_rate_f` / `tax_rate_tt`.
 
 ## Header tax fields
 
@@ -74,4 +74,4 @@ assert item_count       === items.length
 | VSDC `910` | `total_amount` ≠ sum of line totals |
 | VSDC `910` | `item_count` ≠ `items.length` |
 | VSDC `910` | Line `tax_type: "B"` but amounts in the wrong header bucket |
-| VSDC `910` | Missing/invalid tourism header rates or totals mismatch (Kayko applies tourism strategy; configure `/codes/tourism` if needed) |
+| VSDC `910` | Missing/invalid tourism header rates or totals mismatch (Kayko applies tourism strategy; set sale-level `tax_rate_f` / `tax_rate_tt` if needed) |

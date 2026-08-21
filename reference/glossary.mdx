@@ -53,7 +53,7 @@ This glossary defines the jargon that appears in Kayko EBM requests, responses, 
 
 | Term | Definition |
 |------|------------|
-| **Last request date (`x-last-request-date` / `lastReqDt`)** | Fourteen-digit cursor `YYYYMMDDHHmmss` telling VSDC “return records changed after this time.” Required on incremental GET routes such as items, imports, purchases, stocks, branches, notices, and codes. |
+| **Last request date (`x-last-request-date` / `lastReqDt`)** | Fourteen-digit cursor `YYYYMMDDHHmmss` telling VSDC “return records changed after this time.” Required on incremental GET routes such as items, imports, purchases, stocks, branches, and notices. |
 | **`use` / `useYn`** | Active flag. Kayko accepts boolean `use`; VSDC stores `Y` or `N`. |
 
 ## Tax types (A–F, TT)
@@ -70,7 +70,7 @@ Used as `tax_type` on items and invoice lines (upstream `taxTyCd`). Rates on the
 | **F** | Tourism tax category in code tables, **do not send `tax_type: F` on sale lines**; live devices reject it |
 | **TT** | Tourism tax line type used with `tourism_tax: true` on sales |
 
-Configure tourism **header** rates with [`PUT /codes/tourism`](/api/codes).
+Configure tourism **header** rates with sale-level `tourism_tax`, `tax_rate_f`, and `tax_rate_tt` on [`POST /sales`](/api/sales).
 
 ## Purchase and insurance
 

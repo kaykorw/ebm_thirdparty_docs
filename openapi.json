@@ -884,7 +884,7 @@
         ],
         "operationId": "select_taxes",
         "summary": "Get Taxes",
-        "description": "Return tax type codes used as `tax_type` on items and invoice lines.\n\nLabels are human-readable (for example B, 18% Taxable). Sale line type F is rejected on live devices; use TT with tourism_tax for tourism lines. Header tourism rates are separate, see GET/PUT /codes/tourism.",
+        "description": "Return tax type codes used as `tax_type` on items and invoice lines.\n\nLabels are human-readable (for example B, 18% Taxable). Sale line type F is rejected on live devices; use TT with tourism_tax for tourism lines. Header tourism rates are separate; set sale-level tourism_tax, tax_rate_f, and tax_rate_tt when needed.",
         "security": [
           {
             "ApiKeyBearer": []
@@ -4720,7 +4720,7 @@
         ],
         "operationId": "submit_sale",
         "summary": "Create new sale",
-        "description": "Submit a normal fiscal sale for signing.\n\nUse this when a customer pays for goods or services and you need a legally signed EBM receipt. and returns print fields (`receipt_signature`, `internal_data`, counters, SDC, MRC). Stock-out is queued after VSDC `000`, not in this HTTP response.\n\n**Prerequisites:** register each `item_code` first; seed `POST /stocks/master` for stocked goods; send `purchase_code` when `customer.tin_no` is present (business buyer).\n\n**Gotchas:** do not set `original_invoice_no` equal to `invoice_no` on normal sales; do not send line `tax_type` `F` (use `TT` with `tourism_tax: true`); tourism rates are TIN-specific (configure via PUT /codes/tourism).\n\nResponse codes: `000` success; `881` missing purchase code; `910` parameter/tourism/totals; `994` duplicate. Kayko errors use `{ status, message, date }`.",
+        "description": "Submit a normal fiscal sale for signing.\n\nUse this when a customer pays for goods or services and you need a legally signed EBM receipt. and returns print fields (`receipt_signature`, `internal_data`, counters, SDC, MRC). Stock-out is queued after VSDC `000`, not in this HTTP response.\n\n**Prerequisites:** register each `item_code` first; seed `POST /stocks/master` for stocked goods; send `purchase_code` when `customer.tin_no` is present (business buyer).\n\n**Gotchas:** do not set `original_invoice_no` equal to `invoice_no` on normal sales; do not send line `tax_type` `F` (use `TT` with `tourism_tax: true`); tourism rates are TIN-specific (set sale-level tourism_tax, tax_rate_f, tax_rate_tt).\n\nResponse codes: `000` success; `881` missing purchase code; `910` parameter/tourism/totals; `994` duplicate. Kayko errors use `{ status, message, date }`.",
         "security": [
           {
             "ApiKeyBearer": []
@@ -4866,7 +4866,7 @@
                   },
                   "tax_rate_f": {
                     "type": "number",
-                    "description": "Optional override for upstream taxRtF (0–100). Prefer PUT /codes/tourism for TIN defaults."
+                    "description": "Optional override for upstream taxRtF (0–100). Prefer sale-level tax_rate_f / tax_rate_tt overrides."
                   },
                   "tax_rate_tt": {
                     "type": "number",
@@ -5476,249 +5476,6 @@
         "responses": {
           "200": {
             "description": "Mapped remaining quantity"
-          }
-        }
-      }
-    },
-    "/codes": {
-      "get": {
-        "tags": [
-          "Codes"
-        ],
-        "operationId": "sync_codes",
-        "summary": "Sync standard codes",
-        "description": "Pull RRA standard code classes from VSDC (`code/selectCodes`) that changed after your cursor.\n\nCall this during onboarding and on a schedule so dropdowns match the device catalog. Requires `x-last-request-date`. For offline reads after a successful sync, use GET /codes/cached.\n\nResponse codes: mapped `{ message, data }`; empty delta means nothing new (similar to upstream 001).",
-        "security": [
-          {
-            "ApiKeyBearer": []
-          },
-          {
-            "ApiKeyHeader": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "x-tin",
-            "in": "header",
-            "required": true,
-            "description": "Taxpayer Identification Number, exactly 9 characters.",
-            "schema": {
-              "type": "string",
-              "minLength": 9,
-              "maxLength": 9
-            }
-          },
-          {
-            "name": "x-branch-id",
-            "in": "header",
-            "required": true,
-            "description": "Two-character branch ID (`00` = head office).",
-            "schema": {
-              "type": "string",
-              "minLength": 2,
-              "maxLength": 2
-            }
-          },
-          {
-            "name": "x-last-request-date",
-            "in": "header",
-            "required": true,
-            "description": "Sync cursor YYYYMMDDHHmmss. First full pull: 20000101000000.",
-            "schema": {
-              "type": "string",
-              "pattern": "^\\d{14}$",
-              "example": "20000101000000"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Mapped code classes (`000` / success path).",
-            "content": {
-              "application/json": {
-                "example": {
-                  "message": "success",
-                  "data": [],
-                  "meta": {}
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/codes/cached": {
-      "get": {
-        "tags": [
-          "Codes"
-        ],
-        "operationId": "get_cached_codes",
-        "summary": "Get cached codes",
-        "description": "Return the last cached code set for this TIN without calling VSDC.\n\nUse for UI dropdowns after GET /codes has populated the cache. If the cache is empty, you receive EBM_CODES_CACHE_MISS, sync first.",
-        "security": [
-          {
-            "ApiKeyBearer": []
-          },
-          {
-            "ApiKeyHeader": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "x-tin",
-            "in": "header",
-            "required": true,
-            "description": "Taxpayer Identification Number, exactly 9 characters.",
-            "schema": {
-              "type": "string",
-              "minLength": 9,
-              "maxLength": 9
-            }
-          },
-          {
-            "name": "x-branch-id",
-            "in": "header",
-            "required": true,
-            "description": "Two-character branch ID (`00` = head office).",
-            "schema": {
-              "type": "string",
-              "minLength": 2,
-              "maxLength": 2
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Cached code classes"
-          },
-          "404": {
-            "description": "Cache miss (EBM_CODES_CACHE_MISS)"
-          }
-        }
-      }
-    },
-    "/codes/tourism": {
-      "get": {
-        "tags": [
-          "Codes"
-        ],
-        "operationId": "get_tourism_tax",
-        "summary": "Get tourism tax settings",
-        "description": "Return per-TIN tourism header strategy (`non_tourism_null`, `tourism_catalog`, or `override`) and any stored rate overrides.\n\nLive devices validate taxRtF/taxRtTt; configure defaults via PUT /codes/tourism.",
-        "security": [
-          {
-            "ApiKeyBearer": []
-          },
-          {
-            "ApiKeyHeader": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "x-tin",
-            "in": "header",
-            "required": true,
-            "description": "Taxpayer Identification Number, exactly 9 characters.",
-            "schema": {
-              "type": "string",
-              "minLength": 9,
-              "maxLength": 9
-            }
-          },
-          {
-            "name": "x-branch-id",
-            "in": "header",
-            "required": true,
-            "description": "Two-character branch ID (`00` = head office).",
-            "schema": {
-              "type": "string",
-              "minLength": 2,
-              "maxLength": 2
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Tourism settings and hint"
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Codes"
-        ],
-        "operationId": "put_tourism_tax",
-        "summary": "Update tourism tax settings",
-        "description": "Store whether this TIN is tourism-oriented and optional tax_rate_f / tax_rate_tt overrides used on every subsequent sale unless overridden per request.\n\nDo not guess rates. If VSDC returns 910 Wrong Tourism Tax rate, confirm the programmed values with your VSDC operator.",
-        "security": [
-          {
-            "ApiKeyBearer": []
-          },
-          {
-            "ApiKeyHeader": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "x-tin",
-            "in": "header",
-            "required": true,
-            "description": "Taxpayer Identification Number, exactly 9 characters.",
-            "schema": {
-              "type": "string",
-              "minLength": 9,
-              "maxLength": 9
-            }
-          },
-          {
-            "name": "x-branch-id",
-            "in": "header",
-            "required": true,
-            "description": "Two-character branch ID (`00` = head office).",
-            "schema": {
-              "type": "string",
-              "minLength": 2,
-              "maxLength": 2
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "example": {
-                "tourism_tax": false,
-                "tax_rate_f": null,
-                "tax_rate_tt": null
-              },
-              "schema": {
-                "type": "object",
-                "required": [
-                  "tourism_tax"
-                ],
-                "properties": {
-                  "tourism_tax": {
-                    "type": "boolean",
-                    "description": "When true, sales use catalog tourism rates unless overrides exist."
-                  },
-                  "tax_rate_f": {
-                    "type": "number",
-                    "nullable": true,
-                    "description": "Optional override for upstream taxRtF (0–100)."
-                  },
-                  "tax_rate_tt": {
-                    "type": "number",
-                    "nullable": true,
-                    "description": "Optional override for upstream taxRtTt (0–100)."
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Updated tourism settings"
           }
         }
       }

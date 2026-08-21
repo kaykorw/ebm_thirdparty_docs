@@ -31,7 +31,7 @@ icon: table-columns
 | `payment_method` | `pmtTyCd` |
 | `remaining_quantity` | `rsdQty` (absolute remaining qty) |
 
-Live VSDC also expects header rate keys **E, F, TT**. Kayko always includes them on sales; tourism **F/TT** values follow the per-TIN strategy (JSON `null`, catalog rate, or override), not a fixed `3.00` for every business. Configure defaults via [`PUT /codes/tourism`](/api/codes).
+Live VSDC also expects header rate keys **E, F, TT**. Kayko always includes them on sales; tourism **F/TT** values follow the per-TIN strategy (JSON `null`, catalog rate, or override), not a fixed `3.00` for every business. Configure overrides via sale-level `tax_rate_f` / `tax_rate_tt`.
 
 ---
 
@@ -353,7 +353,7 @@ There is no composition route on the gateway. Upstream VSDC stored composition f
 | `taxblAmtE`, `F`, `Tt` | NUMBER | Y | 18,2 | Live VSDC (not in PDF v1.0.5). Usually `0` |
 | `taxRtA`–`D` | NUMBER | Y | 7,2 | Per tax category (`18.00` for B) |
 | `taxRtE` | NUMBER | Y | 7,2 | Reserved; Kayko sends `0.00` |
-| `taxRtF` | NUMBER | Y* | 7,2 | Tourism header rate, JSON `null`, catalog, or override (not always `3.00`). See [`PUT /codes/tourism`](/api/codes). |
+| `taxRtF` | NUMBER | Y* | 7,2 | Tourism header rate, JSON `null`, catalog, or override (not always `3.00`). Use sale-level `tax_rate_f` when needed. |
 | `taxRtTt` | NUMBER | Y* | 7,2 | Same strategy as `taxRtF`. Device-specific accepted values are **unconfirmed, pending RRA clarification**. |
 | `taxAmtA`–`D` | NUMBER | Y | 18,2 | Per tax category |
 | `taxAmtE`, `F`, `Tt` | NUMBER | Y | 18,2 | Usually `0` |

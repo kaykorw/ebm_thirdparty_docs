@@ -1,6 +1,6 @@
 ---
 title: Data Synchronization
-description: "Keep Kayko EBM data in sync with x-last-request-date incremental pulls for branches, codes, items, imports, purchases, and stock."
+description: "Keep Kayko EBM data in sync with x-last-request-date incremental pulls for branches, items, imports, purchases, and stock."
 keywords:
   - EBM data sync
   - x-last-request-date
@@ -39,7 +39,6 @@ sequenceDiagram
 
 | Endpoint | What it syncs |
 |----------|---------------|
-| `GET /codes` | Live RRA standard code classes from VSDC |
 | `GET /item-classes` | Item classification tree |
 | `GET /branches` | Branch office list |
 | `GET /notices` | RRA announcements |
@@ -48,7 +47,7 @@ sequenceDiagram
 | `GET /purchases` | Supplier invoices to confirm |
 | `GET /stocks` | Stock movement history |
 
-Constants (`GET /constants/*`) are static tables and do not use this header. Tourism settings (`GET/PUT /codes/tourism`) are per-TIN Kayko configuration, not a VSDC delta cursor.
+Constants (`GET /constants/*`) are static tables and do not use this header.
 
 Mapped list responses use `{ message, data }`. An empty pull is `{ "message": "No … found", "data": [] }` (not an error). Upstream VSDC `resultCd: "001"` also means nothing new.
 

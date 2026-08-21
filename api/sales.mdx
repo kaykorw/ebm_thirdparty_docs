@@ -62,8 +62,8 @@ Use this for a **normal** fiscal sale. Kayko always sends upstream transaction t
 | `dates.confirmed_at` | No | Confirmation timestamp `YYYYMMDDHHmmss`. |
 | `dates.stock_released_at` | No | Optional stock-release timestamp, or null. |
 | `buyer_accepted` | No | Boolean; treated as accepted when omitted. |
-| `tourism_tax` | No | When `true`, Kayko uses catalog tourism header rates. When false/omitted, non-tourism null strategy applies unless overrides exist. Configure defaults via [`PUT /codes/tourism`](/api/codes). |
-| `tax_rate_f` / `tax_rate_tt` | No | Optional numeric overrides (0–100) for this sale only. Prefer configuring defaults via [`PUT /codes/tourism`](/api/codes). |
+| `tourism_tax` | No | When `true`, Kayko uses catalog tourism header rates. When false/omitted, non-tourism null strategy applies unless sale-level overrides exist. |
+| `tax_rate_f` / `tax_rate_tt` | No | Optional numeric overrides (0–100) for this sale only. |
 | `notes` | No | Free text (max 400). |
 | `receipt` | No | Optional print template fields (`report_number`, `customer_tin`, `customer_mobile`, `trade_name`, `address`, `header`, `footer`). |
 
@@ -231,7 +231,7 @@ If the local sales store is unavailable before the VSDC call, Kayko returns `EBM
 |----------|---------|------------|
 | `881` | Purchase code mandatory | Send `purchase_code` for business customers |
 | `884` | Invalid customer TIN | Look up TIN with `GET /customers` |
-| `910` | Parameter validation (totals, `orgInvcNo`, tourism rates, types) | Fix payload; for tourism rates use [`PUT /codes/tourism`](/api/codes) or sale-level `tax_rate_f` / `tax_rate_tt` |
+| `910` | Parameter validation (totals, `orgInvcNo`, tourism rates, types) | Fix payload; for tourism rates use sale-level `tax_rate_f` / `tax_rate_tt` |
 | `994` | Duplicate / overlapped | Treat carefully; Kayko may treat some duplicates as already accepted on retry paths |
 
 Full table: [Response Codes](/reference/response-codes).

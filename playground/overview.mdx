@@ -11,7 +11,7 @@ icon: play
 
 The **API Playground** tab is the interactive companion to the reference docs. Each endpoint page opens with a short description of what the call does, a request form backed by the OpenAPI contract, and a response panel.
 
-Use the reference pages for deep field narrative ([Sales](/api/sales), [Codes](/api/codes), [Glossary](/reference/glossary)). Use the Playground when you want to authenticate, edit a realistic payload, and inspect a live response.
+Use the reference pages for deep field narrative ([Sales](/api/sales), [Constants](/api/constants), [Glossary](/reference/glossary)). Use the Playground when you want to authenticate, edit a realistic payload, and inspect a live response.
 
 ## Before you start
 
@@ -22,7 +22,7 @@ Use the reference pages for deep field narrative ([Sales](/api/sales), [Codes](/
   <Step title="Authenticate">
     | Routes | Header |
     |--------|--------|
-    | Business routes (items, sales, codes, …) | `Authorization: Bearer sk_…` or `x-api-key: sk_…` |
+    | Business routes (items, sales, …) | `Authorization: Bearer sk_…` or `x-api-key: sk_…` |
     | Initialization (`/initialize/*`) | Prefer `X-API-Token`; a business API key also works |
 
     See [API Keys](/concepts/api-keys) for business key setup.
@@ -49,6 +49,6 @@ Use the reference pages for deep field narrative ([Sales](/api/sales), [Codes](/
 
 ## Consistency with reference docs
 
-Playground examples for sales use the nested `customer` object (`tin_no`, `full_name`, `telephone`) and `purchase_code`, matching [Sales](/api/sales). Tourism rate behavior follows [`PUT /codes/tourism`](/api/codes); do not assume every TIN accepts `taxRtF: 3.00`.
+Playground examples for sales use the nested `customer` object (`tin_no`, `full_name`, `telephone`) and `purchase_code`, matching [Sales](/api/sales). Tourism rate behavior follows sale-level `tourism_tax`, `tax_rate_f`, and `tax_rate_tt`; do not assume every TIN accepts `taxRtF: 3.00`.
 
 If a Playground helper and a reference page ever disagree, treat the reference MDX page as the narrative source of truth and open an issue so the OpenAPI description can be aligned.

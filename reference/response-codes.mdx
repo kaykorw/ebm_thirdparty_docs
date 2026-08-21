@@ -72,7 +72,7 @@ These indicate issues on the Kayko EBM or RRA server side.
 | `901` | Not valid device | Re-initialize with correct `dvcSrlNo` |
 | `902` | Device already installed | Device was already initialized- skip re-init |
 | `903` | Only a registered EBM device can be verified | Use a registered EBM device |
-| `910` | Request parameter error | Totals mismatch, wrong types, **normal sale `orgInvcNo` not `0`**, invalid tourism header rates (`taxRtF` / `taxRtTt`), or other field validation. Kayko maps snake_case for you, omit optional totals unless you can match line math. For tourism rate failures use [`PUT /codes/tourism`](/api/codes). |
+| `910` | Request parameter error | Totals mismatch, wrong types, **normal sale `orgInvcNo` not `0`**, invalid tourism header rates (`taxRtF` / `taxRtTt`), or other field validation. Kayko maps snake_case for you, omit optional totals unless you can match line math. For tourism rate failures use sale-level `tax_rate_f` / `tax_rate_tt`. |
 | `911` | No request full text | Request body is empty |
 | `912` | Request Method error | Use the documented Kayko method (`GET` / `POST` / `PUT` / `DELETE`) |
 | `921` | Sales data cannot be received | Invoice data conflict- check invoice numbers |
