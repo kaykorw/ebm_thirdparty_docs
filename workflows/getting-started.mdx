@@ -54,11 +54,11 @@ If your business is tourism-tax related, or a non-tourism TIN still fails sales 
 
 ### 3. Pull item classification codes
 
-Call [`GET /item-classes`](/api/items#item-classes) with `x-last-request-date`. You need a ten-digit `item_classification_code` when registering products.
+Call `GET /item-classes` with `x-last-request-date`. You need a ten-digit `item_classification_code` when registering products.
 
 ### 4. Register products at head office
 
-Create catalog rows with [`POST /items`](/api/items) using **`x-branch-id: 00`**. Send `item_type` as a text label: `raw_material`, `finished_product`, or `service` (legacy codes `1` / `2` / `3` still work). Omit `item_code` to let Kayko allocate the next code for the origin/type/units prefix. Composition links use [`POST /items/compositions`](/api/items#compositions), one parent/component pair per request.
+Create catalog rows with [`POST /items`](/api/items) using **`x-branch-id: 00`**. Send `item_type` as a text label: `raw_material`, `finished_product`, or `service` (legacy codes `1` / `2` / `3` still work). Omit `item_code` to let Kayko allocate the next code for the origin/type/units prefix.
 
 ### 5. Seed stock master for stocked goods
 

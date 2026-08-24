@@ -24,37 +24,7 @@ Returns the taxpayer’s branch offices so your CIS can stay aligned with RRA’
 <ParamField query="start_page" type="string">Optional page start (digits only)</ParamField>
 <ParamField query="end_page" type="string">Optional page end (digits only)</ParamField>
 
-```bash
-curl -X GET "{{baseUrl}}/branches?start_page=1&end_page=10" \
-  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
-  -H "x-tin: 100027060" \
-  -H "x-branch-id: 00" \
-  -H "x-last-request-date: 20250101000000"
-```
-
-### Response
-
-```json
-{
-  "message": "success",
-  "data": [
-    {
-      "tin": "933000004",
-      "branch_id": "00",
-      "name": "Headquarter",
-      "status": "Active",
-      "province": "KIGALI CITY",
-      "district": "NYARUGENGE",
-      "sector": "MUHIMA",
-      "location": "KIGALI-RWANDA",
-      "manager_name": "JJ",
-      "manager_phone": "0781547202",
-      "manager_email": "ebm@ebm.rw",
-      "is_headquarters": true
-    }
-  ]
-}
-```
+The response is `{ message, data }`. Each branch includes `tin`, `branch_id`, `name`, `status`, location fields, manager contacts, and `is_headquarters`.
 
 ---
 
@@ -73,60 +43,7 @@ curl -X GET "{{baseUrl}}/branches?start_page=1&end_page=10" \
 <ParamField body="notes" type="string">Notes</ParamField>
 <ParamField body="use" type="boolean">Defaults to `true`</ParamField>
 
-Success response:
-
-```json
-{
-  "message": "success",
-  "data": { "user_id": "…" }
-}
-```
-
-<CodeGroup>
-
-```bash cURL
-curl -X POST "{{baseUrl}}/branches/users" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
-  -H "x-tin: 100027060" \
-  -H "x-branch-id: 00" \
-  -d '{
-    "full_name": "User Name",
-    "password": "12341234",
-    "use": true
-  }'
-```
-
-```javascript JavaScript
-await fetch(`${BASE_URL}/branches/users`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
-    'x-tin': '100027060',
-    'x-branch-id': '00',
-  },
-  body: JSON.stringify({
-    full_name: 'User Name',
-    password: '12341234',
-    use: true,
-  }),
-});
-```
-
-```json Payload
-{
-  "full_name": "User Name",
-  "password": "12341234",
-  "address": null,
-  "telephone": null,
-  "authority_code": null,
-  "notes": null,
-  "use": true
-}
-```
-
-</CodeGroup>
+Success returns `{ message: "success", data: { user_id } }`.
 
 ---
 
@@ -143,25 +60,4 @@ In Kayko - RRA documents this endpoint as **pharmacy-only**. It registers an ins
 | `insurance_rate` | Yes | Premium rate from 0 to 100 (for example `20` for 20%). Sent upstream as numeric `isrcRt`. |
 | `use` | No | Defaults to `true`. |
 
-```bash
-curl -X POST "{{baseUrl}}/branches/insurances" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
-  -H "x-tin: 100027060" \
-  -H "x-branch-id: 00" \
-  -d '{
-    "insurance_code": "ISRCC01",
-    "insurance_name": "RSSB Insurance",
-    "insurance_rate": 20,
-    "use": true
-  }'
-```
-
-### Response
-
-```json
-{
-  "message": "success",
-  "data": null
-}
-```
+Success returns `{ message: "success", data: null }`.

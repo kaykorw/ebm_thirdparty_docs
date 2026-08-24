@@ -28,7 +28,7 @@ Use the reference pages for deep field narrative ([Sales](/api/sales), [Constant
     See [API Keys](/concepts/api-keys) for business key setup.
   </Step>
   <Step title="Set tenant headers">
-    Send `x-tin` (nine characters) and `x-branch-id` (two characters) on proxied routes. Incremental list endpoints also need `x-last-request-date` (`YYYYMMDDHHmmss`). You do not send `ebm_url` in the body. Head-office writes (`POST /items`, `PUT /items/:item_code`, `DELETE /items/:item_code`, `POST /items/compositions`, `POST /imports/confirm`, `POST /purchases/confirm`) require `x-branch-id: 00`.
+    Send `x-tin` (nine characters) and `x-branch-id` (two characters) on proxied routes. Incremental list endpoints also need `x-last-request-date` (`YYYYMMDDHHmmss`). You do not send `ebm_url` in the body. Head-office writes (`POST /items`, `PUT /items/:item_code`, `DELETE /items/:item_code`, `POST /imports/confirm`, `POST /purchases/confirm`) require `x-branch-id: 00`.
   </Step>
   <Step title="Read field helpers">
     Every form field includes a label and helper text from the OpenAPI schema. Tax types should be read as human labels (for example **B, 18% Taxable**), not only raw letters. Cross-check enums in [Enumerations](/reference/enumerations) and live tables under [Constants](/api/constants).

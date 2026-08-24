@@ -29,13 +29,13 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "API Key",
-        "description": "Kayko business API key from Settings → Enable EBM → Generate API key. Example: Bearer sk_live_…"
+        "description": "Kayko business API key from Settings \u2192 Enable EBM \u2192 Generate API key. Example: Bearer sk_live_\u2026"
       },
       "ApiKeyHeader": {
         "type": "apiKey",
         "in": "header",
         "name": "x-api-key",
-        "description": "Alternative to Authorization Bearer. Pass the raw sk_live_… / sk_test_… secret."
+        "description": "Alternative to Authorization Bearer. Pass the raw sk_live_\u2026 / sk_test_\u2026 secret."
       },
       "InternalToken": {
         "type": "apiKey",
@@ -65,10 +65,6 @@
     {
       "name": "Classes",
       "description": "RRA item classification code tree"
-    },
-    {
-      "name": "Composition",
-      "description": "Bill-of-materials parent→component links for items"
     },
     {
       "name": "Imports",
@@ -2191,7 +2187,7 @@
           "metadata": {
             "description": "Pull the list of branch offices registered under your TIN. Supports pagination via `startPageIndex` and `endPageIndex`."
           },
-          "content": "Use `\"00\"` as `bhfId` for head office. Other branches use `\"01\"`–`\"99\"`."
+          "content": "Use `\"00\"` as `bhfId` for head office. Other branches use `\"01\"`\u2013`\"99\"`."
         },
         "x-codeSamples": [
           {
@@ -2567,7 +2563,7 @@
         ],
         "summary": "Select Item Classification",
         "operationId": "get_item_classification",
-        "description": "Pull the RRA item classification code tree. Each code maps to a product category and default tax type- required when registering items via `saveItems`.",
+        "description": "Pull the RRA item classification code tree. Each code maps to a product category and default tax type- required when registering items via POST /items.",
         "requestBody": {
           "required": true,
           "content": {
@@ -2615,9 +2611,9 @@
         },
         "x-mint": {
           "metadata": {
-            "description": "Pull the RRA item classification code tree. Each code maps to a product category and default tax type- required when registering items via `saveItems`."
+            "description": "Pull the RRA item classification code tree. Each code maps to a product category and default tax type- required when registering items via POST /items."
           },
-          "content": "Use `itemClsCd` from this list when calling `POST /items/saveItems`."
+          "content": "Use `itemClsCd` from this list when calling `POST /items`."
         },
         "x-codeSamples": [
           {
@@ -2639,283 +2635,6 @@
             "lang": "json",
             "label": "Payload",
             "source": "{\n  \"tin\": \"147069592\",\n  \"bhfId\": \"00\",\n  \"lastReqDt\": \"20210101000000\"\n}"
-          }
-        ]
-      }
-    },
-    "/items/saveItemComposition": {
-      "post": {
-        "tags": [
-          "Items"
-        ],
-        "summary": "Save Item Composition",
-        "operationId": "save_item_composition",
-        "description": "Save a bill-of-materials linking a parent item to component items and quantities. Stored for backup only- cannot be queried back from RRA.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
-              },
-              "example": {
-                "tin": "999958074",
-                "bhfId": "00",
-                "itemCd": "1",
-                "cpstItemCd": "1",
-                "cpstQty": 1,
-                "regrId": "123",
-                "regrNm": "Testing Name"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Standard response envelope",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "resultCd": {
-                      "type": "string",
-                      "example": "000"
-                    },
-                    "resultMsg": {
-                      "type": "string",
-                      "example": "It is succeeded"
-                    },
-                    "resultDt": {
-                      "type": "string",
-                      "example": "20260303145619"
-                    },
-                    "data": {
-                      "type": "object",
-                      "nullable": true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "x-mint": {
-          "metadata": {
-            "description": "Save a bill-of-materials linking a parent item to component items and quantities. Stored for backup only- cannot be queried back from RRA."
-          },
-          "content": "For composite products (e.g. a meal kit made from multiple ingredients)."
-        },
-        "x-codeSamples": [
-          {
-            "lang": "bash",
-            "label": "cURL",
-            "source": "curl -X POST \"{{baseUrl}}/items/saveItemComposition\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"itemCd\": \"1\",\n  \"cpstItemCd\": \"1\",\n  \"cpstQty\": 1,\n  \"regrId\": \"123\",\n  \"regrNm\": \"Testing Name\"\n}'"
-          },
-          {
-            "lang": "javascript",
-            "label": "JavaScript",
-            "source": "const response = await fetch('{{baseUrl}}/items/saveItemComposition', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999958074\",\n    \"bhfId\": \"00\",\n    \"itemCd\": \"1\",\n    \"cpstItemCd\": \"1\",\n    \"cpstQty\": 1,\n    \"regrId\": \"123\",\n    \"regrNm\": \"Testing Name\"\n  }),\n}).then(r => r.json());"
-          },
-          {
-            "lang": "php",
-            "label": "PHP",
-            "source": "<?php\n$response = ebmPost('/items/saveItemComposition', [\n    'tin' => '999958074',\n    'bhfId' => '00',\n    'itemCd' => '1',\n    'cpstItemCd' => '1',\n    'cpstQty' => 1,\n    'regrId' => '123',\n    'regrNm' => 'Testing Name'\n]);"
-          },
-          {
-            "lang": "json",
-            "label": "Payload",
-            "source": "{\n  \"tin\": \"999958074\",\n  \"bhfId\": \"00\",\n  \"itemCd\": \"1\",\n  \"cpstItemCd\": \"1\",\n  \"cpstQty\": 1,\n  \"regrId\": \"123\",\n  \"regrNm\": \"Testing Name\"\n}"
-          }
-        ]
-      }
-    },
-    "/items/saveItems": {
-      "post": {
-        "tags": [
-          "Items"
-        ],
-        "summary": "Save Item",
-        "operationId": "save_items",
-        "description": "Register a new product or update an existing one in the product catalog. Every sale line must reference a registered `itemCd`.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
-              },
-              "example": {
-                "tin": "999202800",
-                "bhfId": "00",
-                "itemCd": "RW2NTU0000001",
-                "itemClsCd": "8014160101",
-                "itemTyCd": "2",
-                "itemNm": "Coca Cola",
-                "itemStdNm": null,
-                "orgnNatCd": "RW",
-                "pkgUnitCd": "NT",
-                "qtyUnitCd": "U",
-                "taxTyCd": "B",
-                "btchNo": null,
-                "bcd": null,
-                "dftPrc": 118,
-                "grpPrcL1": null,
-                "grpPrcL2": null,
-                "grpPrcL3": null,
-                "grpPrcL4": null,
-                "grpPrcL5": null,
-                "addInfo": null,
-                "sftyQty": null,
-                "isrcAplcbYn": "N",
-                "modrId": "1",
-                "modrNm": "Kayko",
-                "regrId": "1",
-                "regrNm": "Kayko",
-                "useYn": "Y"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Standard response envelope",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "resultCd": {
-                      "type": "string",
-                      "example": "000"
-                    },
-                    "resultMsg": {
-                      "type": "string",
-                      "example": "It is succeeded"
-                    },
-                    "resultDt": {
-                      "type": "string",
-                      "example": "20260303145619"
-                    },
-                    "data": {
-                      "type": "object",
-                      "nullable": true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "x-mint": {
-          "metadata": {
-            "description": "Register a new product or update an existing one in the product catalog. Every sale line must reference a registered `itemCd`."
-          },
-          "content": "Generate `itemCd` using the format `{orgnNatCd}{itemTyCd}{pkgUnitCd}{qtyUnitCd}{sequence}`. See [Items API reference](/api/items#item-code-format)."
-        },
-        "x-codeSamples": [
-          {
-            "lang": "bash",
-            "label": "cURL",
-            "source": "curl -X POST \"{{baseUrl}}/items/saveItems\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"999202800\",\n  \"bhfId\": \"00\",\n  \"itemCd\": \"RW2NTU0000001\",\n  \"itemClsCd\": \"8014160101\",\n  \"itemTyCd\": \"2\",\n  \"itemNm\": \"Coca Cola\",\n  \"itemStdNm\": null,\n  \"orgnNatCd\": \"RW\",\n  \"pkgUnitCd\": \"NT\",\n  \"qtyUnitCd\": \"U\",\n  \"taxTyCd\": \"B\",\n  \"btchNo\": null,\n  \"bcd\": null,\n  \"dftPrc\": 118,\n  \"grpPrcL1\": null,\n  \"grpPrcL2\": null,\n  \"grpPrcL3\": null,\n  \"grpPrcL4\": null,\n  \"grpPrcL5\": null,\n  \"addInfo\": null,\n  \"sftyQty\": null,\n  \"isrcAplcbYn\": \"N\",\n  \"modrId\": \"1\",\n  \"modrNm\": \"Kayko\",\n  \"regrId\": \"1\",\n  \"regrNm\": \"Kayko\",\n  \"useYn\": \"Y\"\n}'"
-          },
-          {
-            "lang": "javascript",
-            "label": "JavaScript",
-            "source": "const response = await fetch('{{baseUrl}}/items/saveItems', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"999202800\",\n    \"bhfId\": \"00\",\n    \"itemCd\": \"RW2NTU0000001\",\n    \"itemClsCd\": \"8014160101\",\n    \"itemTyCd\": \"2\",\n    \"itemNm\": \"Coca Cola\",\n    \"itemStdNm\": null,\n    \"orgnNatCd\": \"RW\",\n    \"pkgUnitCd\": \"NT\",\n    \"qtyUnitCd\": \"U\",\n    \"taxTyCd\": \"B\",\n    \"btchNo\": null,\n    \"bcd\": null,\n    \"dftPrc\": 118,\n    \"grpPrcL1\": null,\n    \"grpPrcL2\": null,\n    \"grpPrcL3\": null,\n    \"grpPrcL4\": null,\n    \"grpPrcL5\": null,\n    \"addInfo\": null,\n    \"sftyQty\": null,\n    \"isrcAplcbYn\": \"N\",\n    \"modrId\": \"1\",\n    \"modrNm\": \"Kayko\",\n    \"regrId\": \"1\",\n    \"regrNm\": \"Kayko\",\n    \"useYn\": \"Y\"\n  }),\n}).then(r => r.json());"
-          },
-          {
-            "lang": "php",
-            "label": "PHP",
-            "source": "<?php\n$response = ebmPost('/items/saveItems', [\n    'tin' => '999202800',\n    'bhfId' => '00',\n    'itemCd' => 'RW2NTU0000001',\n    'itemClsCd' => '8014160101',\n    'itemTyCd' => '2',\n    'itemNm' => 'Coca Cola',\n    'itemStdNm' => null,\n    'orgnNatCd' => 'RW',\n    'pkgUnitCd' => 'NT',\n    'qtyUnitCd' => 'U',\n    'taxTyCd' => 'B',\n    'btchNo' => null,\n    'bcd' => null,\n    'dftPrc' => 118,\n    'grpPrcL1' => null,\n    'grpPrcL2' => null,\n    'grpPrcL3' => null,\n    'grpPrcL4' => null,\n    'grpPrcL5' => null,\n    'addInfo' => null,\n    'sftyQty' => null,\n    'isrcAplcbYn' => 'N',\n    'modrId' => '1',\n    'modrNm' => 'Kayko',\n    'regrId' => '1',\n    'regrNm' => 'Kayko',\n    'useYn' => 'Y'\n]);"
-          },
-          {
-            "lang": "json",
-            "label": "Payload",
-            "source": "{\n  \"tin\": \"999202800\",\n  \"bhfId\": \"00\",\n  \"itemCd\": \"RW2NTU0000001\",\n  \"itemClsCd\": \"8014160101\",\n  \"itemTyCd\": \"2\",\n  \"itemNm\": \"Coca Cola\",\n  \"itemStdNm\": null,\n  \"orgnNatCd\": \"RW\",\n  \"pkgUnitCd\": \"NT\",\n  \"qtyUnitCd\": \"U\",\n  \"taxTyCd\": \"B\",\n  \"btchNo\": null,\n  \"bcd\": null,\n  \"dftPrc\": 118,\n  \"grpPrcL1\": null,\n  \"grpPrcL2\": null,\n  \"grpPrcL3\": null,\n  \"grpPrcL4\": null,\n  \"grpPrcL5\": null,\n  \"addInfo\": null,\n  \"sftyQty\": null,\n  \"isrcAplcbYn\": \"N\",\n  \"modrId\": \"1\",\n  \"modrNm\": \"Kayko\",\n  \"regrId\": \"1\",\n  \"regrNm\": \"Kayko\",\n  \"useYn\": \"Y\"\n}"
-          }
-        ]
-      }
-    },
-    "/items/selectItems": {
-      "post": {
-        "tags": [
-          "Items"
-        ],
-        "summary": "Select Items",
-        "operationId": "get_items",
-        "description": "Pull registered products that changed since `lastReqDt`. Returns the full item catalog for your branch.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
-              },
-              "example": {
-                "tin": "123038911",
-                "bhfId": "00",
-                "lastReqDt": "20000101000000"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Standard response envelope",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "resultCd": {
-                      "type": "string",
-                      "example": "000"
-                    },
-                    "resultMsg": {
-                      "type": "string",
-                      "example": "It is succeeded"
-                    },
-                    "resultDt": {
-                      "type": "string",
-                      "example": "20260303145619"
-                    },
-                    "data": {
-                      "type": "object",
-                      "nullable": true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "x-mint": {
-          "metadata": {
-            "description": "Pull registered products that changed since `lastReqDt`. Returns the full item catalog for your branch."
-          },
-          "content": "Use after `saveItems` to verify registration, or on startup to sync your local product database."
-        },
-        "x-codeSamples": [
-          {
-            "lang": "bash",
-            "label": "cURL",
-            "source": "curl -X POST \"{{baseUrl}}/items/selectItems\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"tin\": \"123038911\",\n  \"bhfId\": \"00\",\n  \"lastReqDt\": \"20000101000000\"\n}'"
-          },
-          {
-            "lang": "javascript",
-            "label": "JavaScript",
-            "source": "const response = await fetch('{{baseUrl}}/items/selectItems', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    \"tin\": \"123038911\",\n    \"bhfId\": \"00\",\n    \"lastReqDt\": \"20000101000000\"\n  }),\n}).then(r => r.json());"
-          },
-          {
-            "lang": "php",
-            "label": "PHP",
-            "source": "<?php\n$response = ebmPost('/items/selectItems', [\n    'tin' => '123038911',\n    'bhfId' => '00',\n    'lastReqDt' => '20000101000000'\n]);"
-          },
-          {
-            "lang": "json",
-            "label": "Payload",
-            "source": "{\n  \"tin\": \"123038911\",\n  \"bhfId\": \"00\",\n  \"lastReqDt\": \"20000101000000\"\n}"
           }
         ]
       }
@@ -4214,7 +3933,7 @@
             }
           }
         },
-        "description": "Register a pharmacy insurance company for the branch (VSDC `saveBrancheInsurances`).\n\nRRA documents this as pharmacy-only. Send insurance_code, insurance_name, and insurance_rate (0–100). Some live devices return 910 claiming isrcRt is null even when present."
+        "description": "Register a pharmacy insurance company for the branch (VSDC `saveBrancheInsurances`).\n\nRRA documents this as pharmacy-only. Send insurance_code, insurance_name, and insurance_rate (0\u2013100). Some live devices return 910 claiming isrcRt is null even when present."
       }
     },
     "/notices": {
@@ -4816,7 +4535,7 @@
                   "purchase_code": {
                     "type": "string",
                     "maxLength": 6,
-                    "description": "Required for business customers (when customer.tin_no is set). Max 6 characters. Missing → VSDC 881."
+                    "description": "Required for business customers (when customer.tin_no is set). Max 6 characters. Missing \u2192 VSDC 881."
                   },
                   "customer": {
                     "type": "object",
@@ -4866,11 +4585,11 @@
                   },
                   "tax_rate_f": {
                     "type": "number",
-                    "description": "Optional override for upstream taxRtF (0–100). Prefer sale-level tax_rate_f / tax_rate_tt overrides."
+                    "description": "Optional override for upstream taxRtF (0\u2013100). Prefer sale-level tax_rate_f / tax_rate_tt overrides."
                   },
                   "tax_rate_tt": {
                     "type": "number",
-                    "description": "Optional override for upstream taxRtTt (0–100)."
+                    "description": "Optional override for upstream taxRtTt (0\u2013100)."
                   },
                   "status": {
                     "type": "string",
@@ -4909,7 +4628,7 @@
                         "sequence": {
                           "type": "integer",
                           "minimum": 1,
-                          "description": "Line number 1–999; typically consecutive."
+                          "description": "Line number 1\u2013999; typically consecutive."
                         },
                         "item_code": {
                           "type": "string",
@@ -4925,7 +4644,7 @@
                         },
                         "packages": {
                           "type": "number",
-                          "description": "Package count (≥ 0)."
+                          "description": "Package count (\u2265 0)."
                         },
                         "quantity_unit": {
                           "type": "string",
@@ -4978,8 +4697,8 @@
                     "replayed": false,
                     "print": {
                       "receipt_no": 12,
-                      "receipt_signature": "…",
-                      "internal_data": "…"
+                      "receipt_signature": "\u2026",
+                      "internal_data": "\u2026"
                     }
                   }
                 }
@@ -5107,8 +4826,8 @@
               "example": {
                 "invoice_no": 1799,
                 "receipt": {
-                  "receipt_signature": "…",
-                  "internal_data": "…",
+                  "receipt_signature": "\u2026",
+                  "internal_data": "\u2026",
                   "receipt_no": 12,
                   "total_receipt_no": 12
                 }
@@ -5542,88 +5261,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/items/compositions": {
-      "post": {
-        "tags": [
-          "Composition"
-        ],
-        "operationId": "save_item_composition",
-        "summary": "Save item composition",
-        "description": "Store one parent→component bill-of-materials link.\n\nHead office `x-branch-id: 00` required. Both item codes must already exist. One pair per request; compositions are not listed back by a select API.",
-        "security": [
-          {
-            "ApiKeyBearer": []
-          },
-          {
-            "ApiKeyHeader": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "x-tin",
-            "in": "header",
-            "required": true,
-            "description": "Taxpayer Identification Number, exactly 9 characters.",
-            "schema": {
-              "type": "string",
-              "minLength": 9,
-              "maxLength": 9
-            }
-          },
-          {
-            "name": "x-branch-id",
-            "in": "header",
-            "required": true,
-            "description": "Must be head office `00` for composition writes.",
-            "schema": {
-              "type": "string",
-              "minLength": 2,
-              "maxLength": 2,
-              "example": "00"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "example": {
-                "item_code": "RW2NTU0000001",
-                "component_item_code": "RW1NTU0000002",
-                "quantity": 2
-              },
-              "schema": {
-                "type": "object",
-                "required": [
-                  "item_code",
-                  "component_item_code",
-                  "quantity"
-                ],
-                "properties": {
-                  "item_code": {
-                    "type": "string",
-                    "description": "Parent finished item code."
-                  },
-                  "component_item_code": {
-                    "type": "string",
-                    "description": "Component item code (not the same as parent)."
-                  },
-                  "quantity": {
-                    "type": "number",
-                    "description": "Component quantity per parent."
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Composition saved"
           }
         }
       }

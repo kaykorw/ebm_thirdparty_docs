@@ -30,51 +30,7 @@ Provisions EBM for a business and returns `ebm_url` plus deployment tracking fie
   Force redeploy. Default `false`.
 </ParamField>
 
-<CodeGroup>
-
-```bash cURL
-curl -X POST "{{baseUrl}}/initialize/enable" \
-  -H "Content-Type: application/json" \
-  -H "X-API-Token: $EBM_INTERNAL_API_TOKEN" \
-  -d '{
-    "business_code": "ACME01",
-    "redeploy": false
-  }'
-```
-
-```javascript JavaScript
-const res = await fetch(`${BASE_URL}/initialize/enable`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'X-API-Token': process.env.EBM_INTERNAL_API_TOKEN,
-  },
-  body: JSON.stringify({ business_code: 'ACME01', redeploy: false }),
-}).then((r) => r.json());
-// res.ebm_url → http://localhost:8080/rra/ACME01/
-```
-
-```json Payload
-{
-  "business_code": "ACME01",
-  "redeploy": false
-}
-```
-
-</CodeGroup>
-
-### Response
-
-```json
-{
-  "ebm_url": "http://localhost:8080/rra/ACME01/",
-  "business_code": "ACME01",
-  "deployment_id": "42",
-  "status_url": "…"
-}
-```
-
-You can keep `ebm_url` for your own records. Kayko already stores it on the business, so later gateway calls do not need it in the body.
+The response includes `ebm_url`, `business_code`, `deployment_id`, and `status_url`. You can keep `ebm_url` for your own records. Kayko already stores it on the business, so later gateway calls do not need it in the body.
 
 ---
 
@@ -85,11 +41,6 @@ You can keep `ebm_url` for your own records. Kayko already stores it on the busi
 <ParamField path="deploymentId" type="string" required>
   Numeric deployment id from enable.
 </ParamField>
-
-```bash
-curl -X GET "{{baseUrl}}/initialize/status/42" \
-  -H "X-API-Token: $EBM_INTERNAL_API_TOKEN"
-```
 
 ---
 
@@ -121,47 +72,6 @@ Kayko initializes the device with RRA and returns the **full** result envelope (
 | `x-tin` | `tin` |
 | `x-branch-id` | `bhfId` |
 | `device_serial_number` | `dvcSrlNo` |
-
-<CodeGroup>
-
-```bash cURL
-curl -X POST "{{baseUrl}}/initialize/init" \
-  -H "Content-Type: application/json" \
-  -H "X-API-Token: $EBM_INTERNAL_API_TOKEN" \
-  -H "x-tin: 122548433" \
-  -H "x-branch-id: 03" \
-  -d '{
-    "device_serial_number": "QUA-77379",
-    "business_code": "ACME01"
-  }'
-```
-
-```javascript JavaScript
-const result = await fetch(`${BASE_URL}/initialize/init`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'X-API-Token': process.env.EBM_INTERNAL_API_TOKEN,
-    'x-tin': '122548433',
-    'x-branch-id': '03',
-  },
-  body: JSON.stringify({
-    device_serial_number: 'QUA-77379',
-    business_code: 'ACME01',
-  }),
-}).then((r) => r.json());
-
-const { intrlKey, signKey, cmcKey } = result.data.info;
-```
-
-```json Payload
-{
-  "device_serial_number": "QUA-77379",
-  "business_code": "ACME01"
-}
-```
-
-</CodeGroup>
 
 ### Response `data.info` (inside the result envelope)
 

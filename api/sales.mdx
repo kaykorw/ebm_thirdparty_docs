@@ -91,131 +91,9 @@ Do **not** send sale line `tax_type: "F"`. Use **`TT`** with `tourism_tax: true`
 
 Category B VAT extraction uses taxable amount × 18 / 118, rounded to two decimals.
 
-### Example
-
-<CodeGroup>
-
-```bash cURL
-curl -X POST "{{baseUrl}}/sales" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
-  -H "x-tin: 100027060" \
-  -H "x-branch-id: 00" \
-  -d '{
-    "invoice_no": 1799,
-    "payment_method": "credit",
-    "purchase_code": "PO0001",
-    "customer": {
-      "tin_no": "100004527",
-      "full_name": "RULIBA CLAYS LTD",
-      "telephone": "788312173"
-    },
-    "dates": { "origin_date": "20260303", "confirmed_at": "20260303145619" },
-    "items": [{
-      "sequence": 1,
-      "item_code": "RW2NTU0000642",
-      "item_name": "TOLE PL 2 44X1 22X10",
-      "packaging_unit": "NT",
-      "packages": 1,
-      "quantity_unit": "U",
-      "quantity": 2,
-      "price": 1000,
-      "tax_type": "B"
-    }]
-  }'
-```
-
-```javascript JavaScript
-await fetch(`${BASE_URL}/sales`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
-    'x-tin': '100027060',
-    'x-branch-id': '00',
-  },
-  body: JSON.stringify({
-    invoice_no: 1799,
-    payment_method: 'credit',
-    purchase_code: 'PO0001',
-    customer: {
-      tin_no: '100004527',
-      full_name: 'RULIBA CLAYS LTD',
-      telephone: '788312173',
-    },
-    dates: { origin_date: '20260303', confirmed_at: '20260303145619' },
-    items: [
-      {
-        sequence: 1,
-        item_code: 'RW2NTU0000642',
-        item_name: 'TOLE PL 2 44X1 22X10',
-        packaging_unit: 'NT',
-        packages: 1,
-        quantity_unit: 'U',
-        quantity: 2,
-        price: 1000,
-        tax_type: 'B',
-      },
-    ],
-  }),
-});
-```
-
-```json Payload
-{
-  "invoice_no": 1799,
-  "payment_method": "credit",
-  "purchase_code": "PO0001",
-  "customer": {
-    "tin_no": "100004527",
-    "full_name": "RULIBA CLAYS LTD",
-    "telephone": "788312173"
-  },
-  "dates": {
-    "origin_date": "20260303",
-    "confirmed_at": "20260303145619"
-  },
-  "items": [
-    {
-      "sequence": 1,
-      "item_code": "RW2NTU0000642",
-      "item_name": "TOLE PL 2 44X1 22X10",
-      "packaging_unit": "NT",
-      "packages": 1,
-      "quantity_unit": "U",
-      "quantity": 2,
-      "price": 1000,
-      "tax_type": "B"
-    }
-  ]
-}
-```
-
-</CodeGroup>
-
 ### Success response
 
-```json
-{
-  "message": "success",
-  "data": {
-    "invoice_no": 1799,
-    "original_invoice_no": 0,
-    "receipt_type": "sale",
-    "status": "approved",
-    "replayed": false,
-    "print": {
-      "receipt_no": 12,
-      "total_receipt_no": 12,
-      "internal_data": "…",
-      "receipt_signature": "…",
-      "receipt_published_at": "20260303145619",
-      "sdc_id": "SDC001",
-      "mrc_no": "MRC001"
-    }
-  }
-}
-```
+The response is `{ message, data }`. On success, `data` includes `invoice_no`, `original_invoice_no`, `receipt_type`, `status`, `replayed`, and a `print` object with `receipt_no`, `total_receipt_no`, `internal_data`, `receipt_signature`, `receipt_published_at`, `sdc_id`, and `mrc_no`.
 
 Print **`print.receipt_signature`** and **`print.internal_data`** (and the counters / SDC / MRC as required by your receipt layout). Definitions: [Glossary](/reference/glossary).
 
@@ -252,28 +130,6 @@ Issues a fiscal **refund** receipt linked to a prior sale. Kayko sends receipt t
 | `refunded_at` | No | `YYYYMMDDHHmmss`. |
 | Other sale fields | As needed | Same nested `customer`, `items`, `payment_method`, and so on. |
 
-```json
-{
-  "invoice_no": 1800,
-  "original_invoice_no": 1799,
-  "payment_method": "credit",
-  "refund_reason": "wrong_quantity",
-  "items": [
-    {
-      "sequence": 1,
-      "item_code": "RW2NTU0000642",
-      "item_name": "TOLE PL 2 44X1 22X10",
-      "packaging_unit": "NT",
-      "packages": 1,
-      "quantity_unit": "U",
-      "quantity": 2,
-      "price": 1000,
-      "tax_type": "B"
-    }
-  ]
-}
-```
-
 ---
 
 ## Resend sale {#resend-sale}
@@ -295,10 +151,3 @@ Use when VSDC already signed the invoice (`EBM_SALE_PERSIST_FAILED`) or you must
 `GET /sales/:invoice_no`
 
 Returns the locally stored invoice and print block for reprinting or support diagnostics. Requires the same tenant headers and `sales` scope.
-
-```bash
-curl -X GET "{{baseUrl}}/sales/1799" \
-  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
-  -H "x-tin: 100027060" \
-  -H "x-branch-id: 00"
-```

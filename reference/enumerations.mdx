@@ -26,8 +26,6 @@ Used as `tax_type` on items and line items (upstream `taxTyCd`).
 | `F` | F (Tourism tax) | often 3% in tables | **Do not** send `tax_type: F` on sale lines, live devices reject it |
 | `TT` | TT (Tourism) | often 3% | Use on tourism sale lines with `tourism_tax: true` |
 
-Live sale headers must include tourism rate keys `taxRtF` and `taxRtTt`. Kayko does **not** blindly send `3.00` for every TIN. Non-tourism businesses usually get JSON `null` rates; tourism businesses use catalog rates; overrides go through sale-level `tax_rate_f` / `tax_rate_tt`.
-
 ---
 
 ## Product Type

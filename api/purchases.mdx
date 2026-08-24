@@ -43,29 +43,6 @@ sequenceDiagram
 
 Send `x-last-request-date` (`YYYYMMDDHHmmss`). First sync: `20000101000000`.
 
-<CodeGroup>
-
-```bash cURL
-curl -X GET "{{baseUrl}}/purchases" \
-  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
-  -H "x-tin: 100027060" \
-  -H "x-branch-id: 00" \
-  -H "x-last-request-date: 20000101000000"
-```
-
-```javascript JavaScript
-const data = await fetch(`${BASE_URL}/purchases`, {
-  headers: {
-    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
-    'x-tin': '100027060',
-    'x-branch-id': '00',
-    'x-last-request-date': '20000101000000',
-  },
-}).then((r) => r.json());
-```
-
-</CodeGroup>
-
 Response: `{ message, data: Purchase[] }`. Empty lists return `{ "message": "No purchases found", "data": [] }`.
 
 Each purchase includes supplier identity, payment/receipt labels, tax buckets A–D as returned by VSDC, and `items[]` with your mapped line fields (`item_code`, `quantity`, `tax_type`, `supplier_item_code`, …).
@@ -119,109 +96,6 @@ Optional header totals (`taxable_amount_a`–`tt`, `tax_amount_*`, `total_*`), o
 | `supply_amount`, `discount_*`, `taxable_amount`, `tax_amount`, `total_amount` | N | Computed if omitted |
 | `supplier_item_code` / `supplier_item_name` / `supplier_item_classification_code` | N | Supplier cross-reference |
 | `expiry_date` | N | `YYYYMMDD` |
-
-<CodeGroup>
-
-```bash cURL
-curl -X POST "{{baseUrl}}/purchases/confirm" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
-  -H "x-tin: 100027060" \
-  -H "x-branch-id: 00" \
-  -d '{
-    "invoice_no": 501,
-    "registration_type": "automatic",
-    "payment_method": "credit",
-    "supplier": {
-      "tin_no": "100004527",
-      "full_name": "RULIBA CLAYS LTD",
-      "invoice_no": 1799
-    },
-    "dates": {
-      "purchase_date": "20260303"
-    },
-    "items": [{
-      "item_code": "RW2NTU0000001",
-      "item_classification_code": "8014160101",
-      "item_name": "Coca Cola",
-      "packaging_unit": "NT",
-      "packages": 1,
-      "quantity_unit": "U",
-      "quantity": 10,
-      "price": 118,
-      "tax_type": "B"
-    }]
-  }'
-```
-
-```javascript JavaScript
-await fetch(`${BASE_URL}/purchases/confirm`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
-    'x-tin': '100027060',
-    'x-branch-id': '00',
-  },
-  body: JSON.stringify({
-    invoice_no: 501,
-    registration_type: 'automatic',
-    payment_method: 'credit',
-    supplier: {
-      tin_no: '100004527',
-      full_name: 'RULIBA CLAYS LTD',
-      invoice_no: 1799,
-    },
-    dates: {
-      purchase_date: '20260303',
-    },
-    items: [
-      {
-        item_code: 'RW2NTU0000001',
-        item_classification_code: '8014160101',
-        item_name: 'Coca Cola',
-        packaging_unit: 'NT',
-        packages: 1,
-        quantity_unit: 'U',
-        quantity: 10,
-        price: 118,
-        tax_type: 'B',
-      },
-    ],
-  }),
-});
-```
-
-```json Payload
-{
-  "invoice_no": 501,
-  "registration_type": "automatic",
-  "payment_method": "credit",
-  "supplier": {
-    "tin_no": "100004527",
-    "full_name": "RULIBA CLAYS LTD",
-    "invoice_no": 1799
-  },
-  "dates": {
-    "purchase_date": "20260303"
-  },
-  "items": [
-    {
-      "item_code": "RW2NTU0000001",
-      "item_classification_code": "8014160101",
-      "item_name": "Coca Cola",
-      "packaging_unit": "NT",
-      "packages": 1,
-      "quantity_unit": "U",
-      "quantity": 10,
-      "price": 118,
-      "tax_type": "B"
-    }
-  ]
-}
-```
-
-</CodeGroup>
 
 Response `{ message, data }` includes `invoice_no`, `original_invoice_no` (`0` for a normal purchase), supplier fields, and mapped labels (`registration_type`, `receipt_type`, `payment_method`, `status`).
 

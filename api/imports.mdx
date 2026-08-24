@@ -29,29 +29,6 @@ Confirm has **no quantity**. Quantity, weights, and currency amounts come from `
 
 Send `x-last-request-date` (`YYYYMMDDHHmmss`). First sync: `20000101000000`.
 
-<CodeGroup>
-
-```bash cURL
-curl -X GET "{{baseUrl}}/imports" \
-  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
-  -H "x-tin: 100027060" \
-  -H "x-branch-id: 00" \
-  -H "x-last-request-date: 20000101000000"
-```
-
-```javascript JavaScript
-const data = await fetch(`${BASE_URL}/imports`, {
-  headers: {
-    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
-    'x-tin': '100027060',
-    'x-branch-id': '00',
-    'x-last-request-date': '20000101000000',
-  },
-}).then((r) => r.json());
-```
-
-</CodeGroup>
-
 Response: `{ message, data: ImportItem[] }`. Empty lists return `{ "message": "No import items found", "data": [] }`.
 
 | Field | Description |
@@ -87,75 +64,6 @@ Register the product with [Items](/api/items) **before** confirming, using the s
 <ParamField body="status" type="string" required>`approved` or `cancelled` (`canceled` is accepted)</ParamField>
 <ParamField body="notes" type="string">Optional notes (max 400)</ParamField>
 
-<CodeGroup>
-
-```bash cURL
-curl -X POST "{{baseUrl}}/imports/confirm" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
-  -H "x-tin: 100027060" \
-  -H "x-branch-id: 00" \
-  -d '{
-    "task_code": "TASK001",
-    "declaration_date": "20240706",
-    "item_sequence": 1,
-    "hs_code": "22021000",
-    "item_classification_code": "8014160101",
-    "item_code": "RW2NTU0000001",
-    "status": "approved"
-  }'
-```
-
-```javascript JavaScript
-await fetch(`${BASE_URL}/imports/confirm`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
-    'x-tin': '100027060',
-    'x-branch-id': '00',
-  },
-  body: JSON.stringify({
-    task_code: 'TASK001',
-    declaration_date: '20240706',
-    item_sequence: 1,
-    hs_code: '22021000',
-    item_classification_code: '8014160101',
-    item_code: 'RW2NTU0000001',
-    status: 'approved',
-  }),
-});
-```
-
-```json Payload
-{
-  "task_code": "TASK001",
-  "declaration_date": "20240706",
-  "item_sequence": 1,
-  "hs_code": "22021000",
-  "item_classification_code": "8014160101",
-  "item_code": "RW2NTU0000001",
-  "status": "approved"
-}
-```
-
-</CodeGroup>
-
-Response:
-
-```json
-{
-  "message": "success",
-  "data": {
-    "task_code": "TASK001",
-    "declaration_date": "20240706",
-    "item_sequence": 1,
-    "hs_code": "22021000",
-    "item_code": "RW2NTU0000001",
-    "item_classification_code": "8014160101",
-    "status": "approved"
-  }
-}
-```
+Success returns `{ message, data }` with the confirmed `task_code`, `declaration_date`, `item_sequence`, `hs_code`, `item_code`, `item_classification_code`, and `status`.
 
 Do **not** POST a stock movement in the same request. Seed remaining quantity with `POST /stocks/master` so later import stock-in can update the ledger. See [Stock](/api/stock).

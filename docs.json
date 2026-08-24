@@ -232,13 +232,6 @@
                       "GET /item-classes"
                     ]
                   },
-                  {
-                    "group": "Composition",
-                    "icon": "diagram-project",
-                    "pages": [
-                      "POST /items/compositions"
-                    ]
-                  },
                   "POST /items",
                   "GET /items",
                   "GET /items/{item_code}",

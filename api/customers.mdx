@@ -31,48 +31,7 @@ Requires a business API key with scope `customers`. Use this before selling to a
 | `x-branch-id` | `bhfId` |
 | `customer_tin` | `custmTin` |
 
-<CodeGroup>
-
-```bash cURL
-curl -X GET "{{baseUrl}}/customers?customer_tin=100004527" \
-  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
-  -H "x-tin: 100027060" \
-  -H "x-branch-id: 00"
-```
-
-```javascript JavaScript
-const data = await fetch(
-  `${BASE_URL}/customers?customer_tin=100004527`,
-  {
-    headers: {
-      Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
-      'x-tin': '100027060',
-      'x-branch-id': '00',
-    },
-  },
-).then((r) => r.json());
-```
-
-</CodeGroup>
-
-### Response
-
-```json
-{
-  "message": "success",
-  "data": [
-    {
-      "tin": "933000004",
-      "name": "COMPANY 04 LTD",
-      "status": "Active",
-      "province": "EAST",
-      "district": "NYAGATARE",
-      "sector": "NYAGATARE",
-      "location": "RRA"
-    }
-  ]
-}
-```
+The response is `{ message, data }`. Each customer includes `tin`, `name`, `status`, `province`, `district`, `sector`, and `location`.
 
 ---
 
@@ -95,66 +54,4 @@ Use your business API key (scope `customers`). Internal systems may also call th
 <ParamField body="use" type="boolean">Active flag; defaults to `true`</ParamField>
 <ParamField body="notes" type="string">Optional notes</ParamField>
 
-Registrar and modifier fields are set by Kayko for you.
-
-<CodeGroup>
-
-```bash cURL
-curl -X POST "{{baseUrl}}/customers/create" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer sk_live_YOUR_SECRET" \
-  -H "x-tin: 100027060" \
-  -H "x-branch-id: 00" \
-  -d '{
-    "customer_number": "C001",
-    "customer_tin": "100004527",
-    "customer_name": "RULIBA CLAYS LTD",
-    "telephone": "0780000000",
-    "use": true
-  }'
-```
-
-```javascript JavaScript
-await fetch(`${BASE_URL}/customers/create`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${process.env.KAYKO_EBM_API_KEY}`,
-    'x-tin': '100027060',
-    'x-branch-id': '00',
-  },
-  body: JSON.stringify({
-    customer_number: 'C001',
-    customer_tin: '100004527',
-    customer_name: 'RULIBA CLAYS LTD',
-    telephone: '0780000000',
-    use: true,
-  }),
-});
-```
-
-```json Payload
-{
-  "customer_number": "C001",
-  "customer_tin": "100004527",
-  "customer_name": "RULIBA CLAYS LTD",
-  "address": null,
-  "telephone": "0780000000",
-  "email": null,
-  "fax_number": null,
-  "use": true,
-  "notes": null
-}
-```
-
-</CodeGroup>
-
-### Response
-
-```json
-{
-  "message": "success",
-  "data": null
-}
-```
-
+Registrar and modifier fields are set by Kayko for you. Success returns `{ message: "success", data: null }`.
