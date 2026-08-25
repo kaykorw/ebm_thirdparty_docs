@@ -34,7 +34,7 @@ Use the reference pages for deep field narrative ([Sales](/api/sales), [Constant
     Every form field includes a label and helper text from the OpenAPI schema. Tax types should be read as human labels (for example **B, 18% Taxable**), not only raw letters. Cross-check enums in [Enumerations](/reference/enumerations) and live tables under [Constants](/api/constants).
   </Step>
   <Step title="Send and interpret the response">
-    Edit the pre-filled body or query, click **Send**, and inspect the response panel. Success on mapped routes is usually `{ message, data }`. VSDC failures appear as `{ status, message, date }` where `status` is the result code from [Response Codes](/reference/response-codes) (spec §4.14), for example `000` success, `910` parameter error, `881` missing purchase code, `894` communication error.
+    Edit the pre-filled body or query, click **Send**, and inspect the response panel. Success on mapped routes is usually `{ message, data }`. VSDC failures appear as `{ status, message, date, ebm }` where `status` is the result code from [Response Codes](/reference/response-codes) (spec §4.14), for example `000` success, `910` parameter error, `881` missing purchase code, `894` communication error. `ebm.resultMsg` is the unmodified device text.
   </Step>
 </Steps>
 
@@ -44,7 +44,7 @@ Use the reference pages for deep field narrative ([Sales](/api/sales), [Constant
 |------|-------|----------------|
 | Device init | `{ resultCd, resultMsg, resultDt, data }` | Raw VSDC envelope; `resultCd` meanings in §4.14 / [Response Codes](/reference/response-codes) |
 | Mapped Kayko routes | `{ message, data }` | Business payload under `data` |
-| VSDC failure via Kayko | `{ status, message, date }` | `status` is `resultCd` with human `message` |
+| VSDC failure via Kayko | `{ status, message, date, ebm }` | `status` is `resultCd`; `message` is clarified; `ebm` is the raw VSDC envelope |
 | Auth / gateway failures | `{ status, message, error }` | Kayko guard errors such as missing scopes |
 
 ## Consistency with reference docs

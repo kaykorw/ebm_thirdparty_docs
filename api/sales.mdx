@@ -95,7 +95,7 @@ Category B and fuel `F` VAT extraction uses taxable amount × 18 / 118, rounded 
 
 ### Success response
 
-The response is `{ message, data }`. On success, `data` includes `invoice_no`, `original_invoice_no`, `receipt_type`, `status`, `replayed`, and a `print` object with `receipt_no`, `total_receipt_no`, `internal_data`, `receipt_signature`, `receipt_published_at`, `sdc_id`, `mrc_no`, and `tourism`.
+The response is `{ message, data, ebm }`. `data` includes `invoice_no`, `original_invoice_no`, `receipt_type`, `status`, `replayed`, and a `print` object with `receipt_no`, `total_receipt_no`, `internal_data`, `receipt_signature`, `receipt_published_at`, `sdc_id`, `mrc_no`, and `tourism`. `ebm` is the unmodified VSDC envelope (`resultCd`, `resultMsg`, `resultDt`, `data`) from `saveSales` / `resendSales`. It is `null` on `GET /sales/:invoice_no` and on replayed local copies (no live device call).
 
 Print **`print.receipt_signature`** and **`print.internal_data`** (and the counters / SDC / MRC as required by your receipt layout). For tourism-registered TINs, also print `print.tourism.disclaimer` when it is set. Definitions: [Glossary](/reference/glossary).
 
@@ -111,7 +111,7 @@ If the local sales store is unavailable before the VSDC call, Kayko returns `EBM
 |----------|---------|------------|
 | `881` | Purchase code mandatory | Send `purchase_code` for business customers |
 | `884` | Invalid customer TIN | Look up TIN with `GET /customers` |
-| `910` | Parameter validation (totals, `orgInvcNo`, tax rates, types) | Fix payload. Live devices require `taxRtF` (18) and `taxRtTt` (0 or 3). See [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel). |
+| `910` | Parameter validation (totals, `orgInvcNo`, tax rates, types) | Fix payload. Live devices require `taxRtF` (18) and `taxRtTt` (3). See [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel). |
 | `994` | Duplicate / overlapped | Treat carefully; Kayko may treat some duplicates as already accepted on retry paths |
 
 Full table: [Response Codes](/reference/response-codes).

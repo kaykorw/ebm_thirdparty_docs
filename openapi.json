@@ -5274,7 +5274,7 @@
         ],
         "operationId": "submit_sale",
         "summary": "Create new sale",
-        "description": "Submit a normal fiscal sale for signing.\n\nUse this when a customer pays for goods or services and you need a legally signed EBM receipt. Returns print fields (`receipt_signature`, `internal_data`, counters, SDC, MRC, `tourism`). Stock-out is queued after VSDC `000`, not in this HTTP response.\n\n**Prerequisites:** register each `item_code` first; seed `POST /stocks/master` for stocked goods; send `purchase_code` when `customer.tin_no` is present (business buyer). Sync fuel products with `POST /items/fuel/sync` before selling fuel.\n\n**Gotchas:** do not set `original_invoice_no` equal to `invoice_no` on normal sales; `tax_type` F is VAT on fuel (18%), not tourism; do not send `tax_type` TT (use `use_tourism_tax`); fuel invoices require `sale_purpose` and `rrp`.\n\nResponse codes: `000` success; `881` missing purchase code; `910` parameter/tax rates/totals; `994` duplicate. Kayko errors use `{ status, message, date }`.",
+        "description": "Submit a normal fiscal sale for signing.\n\nUse this when a customer pays for goods or services and you need a legally signed EBM receipt. Returns print fields (`receipt_signature`, `internal_data`, counters, SDC, MRC, `tourism`). Stock-out is queued after VSDC `000`, not in this HTTP response.\n\n**Prerequisites:** register each `item_code` first; seed `POST /stocks/master` for stocked goods; send `purchase_code` when `customer.tin_no` is present (business buyer). Sync fuel products with `POST /items/fuel/sync` before selling fuel.\n\n**Gotchas:** do not set `original_invoice_no` equal to `invoice_no` on normal sales; `tax_type` F is VAT on fuel (18%), not tourism; do not send `tax_type` TT (use `use_tourism_tax`); fuel invoices require `sale_purpose` and `rrp`.\n\nResponse codes: `000` success; `881` missing purchase code; `910` parameter/tax rates/totals; `994` duplicate. Kayko errors use `{ status, message, date, ebm }`. `ebm.resultMsg` is the unmodified VSDC text.",
         "security": [
           {
             "ApiKeyBearer": []
@@ -5622,6 +5622,20 @@
                         "total_tt": 0,
                         "disclaimer": null
                       }
+                    }
+                  },
+                  "ebm": {
+                    "resultCd": "000",
+                    "resultMsg": "It is succeeded",
+                    "resultDt": "20260825124006",
+                    "data": {
+                      "rcptNo": 12,
+                      "totRcptNo": 12,
+                      "intrlData": "\u2026",
+                      "rcptSign": "\u2026",
+                      "vsdcRcptPbctDate": "20260825124006",
+                      "sdcId": "SDC010009000",
+                      "mrcNo": "WIS00004019"
                     }
                   }
                 }

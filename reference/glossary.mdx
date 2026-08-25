@@ -58,7 +58,7 @@ This glossary defines the jargon that appears in Kayko EBM requests, responses, 
 
 ## Tax types (A–F, TT)
 
-Used as `tax_type` on items and invoice lines (upstream `taxTyCd`). Rates on the sale **header** include `taxRtA`–`D`, `taxRtF` (VAT on fuel, 18), and `taxRtTt` (tourism, 0 or 3).
+Used as `tax_type` on items and invoice lines (upstream `taxTyCd`). Rates on the sale **header** include `taxRtA`–`D`, `taxRtF` (VAT on fuel, 18), and `taxRtTt` (tourism, 3).
 
 | Code | Meaning (typical) |
 |------|-------------------|
@@ -95,4 +95,4 @@ Full list: [Response Codes](/reference/response-codes) (spec §4.14).
 | **`910`** | Request parameter validation error (totals, types, missing `taxRtF`/`taxRtTt`, `orgInvcNo`, and similar) |
 | **`994`** | Overlapped / duplicate data |
 
-Kayko maps failed VSDC calls to HTTP errors shaped as `{ "status": "<resultCd>", "message": "…", "date": "…" }`.
+Kayko maps failed VSDC calls to HTTP errors shaped as `{ "status": "<resultCd>", "message": "…", "date": "…", "ebm": { "resultCd", "resultMsg", "resultDt" } }`. `message` is Kayko’s clarified text; `ebm.resultMsg` is what the device returned.

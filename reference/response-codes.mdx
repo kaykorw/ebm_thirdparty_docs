@@ -20,11 +20,16 @@ VSDC failures from `/ebm` routes are remapped to:
 {
   "status": "910",
   "message": "…",
-  "date": "20260820184713"
+  "date": "20260820184713",
+  "ebm": {
+    "resultCd": "910",
+    "resultMsg": "Request parameter error: …",
+    "resultDt": "20260820184713"
+  }
 }
 ```
 
-`status` is the VSDC result code (`resultCd`). HTTP status follows the code family (4xx/5xx).
+`status` is the VSDC result code (`resultCd`). `message` is Kayko’s clarified text. `ebm` is the unmodified device envelope (`resultMsg` is what VSDC actually returned). HTTP status follows the code family (4xx/5xx).
 
 | HTTP | `error` | Meaning |
 |------|---------|---------|
@@ -94,7 +99,16 @@ These indicate issues on the Kayko EBM or RRA server side.
 Successful mapped routes return `{ message, data }`. VSDC failures throw HTTP errors with:
 
 ```json
-{ "status": "910", "message": "…", "date": "20260820184713" }
+{
+  "status": "910",
+  "message": "…",
+  "date": "20260820184713",
+  "ebm": {
+    "resultCd": "910",
+    "resultMsg": "Request parameter error: …",
+    "resultDt": "20260820184713"
+  }
+}
 ```
 
 ```javascript

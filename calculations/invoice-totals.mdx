@@ -11,7 +11,7 @@ icon: file-invoice
 
 Kayko requires **duplicate accounting**, every amount appears on the line and again on the header. Header values must be the **exact sum** of their line counterparts. You may omit header fields on `POST /sales` and `POST /purchases/confirm`; Kayko computes them. If you send them, they must match or VSDC returns `910`.
 
-On the wire to VSDC, Kayko sends rates A–D plus **`taxRtF: 18`** (VAT on fuel) and **`taxRtTt`** (`3` if the TIN is tourism-registered, otherwise `0`). Tourism amounts go in `taxblAmtTt` / `taxAmtTt` / `totalTTAmt` and are **not** rolled into `totTaxblAmt`. See [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel).
+On the wire to VSDC, Kayko sends rates A–D plus **`taxRtF: 18`** (VAT on fuel) and **`taxRtTt: 3`**. Tourism amounts go in `taxblAmtTt` / `taxAmtTt` / `totalTTAmt` and are **not** rolled into `totTaxblAmt`. See [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel).
 
 ## Header tax fields
 
@@ -20,7 +20,7 @@ On the wire to VSDC, Kayko sends rates A–D plus **`taxRtF: 18`** (VAT on fuel)
 | `taxable_amount_a` … `_d`, `_e`, `_f` | `taxblAmtA`–`D`, `E`, `F` | Sum of `taxable_amount` for lines with that `tax_type` |
 | (computed) | `taxRtA`–`D` | 0, 18, 0, 0 |
 | (computed) | `taxRtF` | 18 (VAT on fuel) |
-| (computed) | `taxRtTt` | 3 if tourism-registered, else 0 |
+| (computed) | `taxRtTt` | 3 |
 | `tax_amount_a` … `_f` | `taxAmt*` | Sum of `tax_amount` for that VAT category |
 | `taxable_amount_tt` / `tax_amount_tt` | `taxblAmtTt` / `taxAmtTt` | Tourism overlay (not a line `tax_type`) |
 | `total_taxable_amount` | `totTaxblAmt` | Sum of VAT buckets A–D + E + F (**not** tourism overlay) |
@@ -77,4 +77,4 @@ assert item_count       === items.length
 | VSDC `910` | `total_amount` ≠ sum of line totals |
 | VSDC `910` | `item_count` ≠ `items.length` |
 | VSDC `910` | Line `tax_type: "B"` but amounts in the wrong header bucket |
-| VSDC `910` | Missing `taxRtF` / `taxRtTt` or treating F as tourism | Kayko always sends `taxRtF: 18` and `taxRtTt` 0 or 3. See [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel). |
+| VSDC `910` | Missing `taxRtF` / `taxRtTt`, or `taxRtTt: 0` | Kayko always sends `taxRtF: 18` and `taxRtTt: 3`. See [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel). |

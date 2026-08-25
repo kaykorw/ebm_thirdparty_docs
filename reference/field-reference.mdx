@@ -35,7 +35,7 @@ icon: table-columns
 | `rrp` | `rrp` (fuel regulated retailer price) |
 | `regulated_discount` | `prftDcAmt` (fuel, 0–120) |
 
-Live `saveSales` always includes **`taxRtF: 18`** and **`taxRtTt`** (`0` or `3`). Tourism amounts are `ttAmt` / `totalTTAmt`. See [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel).
+Live `saveSales` always includes **`taxRtF: 18`** and **`taxRtTt: 3`**. Tourism amounts are `ttAmt` / `totalTTAmt`. See [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel).
 
 ---
 
@@ -376,7 +376,7 @@ All save fields plus:
 | `taxblAmtE`, `F`, `Tt` | NUMBER | Y | 18,2 | F = VAT on fuel. Tt = tourism overlay (not a line tax type) |
 | `taxRtA`–`D` | NUMBER | Y | 7,2 | Per tax category (`18` for B) |
 | `taxRtF` | NUMBER | Y | 7,2 | Always `18` (VAT on fuel) |
-| `taxRtTt` | NUMBER | Y | 7,2 | `3` if the TIN is tourism-registered, else `0` |
+| `taxRtTt` | NUMBER | Y | 7,2 | Always `3`. Amounts stay 0 when there are no tourism lines |
 | `taxAmtA`–`D` | NUMBER | Y | 18,2 | Per tax category |
 | `taxAmtE`, `F`, `Tt` | NUMBER | Y | 18,2 | Tt is tourism tax; F is fuel VAT |
 | `totTaxblAmt` | NUMBER | Y | 18,2 | VAT buckets only (A–F), not tourism overlay |
@@ -465,7 +465,7 @@ All save fields plus:
 | `stockRlsDt` | CHAR | 19 | |
 | `totItemCnt` | NUMBER | 10 | |
 | `taxblAmtA`–`D` | NUMBER | 18,2 | |
-| `taxRtA`–`D` | NUMBER | 7,2 | Live devices also expect `taxRtF` (18) and `taxRtTt` (0 or 3) |
+| `taxRtA`–`D` | NUMBER | 7,2 | Live devices also expect `taxRtF` (18) and `taxRtTt` (3) |
 | `taxAmtA`–`D` | NUMBER | 18,2 | |
 | `totTaxblAmt` | NUMBER | 18,2 | |
 | `totTaxAmt` | NUMBER | 18,2 | |

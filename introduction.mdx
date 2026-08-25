@@ -82,7 +82,7 @@ Many transactional upstream calls use this envelope:
 | `date` | Server timestamp (`yyyyMMddHHmmss`) |
 | `data` | Payload; shape varies per endpoint |
 
-Most Kayko business routes return a mapped `{ message, data }` envelope (for example customers, branches, constants, and notices). When VSDC rejects a proxied call, Kayko remaps the failure to `{ status, message, date }` where `status` is the VSDC result code. Auth failures use `{ status, message, error }`.
+Most Kayko business routes return a mapped `{ message, data }` envelope (for example customers, branches, constants, and notices). When VSDC rejects a proxied call, Kayko remaps the failure to `{ status, message, date, ebm }` where `status` is the VSDC result code and `ebm` is the raw device envelope. Auth failures use `{ status, message, error }`.
 
 ## Conventions
 

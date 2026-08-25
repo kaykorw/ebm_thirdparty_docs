@@ -18,7 +18,7 @@ RRA added two separate taxes on VSDC 2.0. **They are not the same field.**
 | Who | Hospitality / tourism TINs | Fuel dealers selling gasoline or diesel |
 | Line `tax_type` | Keep VAT `A`–`D` (usually `B`) | `F` (18% VAT on fuel) |
 | How a line is flagged | Item `use_tourism_tax: true` (`useTTaxYn: Y`) or sale line `use_tourism_tax: true` | Fuel catalog item + `tax_type: F` |
-| Header rates | `taxRtTt` is `3` if the TIN is tourism-registered, else `0` | `taxRtF` is always `18` |
+| Header rates | `taxRtTt` is always `3` (amounts stay 0 if no tourism lines) | `taxRtF` is always `18` |
 | Amounts | Line `ttAmt`, header `taxblAmtTt` / `taxAmtTt` / `totalTTAmt` | Header `taxblAmtF` / `taxAmtF` from `F` lines |
 
 Do **not** send `tax_type: "TT"` on a sale line. Do **not** treat `F` as tourism.
@@ -50,7 +50,7 @@ Header fields Kayko always sends:
 
 | VSDC | Meaning |
 |------|---------|
-| `taxRtTt` | `3` for tourism-registered TINs, otherwise `0` |
+| `taxRtTt` | Always `3`. Live VSDC rejects `0` (`Wrong Tourism Tax rate`) |
 | `taxblAmtTt` | Sum of `ttTaxblAmt` for tourism lines |
 | `taxAmtTt` / `totalTTAmt` | Sum of line `ttAmt` |
 | line `ttAmt` | Per-line tourism amount (`0` when the line is not tourism-taxable) |
@@ -107,8 +107,8 @@ A normal `tax_type: B` invoice still includes the new keys, with zero fuel/touri
 |------|-------|
 | `taxRtB` | 18 |
 | `taxRtF` | 18 |
-| `taxRtTt` | 0 (unless the TIN is tourism-registered, then 3) |
+| `taxRtTt` | 3 |
 | `taxblAmtF` / `taxAmtF` | 0 |
 | `taxblAmtTt` / `taxAmtTt` / `totalTTAmt` | 0 |
 
-Omitting `taxRtF` / `taxRtTt` is what live devices reject as **incorrect tax rates** (`910`).
+Omitting `taxRtF` / `taxRtTt` is **incorrect tax rates** (`910`). Sending `taxRtTt: 0` is **Wrong Tourism Tax rate** (`910`).
