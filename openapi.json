@@ -5971,7 +5971,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Stored invoice and print fields"
+            "description": "Stored invoice, line items, and print fields. Not a live VSDC lookup."
           }
         }
       }

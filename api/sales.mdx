@@ -95,7 +95,7 @@ Category B and fuel `F` VAT extraction uses taxable amount × 18 / 118, rounded 
 
 ### Success response
 
-The response is `{ message, data, ebm }`. `data` includes `invoice_no`, `original_invoice_no`, `receipt_type`, `status`, `replayed`, and a `print` object with `receipt_no`, `total_receipt_no`, `internal_data`, `receipt_signature`, `receipt_published_at`, `sdc_id`, `mrc_no`, and `tourism`. `ebm` is the unmodified VSDC envelope (`resultCd`, `resultMsg`, `resultDt`, `data`) from `saveSales` / `resendSales`. It is `null` on `GET /sales/:invoice_no` and on replayed local copies (no live device call).
+The response is `{ message, data }`. On a live `POST /sales` or resend, `ebm` is also included (the VSDC `saveSales` envelope). `data` includes invoice identity, `customer`, `items` (from the stored request), `totals`, `print`, and related sale fields. `GET /sales/:invoice_no` does not call the device, so it has no `ebm` key.
 
 Print **`print.receipt_signature`** and **`print.internal_data`** (and the counters / SDC / MRC as required by your receipt layout). For tourism-registered TINs, also print `print.tourism.disclaimer` when it is set. Definitions: [Glossary](/reference/glossary).
 
@@ -152,4 +152,8 @@ Use when VSDC already signed the invoice (`EBM_SALE_PERSIST_FAILED`) or you must
 
 `GET /sales/:invoice_no`
 
-Returns the locally stored invoice and print block for reprinting or support diagnostics. Requires the same tenant headers and `sales` scope.
+Returns the **locally stored** invoice (not a live VSDC lookup). VSDC `saveSales` only returns print fields; Kayko keeps the request body (`itemList`, customer, totals) and maps it back here.
+
+Includes `items`, `customer`, `purchase_code`, `payment_method`, `dates`, `totals`, and `print` from the local store. This route does not call VSDC, so there is no `ebm` object.
+
+Requires the same tenant headers and `sales` scope.
