@@ -81,13 +81,15 @@
     },
     "examples": {
       "languages": [
+        "json",
         "curl",
         "javascript",
         "php",
-        "json"
+        "python"
       ],
+      "defaults": "all",
       "prefill": true,
-      "autogenerate": false
+      "autogenerate": true
     }
   },
   "navigation": {
@@ -127,6 +129,7 @@
             "pages": [
               "calculations/overview",
               "calculations/vat-formulas",
+              "calculations/tourism-and-fuel",
               "calculations/line-items",
               "calculations/discounts",
               "calculations/invoice-totals",
@@ -234,6 +237,9 @@
                   },
                   "POST /items",
                   "GET /items",
+                  "GET /items/fuel",
+                  "POST /items/fuel/sync",
+                  "POST /items/fuel/rrp",
                   "GET /items/{item_code}",
                   "PUT /items/{item_code}",
                   "DELETE /items/{item_code}"

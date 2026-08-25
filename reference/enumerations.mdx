@@ -23,8 +23,10 @@ Used as `tax_type` on items and line items (upstream `taxTyCd`).
 | `C` | C (Zero-rated) | 0% | Zero-rated |
 | `D` | D (Non-VAT) | 0% | Non-VAT |
 | `E` | E (reserved) | 0% | Appears on live sale **headers** even though PDF v1.0.5 lists A–D only |
-| `F` | F (Tourism tax) | often 3% in tables | **Do not** send `tax_type: F` on sale lines, live devices reject it |
-| `TT` | TT (Tourism) | often 3% | Use on tourism sale lines with `tourism_tax: true` |
+| `F` | F (VAT on Fuel) | 18% | Gasoline/diesel only. Same 18/118 extraction as B. Do **not** use for tourism. |
+| `TT` | TT (Tourism tax) | 3% | Header rate / overlay only. **Do not** send `tax_type: TT` on sale lines. Use `use_tourism_tax`. |
+
+See [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel).
 
 ---
 
@@ -52,6 +54,17 @@ Kayko sales always send live type `N`. Purchases accept `transaction_type` label
 | `C` | Copy | Copy of an existing invoice |
 | `P` | Proforma | Quote- not a tax document |
 | `T` | Training | Practice- no legal effect |
+
+---
+
+## Sale purpose (fuel)
+
+Send `sale_purpose` on invoices that include fuel lines (upstream `salePurposeCd`).
+
+| Code | Kayko label | Name |
+|------|-------------|------|
+| `01` | `FOR_RESELL` | For resell |
+| `02` | `FOR_CONSUMPTION` | For consumption |
 
 ---
 

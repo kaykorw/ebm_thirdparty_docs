@@ -58,7 +58,7 @@ This glossary defines the jargon that appears in Kayko EBM requests, responses, 
 
 ## Tax types (A–F, TT)
 
-Used as `tax_type` on items and invoice lines (upstream `taxTyCd`). Rates on the sale/purchase **header** are separate fields (`taxRtA` … `taxRtTt`).
+Used as `tax_type` on items and invoice lines (upstream `taxTyCd`). Rates on the sale **header** include `taxRtA`–`D`, `taxRtF` (VAT on fuel, 18), and `taxRtTt` (tourism, 0 or 3).
 
 | Code | Meaning (typical) |
 |------|-------------------|
@@ -67,10 +67,10 @@ Used as `tax_type` on items and invoice lines (upstream `taxTyCd`). Rates on the
 | **C** | Zero-rated (0%) |
 | **D** | Non-VAT (0%) |
 | **E** | Reserved (0%), live headers often include this rate even though PDF v1.0.5 lists A–D only |
-| **F** | Tourism tax category in code tables, **do not send `tax_type: F` on sale lines**; live devices reject it |
-| **TT** | Tourism tax line type used with `tourism_tax: true` on sales |
+| **F** | VAT on fuel (18%). Gasoline/diesel lines only. Not tourism. |
+| **TT** | Tourism tax overlay (3%). Not a sale line `tax_type`. Use item/line `use_tourism_tax`. |
 
-Configure tourism **header** rates with sale-level `tourism_tax`, `tax_rate_f`, and `tax_rate_tt` on [`POST /sales`](/api/sales).
+Fuel catalog, RRP, and tourism print fields: [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel). **RRP** is the regulated retailer price for fuel. **`sale_purpose`** is `FOR_RESELL` or `FOR_CONSUMPTION` on fuel invoices.
 
 ## Purchase and insurance
 
@@ -92,7 +92,7 @@ Full list: [Response Codes](/reference/response-codes) (spec §4.14).
 | **`883`** | Purchase already used |
 | **`884`** | Invalid customer TIN |
 | **`894`** | Server / transport communication error (Kayko maps many Axios failures here) |
-| **`910`** | Request parameter validation error (totals, types, tourism rates, `orgInvcNo`, and similar) |
+| **`910`** | Request parameter validation error (totals, types, missing `taxRtF`/`taxRtTt`, `orgInvcNo`, and similar) |
 | **`994`** | Overlapped / duplicate data |
 
 Kayko maps failed VSDC calls to HTTP errors shaped as `{ "status": "<resultCd>", "message": "…", "date": "…" }`.

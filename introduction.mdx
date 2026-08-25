@@ -52,7 +52,7 @@ Proxied business routes need tenant headers (not `ebm_url` in the body):
 |--------|------|
 | `x-tin` | Your 9-digit TIN |
 | `x-branch-id` | 2-character branch ID (`00` = head office) |
-| `x-last-request-date` | 14 digits `YYYYMMDDHHmmss` on `GET /branches`, `GET /notices`, `GET /items`, `GET /item-classes`, `GET /imports`, `GET /purchases`, and `GET /stocks` |
+| `x-last-request-date` | 14 digits `YYYYMMDDHHmmss` on `GET /branches`, `GET /notices`, `GET /items`, `GET /items/fuel`, `GET /item-classes`, `GET /imports`, `GET /purchases`, and `GET /stocks` |
 
 Kayko resolves your business `ebm_url` from Core360 after you Enable EBM. You do not send it on later calls.
 

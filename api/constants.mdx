@@ -64,9 +64,9 @@ Quantity unit codes (`qtyUnitCd`).
 
 `GET /constants/taxes`
 
-Tax type codes (`taxTyCd`) with rates. Category **B** is standard 18% VAT.
+Tax type codes (`taxTyCd`) with rates. Category **B** is standard 18% VAT. **F** is VAT on fuel (18%). **TT** is the tourism tax rate (3%) used on headers, not as a sale line type.
 
-<ResponseField name="code" type="string">Tax type (`A`–`D`)</ResponseField>
+<ResponseField name="code" type="string">Tax type (`A`–`F`, `TT`)</ResponseField>
 <ResponseField name="sort" type="integer">Display sort order</ResponseField>
 <ResponseField name="name" type="string">Display label</ResponseField>
 <ResponseField name="rate" type="number">Tax rate percent</ResponseField>

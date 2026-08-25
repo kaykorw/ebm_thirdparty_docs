@@ -76,7 +76,7 @@ Kayko maps snake_case labels to VSDC codes. For a normal purchase, Kayko sends u
 <ParamField body="dates.warehoused_at" type="string">`YYYYMMDDHHmmss`</ParamField>
 <ParamField body="items" type="array" required>Line items (see below)</ParamField>
 
-Optional header totals (`taxable_amount_a`–`tt`, `tax_amount_*`, `total_*`), omit them to let Kayko compute from lines. If you send them, they must match. Kayko always forwards live VSDC tax rates including **E** (0), **F** (tourism 3%), and **TT** (3%).
+Optional header totals (`taxable_amount_a`–`tt`, `tax_amount_*`, `total_*`), omit them to let Kayko compute from lines. If you send them, they must match. Kayko forwards live VSDC rates **`taxRtF: 18`** (VAT on fuel) and **`taxRtTt`** (`0` unless the TIN is tourism-registered).
 
 `sequence` is optional. Omit it to auto-number lines `1…n` in array order. If you send it, values must be consecutive starting at `1` matching that order.
 

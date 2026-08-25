@@ -30,6 +30,10 @@ VSDC failures from `/ebm` routes are remapped to:
 |------|---------|---------|
 | 403 | `EBM_HEAD_OFFICE_REQUIRED` | Item write, import confirm, and purchase confirm must use `x-branch-id: 00` |
 | 400 | `EBM_ITEM_NOT_REGISTERED` | Sale/purchase line `item_code` is not in the catalog |
+| 400 | `EBM_FUEL_ITEM_READONLY` | Create/update/deactivate of RRA fuel items. Use `POST /items/fuel/sync` and `POST /items/fuel/rrp` |
+| 400 | `EBM_SALE_PURPOSE_REQUIRED` | Fuel sale missing `sale_purpose` |
+| 400 | `EBM_TAX_TYPE_TT_UNSUPPORTED` | Sale line `tax_type: TT`. Use `use_tourism_tax` instead |
+| 400 | `EBM_TOURISM_TAX_TIN_REQUIRED` | `use_tourism_tax` on a TIN that is not hospitality/tourism |
 | 404 | `EBM_ITEM_NOT_FOUND` | `GET/PUT/DELETE /items/:item_code` |
 | 503 | `EBM_SALE_PERSIST_FAILED` | VSDC signed the sale (`000`) but Kayko could not persist it. **Do not change `invoice_no`.** Retry `POST /sales/resend` with the signature fields in the body |
 | 503 | `EBM_SALES_STORE_UNAVAILABLE` | Local store is down; Kayko did not call VSDC |
@@ -72,7 +76,7 @@ These indicate issues on the Kayko EBM or RRA server side.
 | `901` | Not valid device | Re-initialize with correct `dvcSrlNo` |
 | `902` | Device already installed | Device was already initialized- skip re-init |
 | `903` | Only a registered EBM device can be verified | Use a registered EBM device |
-| `910` | Request parameter error | Totals mismatch, wrong types, **normal sale `orgInvcNo` not `0`**, invalid tourism header rates (`taxRtF` / `taxRtTt`), or other field validation. Kayko maps snake_case for you, omit optional totals unless you can match line math. For tourism rate failures use sale-level `tax_rate_f` / `tax_rate_tt`. |
+| `910` | Request parameter error | Totals mismatch, wrong types, **normal sale `orgInvcNo` not `0`**, missing or incorrect `taxRtF` / `taxRtTt`, or other field validation. Kayko maps snake_case for you, omit optional totals unless you can match line math. See [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel). |
 | `911` | No request full text | Request body is empty |
 | `912` | Request Method error | Use the documented Kayko method (`GET` / `POST` / `PUT` / `DELETE`) |
 | `921` | Sales data cannot be received | Invoice data conflict- check invoice numbers |

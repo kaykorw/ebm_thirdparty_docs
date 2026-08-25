@@ -11,28 +11,31 @@ icon: file-invoice
 
 Kayko requires **duplicate accounting**, every amount appears on the line and again on the header. Header values must be the **exact sum** of their line counterparts. You may omit header fields on `POST /sales` and `POST /purchases/confirm`; Kayko computes them. If you send them, they must match or VSDC returns `910`.
 
-On the wire to VSDC, Kayko sends rates A–D plus live extensions **E**, **F**, and **TT**. Tourism rates **F/TT** follow the per-TIN strategy (null, catalog, or override), not a fixed `3.00` for every business. Configure via sale-level `tax_rate_f` / `tax_rate_tt`.
+On the wire to VSDC, Kayko sends rates A–D plus **`taxRtF: 18`** (VAT on fuel) and **`taxRtTt`** (`3` if the TIN is tourism-registered, otherwise `0`). Tourism amounts go in `taxblAmtTt` / `taxAmtTt` / `totalTTAmt` and are **not** rolled into `totTaxblAmt`. See [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel).
 
 ## Header tax fields
 
 | Kayko field | VSDC field | Meaning |
 |-------------|------------|---------|
-| `taxable_amount_a` … `_d`, `_e`, `_f`, `_tt` | `taxblAmtA`–`D`, `E`, `F`, `Tt` | Sum of `taxable_amount` for lines with that `tax_type` |
-| (computed) | `taxRtA`–`D`, `E`, `F`, `Tt` | 0, 18, 0, 0, 0, 3, 3 |
-| `tax_amount_a` … `_tt` | `taxAmt*` | Sum of `tax_amount` for that category |
-| `total_taxable_amount` | `totTaxblAmt` | Sum of all taxable buckets |
-| `total_tax_amount` | `totTaxAmt` | Sum of all tax buckets |
+| `taxable_amount_a` … `_d`, `_e`, `_f` | `taxblAmtA`–`D`, `E`, `F` | Sum of `taxable_amount` for lines with that `tax_type` |
+| (computed) | `taxRtA`–`D` | 0, 18, 0, 0 |
+| (computed) | `taxRtF` | 18 (VAT on fuel) |
+| (computed) | `taxRtTt` | 3 if tourism-registered, else 0 |
+| `tax_amount_a` … `_f` | `taxAmt*` | Sum of `tax_amount` for that VAT category |
+| `taxable_amount_tt` / `tax_amount_tt` | `taxblAmtTt` / `taxAmtTt` | Tourism overlay (not a line `tax_type`) |
+| `total_taxable_amount` | `totTaxblAmt` | Sum of VAT buckets A–D + E + F (**not** tourism overlay) |
+| `total_tax_amount` | `totTaxAmt` | Sum of VAT buckets A–D + E + F |
 | `total_amount` | `totAmt` | Sum of all line `total_amount` |
 | `item_count` | `totItemCnt` | Number of lines |
 
 ## Aggregation formulas
 
 ```
-taxable_amount_X = Σ line.taxable_amount  where line.tax_type = X
+taxable_amount_X = Σ line.taxable_amount  where line.tax_type = X   (X in A–F)
 tax_amount_X     = Σ line.tax_amount      where line.tax_type = X
 
-total_taxable_amount = A+B+C+D+E+F+TT
-total_tax_amount     = A+B+C+D+E+F+TT
+total_taxable_amount = A+B+C+D+E+F
+total_tax_amount     = A+B+C+D+E+F
 total_amount         = Σ line.total_amount
 ```
 
@@ -74,4 +77,4 @@ assert item_count       === items.length
 | VSDC `910` | `total_amount` ≠ sum of line totals |
 | VSDC `910` | `item_count` ≠ `items.length` |
 | VSDC `910` | Line `tax_type: "B"` but amounts in the wrong header bucket |
-| VSDC `910` | Missing/invalid tourism header rates or totals mismatch (Kayko applies tourism strategy; set sale-level `tax_rate_f` / `tax_rate_tt` if needed) |
+| VSDC `910` | Missing `taxRtF` / `taxRtTt` or treating F as tourism | Kayko always sends `taxRtF: 18` and `taxRtTt` 0 or 3. See [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel). |

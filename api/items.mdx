@@ -1,11 +1,13 @@
 ---
 title: Items
-description: "Item code format for Kayko EBM products registered with RRA EBM 2.1."
+description: "Register products with Kayko EBM, including item code format, tourism-tax flags, and RRA-managed fuel catalog sync."
 keywords:
   - EBM items API
   - product registration
   - itemClsCd
   - item catalog
+  - getFuelProducts
+  - RRP
 icon: box
 ---
 
@@ -65,3 +67,63 @@ RW2NTU0000012
 </Warning>
 
 Item type **`service`** (upstream code `3`) still registers, but Kayko **does not** post stock movements after sales or purchases for services.
+
+---
+
+## Register an item
+
+`POST /items` — head office (`x-branch-id: 00`) only.
+
+Omit `item_code` to let Kayko allocate the next sequence. Send `use_tourism_tax: true` only for hospitality/tourism TINs; Kayko maps that to `useTTaxYn: Y`.
+
+`GET /items` needs `x-last-request-date`. Each row includes `is_fuel` and `system_managed` (both true for RRA fuel products).
+
+`PUT /items/:item_code` and `DELETE /items/:item_code` are also head office. Fuel items cannot be created, edited, or deactivated this way (`EBM_FUEL_ITEM_READONLY`).
+
+`POST /items/compositions` saves a bill of materials (`item_code` + `component_item_code` + `quantity`).
+
+---
+
+## Tourism-taxable items
+
+Hospitality TINs register rooms and similar services with `use_tourism_tax: true` and a normal VAT `tax_type` (`B`, `A`, `C`, or `D`). Tourism is **not** tax type `F`. See [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel).
+
+---
+
+## Fuel products (RRA catalog)
+
+Gasoline and diesel are centrally defined by RRA. CIS must not invent fuel `item_code` values.
+
+### List RRA fuel products
+
+`GET /items/fuel`
+
+Same tenant headers as `GET /items`, including `x-last-request-date`. Kayko calls `items/reference/getFuelProducts` and returns snake_case rows with `tax_type: F` and `system_managed: true`.
+
+### Sync into VSDC
+
+`POST /items/fuel/sync` — head office.
+
+Pulls the full RRA list, then `saveItems` for each product using RRA’s `itemCd` (for example `RW2TYXL1000001`) and `taxTyCd: F`. Optional body:
+
+| Field | Meaning |
+|-------|---------|
+| `rrp` | Default price / RRP applied to every product unless overridden |
+| `beginning_stock` | Posted to `stockMaster/saveStockMaster` when set |
+| `items[]` | Per-code `rrp` / `beginning_stock` overrides |
+
+### Change regulated retailer price
+
+`POST /items/fuel/rrp` — head office.
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `item_code` | Yes | Must already be a synced fuel item |
+| `new_rrp` | Yes | New regulated price |
+| `old_rrp` | No | Defaults to catalog `default_price` |
+| `current_stock_quantity` | Yes | On-hand quantity at the time of the change |
+| `use` | No | Active flag |
+
+Kayko posts `items/saveRrpChangeHistory` first. Only on VSDC success does it update the item’s `dftPrc`. Local RRP must not change if that call fails.
+
+Sell fuel on [`POST /sales`](/api/sales) with `tax_type: F`, `sale_purpose`, and `rrp`.

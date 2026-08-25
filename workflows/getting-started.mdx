@@ -50,7 +50,7 @@ Call [`POST /initialize/init`](/api/initialization) with `x-tin`, `x-branch-id`,
 
 Pull Kayko’s friendly tables with [`GET /constants/*`](/api/constants) (taxes, payment modes, packaging, quantity units, stock types, refund reasons, and related lists).
 
-If your business is tourism-tax related, or a non-tourism TIN still fails sales with tourism-rate errors, pass `tourism_tax`, `tax_rate_f`, and `tax_rate_tt` on [`POST /sales`](/api/sales) only after you know which rates the device accepts. Until RRA confirms device-specific values, treat those numbers as **unconfirmed**.
+Fuel dealers also pull [`GET /items/fuel`](/api/items) and sync with `POST /items/fuel/sync`. Hospitality TINs register tourism items with `use_tourism_tax: true`. Do not send sale-level `tax_rate_f` / `tourism_tax` flags; Kayko sets header rates from the TIN and line flags. See [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel).
 
 ### 3. Pull item classification codes
 
@@ -59,6 +59,8 @@ Call `GET /item-classes` with `x-last-request-date`. You need a ten-digit `item_
 ### 4. Register products at head office
 
 Create catalog rows with [`POST /items`](/api/items) using **`x-branch-id: 00`**. Send `item_type` as a text label: `raw_material`, `finished_product`, or `service` (legacy codes `1` / `2` / `3` still work). Omit `item_code` to let Kayko allocate the next code for the origin/type/units prefix.
+
+Fuel products: do **not** `POST /items`. Use [`GET /items/fuel`](/api/items) then [`POST /items/fuel/sync`](/api/items).
 
 ### 5. Seed stock master for stocked goods
 

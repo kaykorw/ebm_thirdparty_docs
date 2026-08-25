@@ -43,6 +43,267 @@
         "name": "X-API-Token",
         "description": "Internal EBM_INTERNAL_API_TOKEN for /initialize/* (not a business sk_ key)."
       }
+    },
+    "schemas": {
+      "ItemWrite": {
+        "type": "object",
+        "required": [
+          "item_classification_code",
+          "item_type",
+          "item_name",
+          "origin_country",
+          "packaging_unit",
+          "quantity_unit",
+          "tax_type",
+          "default_price"
+        ],
+        "properties": {
+          "item_code": {
+            "type": "string",
+            "maxLength": 20,
+            "description": "Optional on create. Omit to let Kayko allocate the next code for this origin/type/units prefix. If sent, the first 7 characters must match those fields.",
+            "example": "RW2NTU0000001"
+          },
+          "item_classification_code": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 10,
+            "description": "Ten-digit RRA classification from GET /item-classes.",
+            "example": "8014160101"
+          },
+          "item_type": {
+            "type": "string",
+            "description": "Product type label or legacy code: raw_material / 1, finished_product / 2, service / 3.",
+            "example": "finished_product"
+          },
+          "item_name": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Product name.",
+            "example": "Coca Cola"
+          },
+          "standard_name": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200,
+            "description": "Generic / standard name (upstream itemStdNm)."
+          },
+          "origin_country": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 5,
+            "description": "Origin country code (for example RW).",
+            "example": "RW"
+          },
+          "packaging_unit": {
+            "type": "string",
+            "description": "Packaging unit code (for example NT). See GET /constants/packaging.",
+            "example": "NT"
+          },
+          "quantity_unit": {
+            "type": "string",
+            "description": "Quantity unit code (for example U). See GET /constants/quantity.",
+            "example": "U"
+          },
+          "tax_type": {
+            "type": "string",
+            "description": "Tax category. Prefer B for standard VAT goods. F is VAT on fuel. Do not send TT.",
+            "example": "B"
+          },
+          "default_price": {
+            "type": "number",
+            "description": "Default unit price (two decimals).",
+            "example": 118
+          },
+          "barcode": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 20,
+            "description": "Barcode (upstream bcd)."
+          },
+          "batch_number": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 10,
+            "description": "Batch number (upstream btchNo)."
+          },
+          "insurance_applicable": {
+            "type": "boolean",
+            "default": false,
+            "description": "Insurance applicable (upstream isrcAplcbYn)."
+          },
+          "use": {
+            "type": "boolean",
+            "default": true,
+            "description": "Active flag (upstream useYn)."
+          },
+          "safety_quantity": {
+            "type": "number",
+            "nullable": true,
+            "description": "Safety stock quantity (upstream sftyQty)."
+          },
+          "additional_info": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 7,
+            "description": "Extra info (upstream addInfo)."
+          },
+          "group_price_1": {
+            "type": "number",
+            "nullable": true,
+            "description": "Optional group price 1."
+          },
+          "group_price_2": {
+            "type": "number",
+            "nullable": true,
+            "description": "Optional group price 2."
+          },
+          "group_price_3": {
+            "type": "number",
+            "nullable": true,
+            "description": "Optional group price 3."
+          },
+          "group_price_4": {
+            "type": "number",
+            "nullable": true,
+            "description": "Optional group price 4."
+          },
+          "group_price_5": {
+            "type": "number",
+            "nullable": true,
+            "description": "Optional group price 5."
+          },
+          "use_tourism_tax": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true, the item is tourism-taxable (upstream useTTaxYn)."
+          }
+        }
+      },
+      "SaleLine": {
+        "type": "object",
+        "required": [
+          "item_code",
+          "item_name",
+          "packaging_unit",
+          "packages",
+          "quantity_unit",
+          "quantity",
+          "price",
+          "tax_type"
+        ],
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Line number 1\u2013999. Optional on some write APIs; auto-numbered in array order when omitted."
+          },
+          "item_code": {
+            "type": "string"
+          },
+          "item_name": {
+            "type": "string"
+          },
+          "item_classification_code": {
+            "type": "string",
+            "description": "Ten-digit classification; required on purchases/stock, optional on sales."
+          },
+          "packaging_unit": {
+            "type": "string"
+          },
+          "packages": {
+            "type": "number"
+          },
+          "quantity_unit": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "price": {
+            "type": "number"
+          },
+          "tax_type": {
+            "type": "string"
+          },
+          "barcode": {
+            "type": "string",
+            "nullable": true
+          },
+          "supply_amount": {
+            "type": "number",
+            "nullable": true
+          },
+          "discount_rate": {
+            "type": "number",
+            "nullable": true
+          },
+          "discount_amount": {
+            "type": "number",
+            "nullable": true
+          },
+          "total_discount_amount": {
+            "type": "number",
+            "nullable": true
+          },
+          "taxable_amount": {
+            "type": "number",
+            "nullable": true
+          },
+          "tax_amount": {
+            "type": "number",
+            "nullable": true
+          },
+          "total_amount": {
+            "type": "number",
+            "nullable": true
+          },
+          "use_tourism_tax": {
+            "type": "boolean"
+          },
+          "rrp": {
+            "type": "number",
+            "nullable": true
+          },
+          "regulated_discount": {
+            "type": "number",
+            "nullable": true
+          },
+          "insurance_code": {
+            "type": "string",
+            "nullable": true
+          },
+          "insurance_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "insurance_rate": {
+            "type": "number",
+            "nullable": true
+          },
+          "insurance_amount": {
+            "type": "number",
+            "nullable": true
+          },
+          "supplier_item_code": {
+            "type": "string",
+            "nullable": true
+          },
+          "supplier_item_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "supplier_item_classification_code": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiry_date": {
+            "type": "string",
+            "nullable": true,
+            "description": "YYYYMMDD"
+          }
+        }
+      }
     }
   },
   "tags": [
@@ -60,7 +321,7 @@
     },
     {
       "name": "Items",
-      "description": "Product registration and catalog sync"
+      "description": "Product registration, catalog sync, RRA fuel products, and RRP history."
     },
     {
       "name": "Classes",
@@ -72,7 +333,7 @@
     },
     {
       "name": "Sales",
-      "description": "Invoice submission and receipt signatures"
+      "description": "Invoice submission and receipt signatures, including tourism print fields and fuel sale purpose."
     },
     {
       "name": "Purchases",
@@ -90,7 +351,7 @@
     },
     {
       "name": "Codes",
-      "description": "Live VSDC code sync and per-TIN tourism tax header settings."
+      "description": "Live VSDC code sync."
     }
   ],
   "paths": {
@@ -188,6 +449,11 @@
         },
         "x-codeSamples": [
           {
+            "lang": "json",
+            "label": "Request",
+            "source": "{\n  \"business_code\": \"ACME01\",\n  \"redeploy\": false\n}"
+          },
+          {
             "lang": "bash",
             "label": "cURL",
             "source": "curl -X POST \"{{baseUrl}}/initialize/enable\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"X-API-Token: $EBM_INTERNAL_API_TOKEN\" \\\n  -d '{\n  \"business_code\": \"ACME01\",\n  \"redeploy\": false\n}'"
@@ -196,11 +462,6 @@
             "lang": "javascript",
             "label": "JavaScript",
             "source": "const res = await fetch(`${BASE_URL}/initialize/enable`, {\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json',\n    'X-API-Token': process.env.EBM_INTERNAL_API_TOKEN,\n  },\n  body: JSON.stringify({ business_code: 'ACME01', redeploy: false }),\n}).then(r => r.json());"
-          },
-          {
-            "lang": "json",
-            "label": "Payload",
-            "source": "{\n  \"business_code\": \"ACME01\",\n  \"redeploy\": false\n}"
           }
         ]
       }
@@ -358,7 +619,14 @@
               }
             }
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "json",
+            "label": "Request",
+            "source": "{\n  \"device_serial_number\": \"QUA-77379\",\n  \"business_code\": \"ACME01\"\n}"
+          }
+        ]
       }
     },
     "/customers/create": {
@@ -460,8 +728,12 @@
                 "customer_number": "C001",
                 "customer_tin": "100004527",
                 "customer_name": "RULIBA CLAYS LTD",
+                "address": "Kigali",
                 "telephone": "0780000000",
-                "use": true
+                "email": "accounts@example.com",
+                "fax_number": null,
+                "use": true,
+                "notes": null
               }
             }
           }
@@ -478,7 +750,14 @@
               }
             }
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "json",
+            "label": "Request",
+            "source": "{\n  \"customer_number\": \"C001\",\n  \"customer_tin\": \"100004527\",\n  \"customer_name\": \"RULIBA CLAYS LTD\",\n  \"address\": \"Kigali\",\n  \"telephone\": \"0780000000\",\n  \"email\": \"accounts@example.com\",\n  \"fax_number\": null,\n  \"use\": true,\n  \"notes\": null\n}"
+          }
+        ]
       }
     },
     "/constants/countries": {
@@ -880,7 +1159,7 @@
         ],
         "operationId": "select_taxes",
         "summary": "Get Taxes",
-        "description": "Return tax type codes used as `tax_type` on items and invoice lines.\n\nLabels are human-readable (for example B, 18% Taxable). Sale line type F is rejected on live devices; use TT with tourism_tax for tourism lines. Header tourism rates are separate; set sale-level tourism_tax, tax_rate_f, and tax_rate_tt when needed.",
+        "description": "Return tax type codes used as `tax_type` on items and invoice lines.\n\nB is standard 18% VAT. F is VAT on fuel (18%), not tourism. TT is the tourism tax rate used on headers; do not send tax_type TT on sale lines. Tourism uses item/line `use_tourism_tax`. See Tourism Tax and VAT on Fuel.",
         "security": [
           {
             "ApiKeyBearer": []
@@ -3819,8 +4098,13 @@
                 }
               },
               "example": {
+                "user_id": null,
                 "full_name": "User Name",
                 "password": "12341234",
+                "address": null,
+                "telephone": null,
+                "authority_code": null,
+                "notes": null,
                 "use": true
               }
             }
@@ -3840,7 +4124,14 @@
               }
             }
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "json",
+            "label": "Request",
+            "source": "{\n  \"user_id\": null,\n  \"full_name\": \"User Name\",\n  \"password\": \"12341234\",\n  \"address\": null,\n  \"telephone\": null,\n  \"authority_code\": null,\n  \"notes\": null,\n  \"use\": true\n}"
+          }
+        ]
       }
     },
     "/branches/insurances": {
@@ -3933,7 +4224,14 @@
             }
           }
         },
-        "description": "Register a pharmacy insurance company for the branch (VSDC `saveBrancheInsurances`).\n\nRRA documents this as pharmacy-only. Send insurance_code, insurance_name, and insurance_rate (0\u2013100). Some live devices return 910 claiming isrcRt is null even when present."
+        "description": "Register a pharmacy insurance company for the branch (VSDC `saveBrancheInsurances`).\n\nRRA documents this as pharmacy-only. Send insurance_code, insurance_name, and insurance_rate (0\u2013100). Some live devices return 910 claiming isrcRt is null even when present.",
+        "x-codeSamples": [
+          {
+            "lang": "json",
+            "label": "Request",
+            "source": "{\n  \"insurance_code\": \"ISRCC01\",\n  \"insurance_name\": \"RSSB Insurance\",\n  \"insurance_rate\": 20,\n  \"use\": true\n}"
+          }
+        ]
       }
     },
     "/notices": {
@@ -4050,17 +4348,31 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "$ref": "#/components/schemas/ItemWrite"
               },
               "example": {
+                "item_code": "RW2NTU0000001",
                 "item_classification_code": "8014160101",
-                "item_type": "2",
+                "item_type": "finished_product",
                 "item_name": "Coca Cola",
+                "standard_name": "Soft drink",
                 "origin_country": "RW",
                 "packaging_unit": "NT",
                 "quantity_unit": "U",
                 "tax_type": "B",
-                "default_price": 118
+                "default_price": 118,
+                "barcode": "5449000000996",
+                "batch_number": null,
+                "insurance_applicable": false,
+                "use": true,
+                "safety_quantity": 10,
+                "additional_info": null,
+                "group_price_1": null,
+                "group_price_2": null,
+                "group_price_3": null,
+                "group_price_4": null,
+                "group_price_5": null,
+                "use_tourism_tax": false
               }
             }
           }
@@ -4079,7 +4391,14 @@
               }
             }
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "json",
+            "label": "Request",
+            "source": "{\n  \"item_code\": \"RW2NTU0000001\",\n  \"item_classification_code\": \"8014160101\",\n  \"item_type\": \"finished_product\",\n  \"item_name\": \"Coca Cola\",\n  \"standard_name\": \"Soft drink\",\n  \"origin_country\": \"RW\",\n  \"packaging_unit\": \"NT\",\n  \"quantity_unit\": \"U\",\n  \"tax_type\": \"B\",\n  \"default_price\": 118,\n  \"barcode\": \"5449000000996\",\n  \"batch_number\": null,\n  \"insurance_applicable\": false,\n  \"use\": true,\n  \"safety_quantity\": 10,\n  \"additional_info\": null,\n  \"group_price_1\": null,\n  \"group_price_2\": null,\n  \"group_price_3\": null,\n  \"group_price_4\": null,\n  \"group_price_5\": null,\n  \"use_tourism_tax\": false\n}"
+          }
+        ]
       },
       "get": {
         "tags": [
@@ -4138,7 +4457,10 @@
                       "item_code": "RW2NTU0000001",
                       "item_name": "Coca Cola",
                       "tax_type": "B",
-                      "use": true
+                      "use": true,
+                      "is_fuel": false,
+                      "system_managed": false,
+                      "use_tourism_tax": false
                     }
                   ]
                 }
@@ -4146,6 +4468,306 @@
             }
           }
         }
+      }
+    },
+    "/items/fuel": {
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "operationId": "list_fuel_products",
+        "summary": "List RRA fuel products",
+        "description": "Pull RRA fuel reference products (`items/reference/getFuelProducts`). Head-office writes still go through POST /items/fuel/sync. Requires `x-last-request-date`.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2,
+              "example": "00"
+            }
+          },
+          {
+            "name": "x-last-request-date",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{14}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mapped fuel product list",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "success",
+                  "data": [
+                    {
+                      "item_code": "RW2TYXL1000001",
+                      "item_classification_code": "1510150500",
+                      "item_name": "Diesel - Mazout",
+                      "tax_type": "F",
+                      "packaging_unit": "TY",
+                      "quantity_unit": "L",
+                      "system_managed": true
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/fuel/sync": {
+      "post": {
+        "tags": [
+          "Items"
+        ],
+        "operationId": "sync_fuel_products",
+        "summary": "Sync fuel products into VSDC",
+        "description": "Head office only. Fetches RRA fuel products and saves each with `saveItems` using RRA item codes and `taxTyCd: F`. Optional RRP and beginning stock.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2,
+              "example": "00"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "example": {
+                "rrp": 1803,
+                "beginning_stock": 0,
+                "items": [
+                  {
+                    "item_code": "RW2TYXL1000001",
+                    "rrp": 1803,
+                    "beginning_stock": 2932.32
+                  }
+                ]
+              },
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rrp": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "beginning_stock": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "item_code"
+                      ],
+                      "properties": {
+                        "item_code": {
+                          "type": "string"
+                        },
+                        "rrp": {
+                          "type": "number"
+                        },
+                        "beginning_stock": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Synced fuel products",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "success",
+                  "data": [
+                    {
+                      "item_code": "RW2TYXL1000001",
+                      "tax_type": "F",
+                      "rrp": 1803,
+                      "system_managed": true
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "json",
+            "label": "Request",
+            "source": "{\n  \"rrp\": 1803,\n  \"beginning_stock\": 0,\n  \"items\": [\n    {\n      \"item_code\": \"RW2TYXL1000001\",\n      \"rrp\": 1803,\n      \"beginning_stock\": 2932.32\n    }\n  ]\n}"
+          }
+        ]
+      }
+    },
+    "/items/fuel/rrp": {
+      "post": {
+        "tags": [
+          "Items"
+        ],
+        "operationId": "save_fuel_rrp",
+        "summary": "Save fuel RRP change",
+        "description": "Head office only. Posts `items/saveRrpChangeHistory` then updates the item default price only after VSDC success.",
+        "security": [
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 9,
+              "maxLength": 9
+            }
+          },
+          {
+            "name": "x-branch-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2,
+              "example": "00"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "item_code": "RW2TYXL1000001",
+                "old_rrp": 1801,
+                "new_rrp": 1823,
+                "current_stock_quantity": 2932.323
+              },
+              "schema": {
+                "type": "object",
+                "required": [
+                  "item_code",
+                  "new_rrp",
+                  "current_stock_quantity"
+                ],
+                "properties": {
+                  "item_code": {
+                    "type": "string"
+                  },
+                  "new_rrp": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "old_rrp": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "current_stock_quantity": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "use": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "RRP change accepted",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "success",
+                  "data": {
+                    "item_code": "RW2TYXL1000001",
+                    "item_name": "Diesel - Mazout",
+                    "old_rrp": 1801,
+                    "new_rrp": 1823,
+                    "current_stock_quantity": 2932.323
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "json",
+            "label": "Request",
+            "source": "{\n  \"item_code\": \"RW2TYXL1000001\",\n  \"old_rrp\": 1801,\n  \"new_rrp\": 1823,\n  \"current_stock_quantity\": 2932.323\n}"
+          }
+        ]
       }
     },
     "/items/{item_code}": {
@@ -4253,7 +4875,156 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "required": [
+                  "item_classification_code",
+                  "item_type",
+                  "item_name",
+                  "origin_country",
+                  "packaging_unit",
+                  "quantity_unit",
+                  "tax_type",
+                  "default_price"
+                ],
+                "properties": {
+                  "item_classification_code": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 10,
+                    "description": "Ten-digit RRA classification from GET /item-classes.",
+                    "example": "8014160101"
+                  },
+                  "item_type": {
+                    "type": "string",
+                    "description": "Product type label or legacy code: raw_material / 1, finished_product / 2, service / 3.",
+                    "example": "finished_product"
+                  },
+                  "item_name": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "Product name.",
+                    "example": "Coca Cola"
+                  },
+                  "standard_name": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 200,
+                    "description": "Generic / standard name (upstream itemStdNm)."
+                  },
+                  "origin_country": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 5,
+                    "description": "Origin country code (for example RW).",
+                    "example": "RW"
+                  },
+                  "packaging_unit": {
+                    "type": "string",
+                    "description": "Packaging unit code (for example NT). See GET /constants/packaging.",
+                    "example": "NT"
+                  },
+                  "quantity_unit": {
+                    "type": "string",
+                    "description": "Quantity unit code (for example U). See GET /constants/quantity.",
+                    "example": "U"
+                  },
+                  "tax_type": {
+                    "type": "string",
+                    "description": "Tax category. Prefer B for standard VAT goods. F is VAT on fuel. Do not send TT.",
+                    "example": "B"
+                  },
+                  "default_price": {
+                    "type": "number",
+                    "description": "Default unit price (two decimals).",
+                    "example": 118
+                  },
+                  "barcode": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 20,
+                    "description": "Barcode (upstream bcd)."
+                  },
+                  "batch_number": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 10,
+                    "description": "Batch number (upstream btchNo)."
+                  },
+                  "insurance_applicable": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Insurance applicable (upstream isrcAplcbYn)."
+                  },
+                  "use": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Active flag (upstream useYn)."
+                  },
+                  "safety_quantity": {
+                    "type": "number",
+                    "nullable": true,
+                    "description": "Safety stock quantity (upstream sftyQty)."
+                  },
+                  "additional_info": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 7,
+                    "description": "Extra info (upstream addInfo)."
+                  },
+                  "group_price_1": {
+                    "type": "number",
+                    "nullable": true,
+                    "description": "Optional group price 1."
+                  },
+                  "group_price_2": {
+                    "type": "number",
+                    "nullable": true,
+                    "description": "Optional group price 2."
+                  },
+                  "group_price_3": {
+                    "type": "number",
+                    "nullable": true,
+                    "description": "Optional group price 3."
+                  },
+                  "group_price_4": {
+                    "type": "number",
+                    "nullable": true,
+                    "description": "Optional group price 4."
+                  },
+                  "group_price_5": {
+                    "type": "number",
+                    "nullable": true,
+                    "description": "Optional group price 5."
+                  },
+                  "use_tourism_tax": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "When true, the item is tourism-taxable (upstream useTTaxYn)."
+                  }
+                }
+              },
+              "example": {
+                "item_classification_code": "8014160101",
+                "item_type": "finished_product",
+                "item_name": "Coca Cola",
+                "standard_name": "Soft drink",
+                "origin_country": "RW",
+                "packaging_unit": "NT",
+                "quantity_unit": "U",
+                "tax_type": "B",
+                "default_price": 118,
+                "barcode": "5449000000996",
+                "batch_number": null,
+                "insurance_applicable": false,
+                "use": true,
+                "safety_quantity": 10,
+                "additional_info": null,
+                "group_price_1": null,
+                "group_price_2": null,
+                "group_price_3": null,
+                "group_price_4": null,
+                "group_price_5": null,
+                "use_tourism_tax": false
               }
             }
           }
@@ -4262,7 +5033,14 @@
           "200": {
             "description": "Mapped item_code"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "json",
+            "label": "Request",
+            "source": "{\n  \"item_classification_code\": \"8014160101\",\n  \"item_type\": \"finished_product\",\n  \"item_name\": \"Coca Cola\",\n  \"standard_name\": \"Soft drink\",\n  \"origin_country\": \"RW\",\n  \"packaging_unit\": \"NT\",\n  \"quantity_unit\": \"U\",\n  \"tax_type\": \"B\",\n  \"default_price\": 118,\n  \"barcode\": \"5449000000996\",\n  \"batch_number\": null,\n  \"insurance_applicable\": false,\n  \"use\": true,\n  \"safety_quantity\": 10,\n  \"additional_info\": null,\n  \"group_price_1\": null,\n  \"group_price_2\": null,\n  \"group_price_3\": null,\n  \"group_price_4\": null,\n  \"group_price_5\": null,\n  \"use_tourism_tax\": false\n}"
+          }
+        ]
       },
       "delete": {
         "tags": [
@@ -4413,6 +5191,55 @@
           "required": true,
           "content": {
             "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "task_code",
+                  "declaration_date",
+                  "item_sequence",
+                  "hs_code",
+                  "item_classification_code",
+                  "item_code",
+                  "status"
+                ],
+                "properties": {
+                  "task_code": {
+                    "type": "string",
+                    "description": "Customs task code from GET /imports."
+                  },
+                  "declaration_date": {
+                    "type": "string",
+                    "description": "Declaration date YYYYMMDD."
+                  },
+                  "item_sequence": {
+                    "type": "integer",
+                    "description": "Line sequence from GET /imports."
+                  },
+                  "hs_code": {
+                    "type": "string"
+                  },
+                  "item_classification_code": {
+                    "type": "string"
+                  },
+                  "item_code": {
+                    "type": "string",
+                    "description": "Your registered fiscal item code."
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "approved",
+                      "cancelled",
+                      "canceled"
+                    ]
+                  },
+                  "notes": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 400
+                  }
+                }
+              },
               "example": {
                 "task_code": "TASK001",
                 "declaration_date": "20240706",
@@ -4420,7 +5247,8 @@
                 "hs_code": "22021000",
                 "item_classification_code": "8014160101",
                 "item_code": "RW2NTU0000001",
-                "status": "approved"
+                "status": "approved",
+                "notes": null
               }
             }
           }
@@ -4429,7 +5257,14 @@
           "200": {
             "description": "Mapped confirmation"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "json",
+            "label": "Request",
+            "source": "{\n  \"task_code\": \"TASK001\",\n  \"declaration_date\": \"20240706\",\n  \"item_sequence\": 1,\n  \"hs_code\": \"22021000\",\n  \"item_classification_code\": \"8014160101\",\n  \"item_code\": \"RW2NTU0000001\",\n  \"status\": \"approved\",\n  \"notes\": null\n}"
+          }
+        ]
       }
     },
     "/sales": {
@@ -4439,7 +5274,7 @@
         ],
         "operationId": "submit_sale",
         "summary": "Create new sale",
-        "description": "Submit a normal fiscal sale for signing.\n\nUse this when a customer pays for goods or services and you need a legally signed EBM receipt. and returns print fields (`receipt_signature`, `internal_data`, counters, SDC, MRC). Stock-out is queued after VSDC `000`, not in this HTTP response.\n\n**Prerequisites:** register each `item_code` first; seed `POST /stocks/master` for stocked goods; send `purchase_code` when `customer.tin_no` is present (business buyer).\n\n**Gotchas:** do not set `original_invoice_no` equal to `invoice_no` on normal sales; do not send line `tax_type` `F` (use `TT` with `tourism_tax: true`); tourism rates are TIN-specific (set sale-level tourism_tax, tax_rate_f, tax_rate_tt).\n\nResponse codes: `000` success; `881` missing purchase code; `910` parameter/tourism/totals; `994` duplicate. Kayko errors use `{ status, message, date }`.",
+        "description": "Submit a normal fiscal sale for signing.\n\nUse this when a customer pays for goods or services and you need a legally signed EBM receipt. Returns print fields (`receipt_signature`, `internal_data`, counters, SDC, MRC, `tourism`). Stock-out is queued after VSDC `000`, not in this HTTP response.\n\n**Prerequisites:** register each `item_code` first; seed `POST /stocks/master` for stocked goods; send `purchase_code` when `customer.tin_no` is present (business buyer). Sync fuel products with `POST /items/fuel/sync` before selling fuel.\n\n**Gotchas:** do not set `original_invoice_no` equal to `invoice_no` on normal sales; `tax_type` F is VAT on fuel (18%), not tourism; do not send `tax_type` TT (use `use_tourism_tax`); fuel invoices require `sale_purpose` and `rrp`.\n\nResponse codes: `000` success; `881` missing purchase code; `910` parameter/tax rates/totals; `994` duplicate. Kayko errors use `{ status, message, date }`.",
         "security": [
           {
             "ApiKeyBearer": []
@@ -4482,6 +5317,10 @@
                 "invoice_no": 1799,
                 "payment_method": "credit",
                 "purchase_code": "PO0001",
+                "status": "approved",
+                "buyer_accepted": true,
+                "notes": null,
+                "sale_purpose": null,
                 "customer": {
                   "tin_no": "100004527",
                   "full_name": "RULIBA CLAYS LTD",
@@ -4489,19 +5328,32 @@
                 },
                 "dates": {
                   "origin_date": "20260303",
-                  "confirmed_at": "20260303145619"
+                  "confirmed_at": "20260303145619",
+                  "stock_released_at": null
+                },
+                "receipt": {
+                  "report_number": null,
+                  "customer_tin": "100004527",
+                  "customer_mobile": "788312173",
+                  "trade_name": null,
+                  "address": null,
+                  "header": null,
+                  "footer": null
                 },
                 "items": [
                   {
                     "sequence": 1,
                     "item_code": "RW2NTU0000642",
                     "item_name": "TOLE PL 2 44X1 22X10",
+                    "item_classification_code": "8014160101",
                     "packaging_unit": "NT",
                     "packages": 1,
                     "quantity_unit": "U",
                     "quantity": 2,
                     "price": 1000,
-                    "tax_type": "B"
+                    "tax_type": "B",
+                    "barcode": null,
+                    "use_tourism_tax": false
                   }
                 ]
               },
@@ -4579,18 +5431,6 @@
                       }
                     }
                   },
-                  "tourism_tax": {
-                    "type": "boolean",
-                    "description": "When true, use catalog tourism header rates. When false/omitted, non-tourism null strategy unless overrides exist."
-                  },
-                  "tax_rate_f": {
-                    "type": "number",
-                    "description": "Optional override for upstream taxRtF (0\u2013100). Prefer sale-level tax_rate_f / tax_rate_tt overrides."
-                  },
-                  "tax_rate_tt": {
-                    "type": "number",
-                    "description": "Optional override for upstream taxRtTt (0\u2013100)."
-                  },
                   "status": {
                     "type": "string",
                     "description": "Sale status label (for example approved)."
@@ -4605,7 +5445,57 @@
                   },
                   "receipt": {
                     "type": "object",
-                    "description": "Optional receipt print template fields (header/footer, trade name, etc.)."
+                    "description": "Optional receipt print template fields (header/footer, trade name, etc.).",
+                    "properties": {
+                      "report_number": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "customer_tin": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "customer_mobile": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "trade_name": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "address": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "header": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "footer": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "receipt_signature": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "internal_data": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "receipt_no": {
+                        "type": "integer",
+                        "nullable": true
+                      },
+                      "total_receipt_no": {
+                        "type": "integer",
+                        "nullable": true
+                      },
+                      "receipt_published_at": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    }
                   },
                   "items": {
                     "type": "array",
@@ -4666,16 +5556,43 @@
                             "C",
                             "D",
                             "E",
-                            "TT"
+                            "F"
                           ],
-                          "description": "Tax category. B, 18% Taxable is most common. Do not send F on sale lines; use TT with tourism_tax."
+                          "description": "Tax category. B is standard 18% VAT. F is VAT on fuel. Do not send TT; use use_tourism_tax for tourism."
                         },
                         "item_classification_code": {
                           "type": "string",
                           "description": "Optional 10-digit classification; filled from catalog when omitted."
+                        },
+                        "use_tourism_tax": {
+                          "type": "boolean",
+                          "description": "When true, this line is tourism-taxable (ttAmt computed). Prefer registering the item with use_tourism_tax."
+                        },
+                        "rrp": {
+                          "type": "number",
+                          "minimum": 0,
+                          "description": "Regulated retailer price. Required on fuel lines (or taken from catalog default_price)."
+                        },
+                        "regulated_discount": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 120,
+                          "description": "Fuel only. Maps to prftDcAmt. Normal discounts are rejected on fuel lines."
                         }
                       }
                     }
+                  },
+                  "sale_purpose": {
+                    "type": "string",
+                    "enum": [
+                      "FOR_RESELL",
+                      "FOR_CONSUMPTION",
+                      "for_resell",
+                      "for_consumption",
+                      "01",
+                      "02"
+                    ],
+                    "description": "Required when the invoice includes fuel items. Maps to salePurposeCd 01/02."
                   }
                 }
               }
@@ -4698,7 +5615,13 @@
                     "print": {
                       "receipt_no": 12,
                       "receipt_signature": "\u2026",
-                      "internal_data": "\u2026"
+                      "internal_data": "\u2026",
+                      "tourism": {
+                        "registered": false,
+                        "has_taxable_items": false,
+                        "total_tt": 0,
+                        "disclaimer": null
+                      }
                     }
                   }
                 }
@@ -4708,7 +5631,14 @@
           "503": {
             "description": "EBM_SALE_PERSIST_FAILED or EBM_SALES_STORE_UNAVAILABLE"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "json",
+            "label": "Request",
+            "source": "{\n  \"invoice_no\": 1799,\n  \"payment_method\": \"credit\",\n  \"purchase_code\": \"PO0001\",\n  \"status\": \"approved\",\n  \"buyer_accepted\": true,\n  \"notes\": null,\n  \"sale_purpose\": null,\n  \"customer\": {\n    \"tin_no\": \"100004527\",\n    \"full_name\": \"RULIBA CLAYS LTD\",\n    \"telephone\": \"788312173\"\n  },\n  \"dates\": {\n    \"origin_date\": \"20260303\",\n    \"confirmed_at\": \"20260303145619\",\n    \"stock_released_at\": null\n  },\n  \"receipt\": {\n    \"report_number\": null,\n    \"customer_tin\": \"100004527\",\n    \"customer_mobile\": \"788312173\",\n    \"trade_name\": null,\n    \"address\": null,\n    \"header\": null,\n    \"footer\": null\n  },\n  \"items\": [\n    {\n      \"sequence\": 1,\n      \"item_code\": \"RW2NTU0000642\",\n      \"item_name\": \"TOLE PL 2 44X1 22X10\",\n      \"item_classification_code\": \"8014160101\",\n      \"packaging_unit\": \"NT\",\n      \"packages\": 1,\n      \"quantity_unit\": \"U\",\n      \"quantity\": 2,\n      \"price\": 1000,\n      \"tax_type\": \"B\",\n      \"barcode\": null,\n      \"use_tourism_tax\": false\n    }\n  ]\n}"
+          }
+        ]
       }
     },
     "/sales/refund": {
@@ -4752,21 +5682,85 @@
           "required": true,
           "content": {
             "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "invoice_no",
+                  "original_invoice_no",
+                  "payment_method",
+                  "refund_reason",
+                  "items"
+                ],
+                "properties": {
+                  "invoice_no": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "New refund invoice number."
+                  },
+                  "original_invoice_no": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Original sale invoice being refunded."
+                  },
+                  "payment_method": {
+                    "type": "string"
+                  },
+                  "refund_reason": {
+                    "type": "string",
+                    "description": "Label from GET /constants/refund-reasons."
+                  },
+                  "refunded_at": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "YYYYMMDDHHmmss"
+                  },
+                  "purchase_code": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "customer": {
+                    "type": "object",
+                    "properties": {
+                      "tin_no": {
+                        "type": "string"
+                      },
+                      "full_name": {
+                        "type": "string"
+                      },
+                      "telephone": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "$ref": "#/components/schemas/SaleLine"
+                    }
+                  }
+                }
+              },
               "example": {
                 "invoice_no": 1800,
                 "original_invoice_no": 1799,
                 "payment_method": "credit",
                 "refund_reason": "wrong_quantity",
+                "refunded_at": "20260303150000",
                 "items": [
                   {
+                    "sequence": 1,
                     "item_code": "RW2NTU0000642",
                     "item_name": "TOLE PL 2 44X1 22X10",
+                    "item_classification_code": "8014160101",
                     "packaging_unit": "NT",
                     "packages": 1,
                     "quantity_unit": "U",
                     "quantity": 2,
                     "price": 1000,
-                    "tax_type": "B"
+                    "tax_type": "B",
+                    "barcode": null,
+                    "use_tourism_tax": false
                   }
                 ]
               }
@@ -4778,7 +5772,14 @@
             "description": "Signed refund"
           }
         },
-        "description": "Issue a fiscal refund linked to an original sale invoice. Requires original_invoice_no and refund_reason. Stock-in is queued after VSDC 000."
+        "description": "Issue a fiscal refund linked to an original sale invoice. Requires original_invoice_no and refund_reason. Stock-in is queued after VSDC 000.",
+        "x-codeSamples": [
+          {
+            "lang": "json",
+            "label": "Request",
+            "source": "{\n  \"invoice_no\": 1800,\n  \"original_invoice_no\": 1799,\n  \"payment_method\": \"credit\",\n  \"refund_reason\": \"wrong_quantity\",\n  \"refunded_at\": \"20260303150000\",\n  \"items\": [\n    {\n      \"sequence\": 1,\n      \"item_code\": \"RW2NTU0000642\",\n      \"item_name\": \"TOLE PL 2 44X1 22X10\",\n      \"item_classification_code\": \"8014160101\",\n      \"packaging_unit\": \"NT\",\n      \"packages\": 1,\n      \"quantity_unit\": \"U\",\n      \"quantity\": 2,\n      \"price\": 1000,\n      \"tax_type\": \"B\",\n      \"barcode\": null,\n      \"use_tourism_tax\": false\n    }\n  ]\n}"
+          }
+        ]
       }
     },
     "/sales/resend": {
@@ -4823,13 +5824,73 @@
           "required": true,
           "content": {
             "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "invoice_no"
+                ],
+                "properties": {
+                  "invoice_no": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "payment_method": {
+                    "type": "string"
+                  },
+                  "purchase_code": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "customer": {
+                    "type": "object",
+                    "properties": {
+                      "tin_no": {
+                        "type": "string"
+                      },
+                      "full_name": {
+                        "type": "string"
+                      },
+                      "telephone": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/SaleLine"
+                    }
+                  },
+                  "receipt": {
+                    "type": "object",
+                    "properties": {
+                      "receipt_signature": {
+                        "type": "string"
+                      },
+                      "internal_data": {
+                        "type": "string"
+                      },
+                      "receipt_no": {
+                        "type": "integer"
+                      },
+                      "total_receipt_no": {
+                        "type": "integer"
+                      },
+                      "receipt_published_at": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
               "example": {
                 "invoice_no": 1799,
                 "receipt": {
                   "receipt_signature": "\u2026",
                   "internal_data": "\u2026",
                   "receipt_no": 12,
-                  "total_receipt_no": 12
+                  "total_receipt_no": 12,
+                  "receipt_published_at": "20260303145619"
                 }
               }
             }
@@ -4839,7 +5900,14 @@
           "200": {
             "description": "Replayed sale"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "json",
+            "label": "Request",
+            "source": "{\n  \"invoice_no\": 1799,\n  \"receipt\": {\n    \"receipt_signature\": \"\u2026\",\n    \"internal_data\": \"\u2026\",\n    \"receipt_no\": 12,\n    \"total_receipt_no\": 12,\n    \"receipt_published_at\": \"20260303145619\"\n  }\n}"
+          }
+        ]
       }
     },
     "/sales/{invoice_no}": {
@@ -4990,14 +6058,125 @@
           "required": true,
           "content": {
             "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "invoice_no",
+                  "registration_type",
+                  "payment_method",
+                  "items"
+                ],
+                "properties": {
+                  "invoice_no": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "original_invoice_no": {
+                    "type": "integer",
+                    "nullable": true,
+                    "description": "Required when receipt_type is refund."
+                  },
+                  "registration_type": {
+                    "type": "string",
+                    "enum": [
+                      "automatic",
+                      "manual"
+                    ]
+                  },
+                  "payment_method": {
+                    "type": "string"
+                  },
+                  "transaction_type": {
+                    "type": "string",
+                    "enum": [
+                      "normal",
+                      "copy",
+                      "proforma",
+                      "training"
+                    ]
+                  },
+                  "receipt_type": {
+                    "type": "string",
+                    "enum": [
+                      "purchase",
+                      "refund"
+                    ]
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "supplier": {
+                    "type": "object",
+                    "description": "For automatic registration, tin_no and invoice_no are required.",
+                    "properties": {
+                      "tin_no": {
+                        "type": "string",
+                        "minLength": 9,
+                        "maxLength": 9
+                      },
+                      "branch_id": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 2
+                      },
+                      "full_name": {
+                        "type": "string"
+                      },
+                      "invoice_no": {
+                        "type": "integer"
+                      },
+                      "sdc_id": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    }
+                  },
+                  "dates": {
+                    "type": "object",
+                    "properties": {
+                      "purchase_date": {
+                        "type": "string",
+                        "description": "YYYYMMDD"
+                      },
+                      "confirmed_at": {
+                        "type": "string",
+                        "description": "YYYYMMDDHHmmss"
+                      },
+                      "warehoused_at": {
+                        "type": "string",
+                        "description": "YYYYMMDDHHmmss"
+                      }
+                    }
+                  },
+                  "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "$ref": "#/components/schemas/SaleLine"
+                    }
+                  }
+                }
+              },
               "example": {
                 "invoice_no": 501,
+                "original_invoice_no": 0,
                 "registration_type": "automatic",
                 "payment_method": "credit",
-                "supplier_tin": "100004527",
-                "supplier_name": "RULIBA CLAYS LTD",
-                "supplier_invoice_no": 1799,
-                "purchase_date": "20260303",
+                "transaction_type": "normal",
+                "receipt_type": "purchase",
+                "status": "approved",
+                "supplier": {
+                  "tin_no": "100004527",
+                  "branch_id": "00",
+                  "full_name": "RULIBA CLAYS LTD",
+                  "invoice_no": 1799,
+                  "sdc_id": null
+                },
+                "dates": {
+                  "purchase_date": "20260303",
+                  "confirmed_at": "20260303145619",
+                  "warehoused_at": "20260303145619"
+                },
                 "items": [
                   {
                     "item_code": "RW2NTU0000001",
@@ -5008,7 +6187,10 @@
                     "quantity_unit": "U",
                     "quantity": 10,
                     "price": 118,
-                    "tax_type": "B"
+                    "tax_type": "B",
+                    "supplier_item_code": null,
+                    "supplier_item_name": null,
+                    "expiry_date": null
                   }
                 ]
               }
@@ -5019,7 +6201,14 @@
           "200": {
             "description": "Mapped confirmation"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "json",
+            "label": "Request",
+            "source": "{\n  \"invoice_no\": 501,\n  \"original_invoice_no\": 0,\n  \"registration_type\": \"automatic\",\n  \"payment_method\": \"credit\",\n  \"transaction_type\": \"normal\",\n  \"receipt_type\": \"purchase\",\n  \"status\": \"approved\",\n  \"supplier\": {\n    \"tin_no\": \"100004527\",\n    \"branch_id\": \"00\",\n    \"full_name\": \"RULIBA CLAYS LTD\",\n    \"invoice_no\": 1799,\n    \"sdc_id\": null\n  },\n  \"dates\": {\n    \"purchase_date\": \"20260303\",\n    \"confirmed_at\": \"20260303145619\",\n    \"warehoused_at\": \"20260303145619\"\n  },\n  \"items\": [\n    {\n      \"item_code\": \"RW2NTU0000001\",\n      \"item_classification_code\": \"8014160101\",\n      \"item_name\": \"Coca Cola\",\n      \"packaging_unit\": \"NT\",\n      \"packages\": 1,\n      \"quantity_unit\": \"U\",\n      \"quantity\": 10,\n      \"price\": 118,\n      \"tax_type\": \"B\",\n      \"supplier_item_code\": null,\n      \"supplier_item_name\": null,\n      \"expiry_date\": null\n    }\n  ]\n}"
+          }
+        ]
       }
     },
     "/stocks": {
@@ -5115,10 +6304,73 @@
           "required": true,
           "content": {
             "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sar_no",
+                  "stock_type",
+                  "occurrence_date",
+                  "items"
+                ],
+                "properties": {
+                  "sar_no": {
+                    "type": "integer",
+                    "description": "Your stock-and-release document number."
+                  },
+                  "original_sar_no": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "stock_type": {
+                    "type": "string",
+                    "description": "Label such as adjustment, processing, discarding, return."
+                  },
+                  "occurrence_date": {
+                    "type": "string",
+                    "description": "YYYYMMDD"
+                  },
+                  "registration_type": {
+                    "type": "string",
+                    "enum": [
+                      "automatic",
+                      "manual"
+                    ]
+                  },
+                  "customer_tin": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "customer_branch_id": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "customer_name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "notes": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "$ref": "#/components/schemas/SaleLine"
+                    }
+                  }
+                }
+              },
               "example": {
                 "sar_no": 106,
+                "original_sar_no": 0,
                 "stock_type": "adjustment",
                 "occurrence_date": "20240520",
+                "registration_type": "manual",
+                "customer_tin": null,
+                "customer_branch_id": null,
+                "customer_name": null,
+                "notes": null,
                 "items": [
                   {
                     "item_code": "RW2NTU0000001",
@@ -5140,7 +6392,14 @@
           "200": {
             "description": "Mapped movement"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "json",
+            "label": "Request",
+            "source": "{\n  \"sar_no\": 106,\n  \"original_sar_no\": 0,\n  \"stock_type\": \"adjustment\",\n  \"occurrence_date\": \"20240520\",\n  \"registration_type\": \"manual\",\n  \"customer_tin\": null,\n  \"customer_branch_id\": null,\n  \"customer_name\": null,\n  \"notes\": null,\n  \"items\": [\n    {\n      \"item_code\": \"RW2NTU0000001\",\n      \"item_classification_code\": \"8014160101\",\n      \"item_name\": \"Coca Cola\",\n      \"packaging_unit\": \"NT\",\n      \"packages\": 1,\n      \"quantity_unit\": \"U\",\n      \"quantity\": 5,\n      \"price\": 118,\n      \"tax_type\": \"B\"\n    }\n  ]\n}"
+          }
+        ]
       }
     },
     "/stocks/master": {
@@ -5185,6 +6444,23 @@
           "required": true,
           "content": {
             "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "item_code",
+                  "remaining_quantity"
+                ],
+                "properties": {
+                  "item_code": {
+                    "type": "string"
+                  },
+                  "remaining_quantity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Absolute remaining quantity, not a delta."
+                  }
+                }
+              },
               "example": {
                 "item_code": "RW2NTU0000001",
                 "remaining_quantity": 100
@@ -5196,7 +6472,14 @@
           "200": {
             "description": "Mapped remaining quantity"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "json",
+            "label": "Request",
+            "source": "{\n  \"item_code\": \"RW2NTU0000001\",\n  \"remaining_quantity\": 100\n}"
+          }
+        ]
       }
     },
     "/item-classes": {

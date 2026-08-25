@@ -62,14 +62,13 @@ Use this for a **normal** fiscal sale. Kayko always sends upstream transaction t
 | `dates.confirmed_at` | No | Confirmation timestamp `YYYYMMDDHHmmss`. |
 | `dates.stock_released_at` | No | Optional stock-release timestamp, or null. |
 | `buyer_accepted` | No | Boolean; treated as accepted when omitted. |
-| `tourism_tax` | No | When `true`, Kayko uses catalog tourism header rates. When false/omitted, non-tourism null strategy applies unless sale-level overrides exist. |
-| `tax_rate_f` / `tax_rate_tt` | No | Optional numeric overrides (0–100) for this sale only. |
+| `sale_purpose` | Conditional | `FOR_RESELL` or `FOR_CONSUMPTION`. **Required when any line is fuel** (`tax_type` `F` or a fuel classification). Omitted on ordinary sales. |
 | `notes` | No | Free text (max 400). |
 | `receipt` | No | Optional print template fields (`report_number`, `customer_tin`, `customer_mobile`, `trade_name`, `address`, `header`, `footer`). |
 
 Optional header amount buckets (`taxable_amount_a` … `tt`, `tax_amount_*`, `total_*`) may be omitted so Kayko computes them from lines. If you send them, they must match line math or VSDC returns **`910`**.
 
-Do **not** send sale line `tax_type: "F"`. Use **`TT`** with `tourism_tax: true` when fiscalizing tourism tax lines.
+**Tax type `F` is VAT on fuel (18%), not tourism.** Tourism is a flag on the item/line (`use_tourism_tax`), not a VAT category. Do **not** send `tax_type: "TT"`. Details: [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel).
 
 ### Line items
 
@@ -83,19 +82,22 @@ Do **not** send sale line `tax_type: "F"`. Use **`TT`** with `tourism_tax: true`
 | `quantity_unit` | Yes | Code from quantity constants (for example `U`). |
 | `quantity` | Yes | Positive quantity. |
 | `price` | Yes | Tax-inclusive unit price. |
-| `tax_type` | Yes | Usually `B` (18% VAT). See [Glossary](/reference/glossary) and [VAT Formulas](/calculations/vat-formulas). |
+| `tax_type` | Yes | Usually `B` (18% VAT). Use `F` only for RRA fuel products. Never `TT`. See [VAT Formulas](/calculations/vat-formulas) and [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel). |
 | `item_classification_code` | No | Ten digits; filled from catalog when omitted. |
 | `barcode` | No | Optional. |
+| `use_tourism_tax` | No | When `true`, this line is tourism-taxable. Prefer registering the item with `use_tourism_tax` so the catalog carries `useTTaxYn: Y`. |
+| `rrp` | Conditional | Regulated retailer price. Required on fuel lines (or taken from catalog `default_price`). |
+| `regulated_discount` | No | Fuel only, 0–120 (`prftDcAmt`). Normal `discount_*` fields are rejected on fuel. |
 | `supply_amount`, `discount_rate`, `discount_amount`, `total_discount_amount`, `taxable_amount`, `tax_amount`, `total_amount` | No | Computed when omitted. |
 | `insurance_code`, `insurance_name`, `insurance_rate`, `insurance_amount` | No | Pharmacy / insured sales lines. |
 
-Category B VAT extraction uses taxable amount × 18 / 118, rounded to two decimals.
+Category B and fuel `F` VAT extraction uses taxable amount × 18 / 118, rounded to two decimals. Tourism tax uses × 3 / 103 on the VAT-exclusive amount.
 
 ### Success response
 
-The response is `{ message, data }`. On success, `data` includes `invoice_no`, `original_invoice_no`, `receipt_type`, `status`, `replayed`, and a `print` object with `receipt_no`, `total_receipt_no`, `internal_data`, `receipt_signature`, `receipt_published_at`, `sdc_id`, and `mrc_no`.
+The response is `{ message, data }`. On success, `data` includes `invoice_no`, `original_invoice_no`, `receipt_type`, `status`, `replayed`, and a `print` object with `receipt_no`, `total_receipt_no`, `internal_data`, `receipt_signature`, `receipt_published_at`, `sdc_id`, `mrc_no`, and `tourism`.
 
-Print **`print.receipt_signature`** and **`print.internal_data`** (and the counters / SDC / MRC as required by your receipt layout). Definitions: [Glossary](/reference/glossary).
+Print **`print.receipt_signature`** and **`print.internal_data`** (and the counters / SDC / MRC as required by your receipt layout). For tourism-registered TINs, also print `print.tourism.disclaimer` when it is set. Definitions: [Glossary](/reference/glossary).
 
 ### Persist failure after signing
 
@@ -109,7 +111,7 @@ If the local sales store is unavailable before the VSDC call, Kayko returns `EBM
 |----------|---------|------------|
 | `881` | Purchase code mandatory | Send `purchase_code` for business customers |
 | `884` | Invalid customer TIN | Look up TIN with `GET /customers` |
-| `910` | Parameter validation (totals, `orgInvcNo`, tourism rates, types) | Fix payload; for tourism rates use sale-level `tax_rate_f` / `tax_rate_tt` |
+| `910` | Parameter validation (totals, `orgInvcNo`, tax rates, types) | Fix payload. Live devices require `taxRtF` (18) and `taxRtTt` (0 or 3). See [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel). |
 | `994` | Duplicate / overlapped | Treat carefully; Kayko may treat some duplicates as already accepted on retry paths |
 
 Full table: [Response Codes](/reference/response-codes).

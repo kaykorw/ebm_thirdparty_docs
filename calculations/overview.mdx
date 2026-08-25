@@ -23,7 +23,7 @@ flowchart TB
         LINE["total_amount"]
     end
     subgraph header ["Invoice header"]
-        CAT["Sum by tax category A–D, E, F, TT"]
+        CAT["Sum VAT buckets A–D, E, F"]
         TOT["total_taxable_amount, total_tax_amount, total_amount"]
     end
     PRC --> DC --> TAX --> LINE
@@ -34,7 +34,10 @@ flowchart TB
 
 <CardGroup cols={2}>
   <Card title="VAT Formulas" icon="percent" href="/calculations/vat-formulas">
-    Tax categories A–D plus E/F/TT, the 18/118 extraction formula, and multi-category invoices.
+    Tax categories A–D plus fuel F, the 18/118 extraction formula, and multi-category invoices.
+  </Card>
+  <Card title="Tourism & Fuel" icon="gas-pump" href="/calculations/tourism-and-fuel">
+    Tourism tax (`use_tourism_tax` / `ttAmt`) versus VAT on fuel (`tax_type` F, RRP, sale purpose).
   </Card>
   <Card title="Line Items" icon="list" href="/calculations/line-items">
     `price`, `quantity`, `supply_amount`, packaging, and per-line totals.
@@ -63,7 +66,7 @@ flowchart TB
 | `tax_type` drives category | A line with `tax_type: "B"` contributes to `taxable_amount_b` / `tax_amount_b`, not A. |
 | `total_amount` consistency | Header `total_amount` must equal the sum of all line `total_amount` values. |
 | Round at each step | Round each line's `tax_amount` to 2 dp **before** summing into header totals. |
-| Live rates E/F/TT | Header keys are present on sales. Tourism F/TT use null, catalog, or override via sale-level `tax_rate_f` / `tax_rate_tt`. |
+| Live rates F/TT | Header always includes `taxRtF` (18) and `taxRtTt` (0 or 3). Fuel amounts use bucket F. Tourism amounts use `ttAmt` / `totalTTAmt`, not line `tax_type` TT. |
 
 ## Quick reference- category B (18% VAT)
 

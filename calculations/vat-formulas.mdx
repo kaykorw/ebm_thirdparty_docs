@@ -1,18 +1,21 @@
 ---
 title: VAT Formulas
-description: "RRA EBM VAT formulas for tax categories A–D plus live E/F/TT rates, the 18/118 extraction formula, and multi-category invoice math."
+description: "RRA EBM VAT formulas for tax categories A–D and F (VAT on fuel), plus tourism tax amounts that sit outside the VAT buckets."
 keywords:
   - EBM VAT formula
   - 18/118
   - tax categories
-  - tourism tax TT
+  - tourism tax
+  - VAT on fuel
   - taxable amount
 icon: percent
 ---
 
-Rwanda EBM uses tax-inclusive prices. Kayko maps your snake_case fields (`tax_type`, `taxable_amount`, `tax_amount`) to VSDC `taxTyCd` / `taxblAmt` / `taxAmt`. Live devices require header **rates** for A–D **and** E, F, and TT.
+Rwanda EBM uses tax-inclusive prices. Kayko maps your snake_case fields (`tax_type`, `taxable_amount`, `tax_amount`) to VSDC `taxTyCd` / `taxblAmt` / `taxAmt`.
 
-You can omit line and header tax amounts on Kayko requests. Kayko computes them and always sends rates as JSON **numbers with two decimals** (NUMBER 7,2), e.g. `"taxRtF":3.00` not `3` or `"3"`.
+You can omit line and header tax amounts on Kayko requests. Kayko computes them. Live `saveSales` always includes **`taxRtF` (18)** and **`taxRtTt` (0 or 3)**. Omitting those keys returns `910` (incorrect tax rates).
+
+Tourism tax and VAT on fuel are documented in [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel).
 
 ## Tax categories
 
@@ -23,16 +26,16 @@ You can omit line and header tax amounts on Kayko requests. Kayko computes them 
 | `C` | C (Zero-rated) | 0% | `0` |
 | `D` | D (Non-VAT) | 0% | `0` |
 | `E` | E (reserved) | 0% | `0` |
-| `F` | F (Tourism tax) | 3% | `taxable_amount × 3 / 103` when the line uses `F` |
-| `TT` | TT | 3% | Same extraction when the line uses `TT` |
+| `F` | F (VAT on Fuel) | 18% | Same as B: `taxable_amount × 18 / 118` |
+| `TT` | TT (Tourism tax rate) | 3% | **Not a sale line `tax_type`.** Tourism uses `use_tourism_tax` and `ttAmt`. |
 
-Most goods use **`B`**. Spec PDF v1.0.5 documents header tax types A–D; current VSDC firmware also expects tourism header keys **`taxRtF`** and **`taxRtTt`** on every sale. Kayko’s default for non-tourism TINs is to send those keys as JSON **`null`**. Tourism sales (`tourism_tax: true`) use catalog rates (usually 3). Overrides use sale-level `tax_rate_f` / `tax_rate_tt`. Forcing `3.00` on a non-tourism device commonly returns `910` (“Wrong Tourism Tax rate”).
+Most goods use **`B`**. Fuel (gasoline/diesel) uses **`F`**. Tourism is additive on a VAT line, not a replacement tax type.
 
 Live rates: `GET /constants/taxes` (`code`, `name`, `rate`).
 
 ## Why 18/118 and not 18%?
 
-Category B prices are **tax-inclusive**. The customer pays one total that already includes VAT. You **extract** the VAT portion rather than adding 18% on top.
+Category B (and fuel F) prices are **tax-inclusive**. The customer pays one total that already includes VAT. You **extract** the VAT portion rather than adding 18% on top.
 
 If the tax-inclusive amount is **T**, the VAT component **V** is:
 
@@ -88,14 +91,16 @@ Kayko field → VSDC field:
 | Kayko | VSDC | Value |
 |-------|------|-------|
 | `taxable_amount_b` | `taxblAmtB` | 2,000.00 |
-| (computed) | `taxRtB` | 18.00 |
+| (computed) | `taxRtB` | 18 |
 | `tax_amount_b` | `taxAmtB` | 305.08 |
-| `taxable_amount_a/c/d/e/f/tt` | `taxblAmt*` | 0 |
+| (computed) | `taxRtF` | 18 |
+| (computed) | `taxRtTt` | 0 (or 3 if the TIN is tourism-registered) |
+| `taxable_amount_f` / `tt` | `taxblAmtF` / `Tt` | 0 |
 | `total_taxable_amount` | `totTaxblAmt` | 2,000.00 |
 | `total_tax_amount` | `totTaxAmt` | 305.08 |
 | `total_amount` | `totAmt` | 2,000.00 |
 
-Always include rates E/F/TT even when amounts are 0.
+Always include `taxRtF` and `taxRtTt` even when fuel/tourism amounts are 0.
 
 ## Categories A, C, D, E, zero VAT
 
@@ -141,7 +146,7 @@ function extractVat(taxInclusiveAmount, rate = 18) {
 }
 
 // extractVat(2000) → 305.08
-// extractVat(2000, 3) → 58.25  (tourism F / TT)
+// extractVat(8474.58, 3) → 246.83  (tourism on VAT-exclusive base)
 ```
 
 ## Common mistakes
@@ -152,5 +157,6 @@ function extractVat(taxInclusiveAmount, rate = 18) {
 | Rounding only at header | Header ≠ sum of lines | Round each line first, then sum |
 | Line `tax_type: "B"` but amounts in A | Validation error | B lines → `taxable_amount_b` |
 | Integer amounts (`305` not `305.08`) | Error 910 | Always 2 decimal places |
-| Missing tourism header keys or wrong programmed rate | Error 910 on live devices | Use Kayko’s tourism strategy / sale-level `tax_rate_f` / `tax_rate_tt`; do not hard-code `3.00` for every TIN |
+| Treating `F` as tourism or sending `tax_type: TT` | Error 910 / `EBM_TAX_TYPE_TT_UNSUPPORTED` | Fuel is `F` at 18%. Tourism is `use_tourism_tax` + `ttAmt` |
+| Omitting `taxRtF` / `taxRtTt` | Error 910 (“incorrect tax rates”) | Kayko always sends them; do not strip header rates |
 | Normal sale `original_invoice_no` = `invoice_no` | Error 910 | Leave it off; Kayko sends `orgInvcNo: 0` |

@@ -80,7 +80,7 @@ Depends on `taxTyCd`:
 
 | `taxTyCd` | Formula |
 |-----------|---------|
-| `"B"` | `ROUND(taxblAmt × 18 / 118, 2)` |
+| `"B"` or `"F"` | `ROUND(taxblAmt × 18 / 118, 2)` |
 | `"A"`, `"C"`, `"D"` | `0` |
 
 ## Line total (`totAmt`)
@@ -120,5 +120,6 @@ Before submitting any `itemList` entry, verify:
 - [ ] `taxblAmt = splyAmt − totDcAmt`
 - [ ] `taxAmt` matches the [VAT formula](/calculations/vat-formulas) for the line's `taxTyCd`
 - [ ] `totAmt = taxblAmt`
-- [ ] `tax_type` matches the item's registered tax type from `POST /items`
+- [ ] `tax_type` matches the item's registered tax type from `POST /items` (fuel is `F`; tourism stays A–D plus `use_tourism_tax`)
+- [ ] Fuel lines include `rrp` / `sale_purpose` and no normal discount; see [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel)
 - [ ] `item_code`, `item_classification_code`, `packaging_unit`, `quantity_unit` are valid registered codes

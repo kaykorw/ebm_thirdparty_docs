@@ -30,8 +30,12 @@ icon: table-columns
 | `original_invoice_no` | `orgInvcNo` (**`0` on a normal sale or purchase**; original number on refunds) |
 | `payment_method` | `pmtTyCd` |
 | `remaining_quantity` | `rsdQty` (absolute remaining qty) |
+| `use_tourism_tax` | `useTTaxYn` (items) / line tourism flag |
+| `sale_purpose` | `salePurposeCd` (`01` resell, `02` consumption) |
+| `rrp` | `rrp` (fuel regulated retailer price) |
+| `regulated_discount` | `prftDcAmt` (fuel, 0–120) |
 
-Live VSDC also expects header rate keys **E, F, TT**. Kayko always includes them on sales; tourism **F/TT** values follow the per-TIN strategy (JSON `null`, catalog rate, or override), not a fixed `3.00` for every business. Configure overrides via sale-level `tax_rate_f` / `tax_rate_tt`.
+Live `saveSales` always includes **`taxRtF: 18`** and **`taxRtTt`** (`0` or `3`). Tourism amounts are `ttAmt` / `totalTTAmt`. See [Tourism Tax and VAT on Fuel](/calculations/tourism-and-fuel).
 
 ---
 
@@ -258,9 +262,27 @@ Kayko serves reference tables as `GET /constants/taxes`, `/payment-modes`, `/pac
 | `addInfo` | CHAR | N | 7 | Additional info |
 | `sftyQty` | NUMBER | N | 13,2 | Safety stock quantity |
 | `isrcAplcbYn` | CHAR | Y | 1 | Insurance applicable |
+| `useTTaxYn` | CHAR | N | 1 | `Y` when the item is tourism-taxable |
 | `useYn` | CHAR | Y | 1 | |
 | `regrNm/Id` | CHAR | Y | 60/20 | |
 | `modrNm/Id` | CHAR | Y | 60/20 | |
+
+Fuel products are not saved through this route. Use `GET /items/fuel` and `POST /items/fuel/sync`.
+
+### `GET /items/fuel` (upstream `items/reference/getFuelProducts`)
+
+Request is the usual `tin`, `bhfId`, `lastReqDt`. Response `data.itemPredefList[]` includes `itemCd`, `itemClsCd`, `itemNm`, `itemTyCd`, `orgnNatCd`, `pkgUnitCd`, `qtyUnitCd`, `taxTyCd`, `useYn`. Kayko maps `tax_type` to **`F`**.
+
+### `POST /items/fuel/rrp` (upstream `items/saveRrpChangeHistory`)
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `itemCd` | CHAR | Y | Fuel item code |
+| `itemNm` | CHAR | Y | |
+| `oldRrp` / `newRrp` | NUMBER | Y | 18,2 |
+| `currentStockQty` | NUMBER | Y | 18,2 |
+| `useYn` | CHAR | Y | |
+| `regDt` / `modDt` | CHAR | Y | `yyyyMMddHHmmss` |
 
 ### `GET /items` (upstream `items/selectItems`), Response `data.itemList[]`
 
@@ -271,9 +293,9 @@ All save fields plus:
 | `regBhfId` | CHAR | 2 | Branch that registered the item |
 | `rraModYn` | CHAR | 1 | RRA modified classification flag |
 
-### Item composition (not exposed on Kayko)
+### Item composition
 
-There is no composition route on the gateway. Upstream VSDC stored composition for backup only and it cannot be queried back.
+`POST /items/compositions` (upstream `items/saveItemComposition`) saves `itemCd`, `cpstItemCd`, and `cpstQty`.
 
 ---
 
@@ -340,6 +362,7 @@ There is no composition route on the gateway. Upstream VSDC stored composition f
 | `salesTyCd` | CHAR | Y | 5 | Send only `"N"` for normal- [Transaction Type](/reference/enumerations#transaction-type) |
 | `rcptTyCd` | CHAR | Y | 5 | [Sales Receipt Type](/reference/enumerations#sales-receipt-type) |
 | `pmtTyCd` | CHAR | N | 5 | [Payment Method](/reference/enumerations#payment-method) |
+| `salePurposeCd` | CHAR | N | 5 | Fuel invoices only: `01` FOR RESELL, `02` FOR CONSUMPTION |
 | `salesSttsCd` | CHAR | Y | 5 | [Transaction Progress](/reference/enumerations#transaction-progress) |
 | `cfmDt` | CHAR | Y | 14 | `yyyyMMddHHmmss` |
 | `salesDt` | CHAR | Y | 8 | `yyyyMMdd` |
@@ -350,16 +373,16 @@ There is no composition route on the gateway. Upstream VSDC stored composition f
 | `rfdRsnCd` | CHAR | N | 5 | [Refund Reason](/reference/enumerations#refund-reason-code) |
 | `totItemCnt` | NUMBER | Y | 10 | |
 | `taxblAmtA`–`D` | NUMBER | Y | 18,2 | Per tax category |
-| `taxblAmtE`, `F`, `Tt` | NUMBER | Y | 18,2 | Live VSDC (not in PDF v1.0.5). Usually `0` |
-| `taxRtA`–`D` | NUMBER | Y | 7,2 | Per tax category (`18.00` for B) |
-| `taxRtE` | NUMBER | Y | 7,2 | Reserved; Kayko sends `0.00` |
-| `taxRtF` | NUMBER | Y* | 7,2 | Tourism header rate, JSON `null`, catalog, or override (not always `3.00`). Use sale-level `tax_rate_f` when needed. |
-| `taxRtTt` | NUMBER | Y* | 7,2 | Same strategy as `taxRtF`. Device-specific accepted values are **unconfirmed, pending RRA clarification**. |
+| `taxblAmtE`, `F`, `Tt` | NUMBER | Y | 18,2 | F = VAT on fuel. Tt = tourism overlay (not a line tax type) |
+| `taxRtA`–`D` | NUMBER | Y | 7,2 | Per tax category (`18` for B) |
+| `taxRtF` | NUMBER | Y | 7,2 | Always `18` (VAT on fuel) |
+| `taxRtTt` | NUMBER | Y | 7,2 | `3` if the TIN is tourism-registered, else `0` |
 | `taxAmtA`–`D` | NUMBER | Y | 18,2 | Per tax category |
-| `taxAmtE`, `F`, `Tt` | NUMBER | Y | 18,2 | Usually `0` |
-| `totTaxblAmt` | NUMBER | Y | 18,2 | |
+| `taxAmtE`, `F`, `Tt` | NUMBER | Y | 18,2 | Tt is tourism tax; F is fuel VAT |
+| `totTaxblAmt` | NUMBER | Y | 18,2 | VAT buckets only (A–F), not tourism overlay |
 | `totTaxAmt` | NUMBER | Y | 18,2 | |
 | `totAmt` | NUMBER | Y | 18,2 | |
+| `totalTTAmt` | NUMBER | Y | 18,2 | Sum of line `ttAmt` |
 | `prchrAcptcYn` | CHAR | Y | 1 | |
 | `remark` | CHAR | N | 400 | |
 | `regrNm/Id` | CHAR | Y | 60/20 | Max 8 chars for `regrNm`/`modrNm` on sales |
@@ -400,10 +423,13 @@ There is no composition route on the gateway. Upstream VSDC stored composition f
 | `isrccNm` | CHAR | N | 100 |
 | `isrcRt` | NUMBER | N | 3 |
 | `isrcAmt` | NUMBER | N | 18,2 |
-| `taxTyCd` | CHAR | Y | 5 |
-| `taxblAmt` | NUMBER | Y | 18,2 |
-| `taxAmt` | NUMBER | Y | 18,2 |
-| `totAmt` | NUMBER | Y | 18,2 |
+| `taxTyCd` | CHAR | Y | 5 | `A`–`D` or `F` (fuel). Not `TT` |
+| `taxblAmt` | NUMBER | Y | 18,2 | |
+| `taxAmt` | NUMBER | Y | 18,2 | |
+| `totAmt` | NUMBER | Y | 18,2 | |
+| `ttAmt` | NUMBER | Y | 18,2 | Tourism tax on this line (`0` if not tourism-taxable) |
+| `rrp` | NUMBER | N | 18,2 | Fuel only |
+| `prftDcAmt` | NUMBER | N | 18,2 | Fuel regulated discount 0–120 |
 
 ### Response `data`
 
@@ -439,7 +465,7 @@ There is no composition route on the gateway. Upstream VSDC stored composition f
 | `stockRlsDt` | CHAR | 19 | |
 | `totItemCnt` | NUMBER | 10 | |
 | `taxblAmtA`–`D` | NUMBER | 18,2 | |
-| `taxRtA`–`D` | NUMBER | 7,2 | Live devices also return/expect E, F, TT rates |
+| `taxRtA`–`D` | NUMBER | 7,2 | Live devices also expect `taxRtF` (18) and `taxRtTt` (0 or 3) |
 | `taxAmtA`–`D` | NUMBER | 18,2 | |
 | `totTaxblAmt` | NUMBER | 18,2 | |
 | `totTaxAmt` | NUMBER | 18,2 | |

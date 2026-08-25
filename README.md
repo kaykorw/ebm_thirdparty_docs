@@ -17,5 +17,5 @@ Integrators authenticate with a business API key from the Kayko dashboard:
 | **Kayko EBM gateway** | `/initialize/*`, `/customers/*`, `/constants/*`, plus sales, items, stock, and more |
 | **Code examples** | cURL, JavaScript, and PHP on every endpoint |
 | **Integration checklist** | Recommended order of API calls |
-| **Calculations** | VAT formulas, discounts, and invoice totals |
+| **Calculations** | VAT formulas, tourism tax vs VAT on fuel, discounts, and invoice totals |
 | **Lookup tables** | Fields, enumerations, countries, currencies |
